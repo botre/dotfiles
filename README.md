@@ -6,7 +6,7 @@
 
 * Sign in with Apple ID
 * Change user picture
-* Enable firewall on
+* Turn firewall on
 * Disable "Show recent applications in dock"
 * Enable "Show Bluetooth in menu bar"
 * Enable "Show Sound in menu bar"
