@@ -6,7 +6,7 @@
 
 * Sign in with Apple ID
 * Change user picture
-* Turn firewall on
+* Turn on firewall
 * Disable "Show recent applications in dock"
 * Enable "Show Bluetooth in menu bar"
 * Enable "Show Sound in menu bar"
@@ -56,7 +56,9 @@ Then, use Homebrew to install:
 ## IntelliJ
 
 * Sign in with JetBrains account
-* Enable "IDE Settings Sync" (silently, from account)
+* Enable "IDE Settings Sync"
+    * Enable "Sync Plugins Silently"
+    * Enable "Get Settings from Account"
 
 ## Zsh
 
