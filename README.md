@@ -54,6 +54,18 @@ Then, use Homebrew to install:
 * Freedom
 * Google Drive
 
+## Git
+
+* Configure user and editor
+
+```bash
+git config --global user.name "botre"
+git config --global user.email "git@bjornkrols.com"
+git config --global core.editor code
+```
+
+* Create machine-specific GitHub personal access token
+
 ## IntelliJ
 
 * Sign in with JetBrains account
