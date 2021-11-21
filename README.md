@@ -73,6 +73,7 @@ git config --global core.editor code
     * Enable "Sync Plugins Silently"
     * Enable "Get Settings from Account"
 * Point shell path to Zsh
+* Set "Open project in" to "New window"
 
 ## Zsh
 
