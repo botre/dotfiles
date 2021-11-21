@@ -65,6 +65,7 @@ git config --global core.editor code
 ```
 
 * Create machine-specific GitHub personal access token
+* Authorize GitHub CLI
 
 ## IntelliJ
 
