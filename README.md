@@ -54,6 +54,10 @@ Then, use Homebrew to install:
 * Freedom
 * Google Drive
 
+## AWS
+
+* Run `aws configure`
+
 ## Git
 
 * Configure user and editor
@@ -89,7 +93,9 @@ plugins=(aws docker fzf gh git node npm terraform yarn)
 
 source $ZSH/oh-my-zsh.sh
 
-alias zshconfig="code ~/.zshrc"
-alias ohmyzsh="code ~/.oh-my-zsh"
+alias awsconfig="code ~/.aws/config"
+alias awscredentials="code ~/.aws/credentials"
 alias brewup="brew update; brew upgrade; brew cleanup; brew doctor"
+alias omzshconfig="code ~/.oh-my-zsh"
+alias zshconfig="code ~/.zshrc"
 ```
