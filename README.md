@@ -60,6 +60,7 @@ Then, use Homebrew to install:
 * Enable "IDE Settings Sync"
     * Enable "Sync Plugins Silently"
     * Enable "Get Settings from Account"
+* Point shell path to Zsh
 
 ## Zsh
 
