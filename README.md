@@ -6,10 +6,13 @@
 
 * Sign in with Apple ID
 * Change user picture
-* Turn on firewall
+* Enable automatic software updates
+* Turn on "Firewall"
+* Turn on "FileVault"
+* Turn off "Remote Login"
 * Disable "Play sound on startup"
 * Disable "Show recent applications in dock"
-* Enable "Show Bluetooth in menu bar"
+* Enable "Show Bluetooth in menu bar"git
 * Enable "Show Sound in menu bar"
 * Enable "Finder > View > Show Path Bar"
 * Enable "Finder > View > Show Status Bar"
