@@ -29,8 +29,8 @@ Then, use Homebrew to install:
 
 * 1Password
 * AWS CLI
-* Docker
 * Discord
+* Docker
 * Freedom
 * fzf
 * Git
@@ -40,8 +40,9 @@ Then, use Homebrew to install:
 * IntelliJ
 * iTerm2
 * jq
-* Oh My Zsh
 * n
+* Oh My Zsh
+* Rectangle
 * Slack
 * tfenv
 * Visual Studio Code
@@ -54,6 +55,7 @@ Then, use Homebrew to install:
 * Docker
 * Freedom
 * Google Drive
+* Rectangle
 
 ## AWS
 
