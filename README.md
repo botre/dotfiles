@@ -19,6 +19,7 @@
 * Change default shell to Zsh
 * Create "Development" directory in user directory and add it to favorites
 * Set "Development" as default directory for iTerm
+* Enable Slack notifications
 
 ### Applications
 
