@@ -83,6 +83,12 @@ git config --global core.editor code
 * Point shell path to Zsh
 * Set "Open project in" to "New window"
 
+## SSH
+
+```bash
+ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
+```
+
 ## Zsh
 
 .zshrc
