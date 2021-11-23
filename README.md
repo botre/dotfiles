@@ -6,6 +6,7 @@
 
 * Sign in with Apple ID
 * Change user picture
+* Delete widgets
 * Enable automatic software updates
 * Turn on "Firewall"
 * Turn on "FileVault"
