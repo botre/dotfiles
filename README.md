@@ -70,12 +70,15 @@ Then, use Homebrew to install:
 
 ## Git
 
-* Configure user and editor
+* Global configurations
 
 ```bash
 git config --global user.name "botre"
 git config --global user.email "git@bjornkrols.com"
+git config --global pull.rebase true
+git config --global fetch.prune true
 git config --global core.editor nano
+git config --global diff.colorMoved zebra
 ```
 
 * Create machine-specific GitHub personal access token
