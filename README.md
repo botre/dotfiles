@@ -40,6 +40,7 @@ Then, use Homebrew to install:
 * GitHub CLI
 * Google Chrome
 * Google Drive
+* GPG Suite
 * IntelliJ
 * iTerm2
 * jq
@@ -47,6 +48,7 @@ Then, use Homebrew to install:
 * Oh My Zsh
 * Rectangle
 * Slack
+* Sops
 * tfenv
 * Visual Studio Code
 * Yarn
