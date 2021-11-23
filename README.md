@@ -105,7 +105,20 @@ export ZSH="/Users/bjorn/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
 
-plugins=(aws docker fzf gh git node npm terraform yarn)
+plugins=(
+  aws
+  brew
+  docker
+  fzf
+  gh
+  git
+  history
+  node
+  npm
+  terraform
+  vscode
+  yarn
+)
 
 source $ZSH/oh-my-zsh.sh
 
