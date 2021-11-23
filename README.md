@@ -93,6 +93,10 @@ git config --global diff.colorMoved zebra
 * Point shell path to Zsh
 * Set "Open project in" to "New window"
 
+## iTerm2
+
+* Disable "Preferences > General > Confirm Quit iTerm2"
+
 ## SSH
 
 ```bash
