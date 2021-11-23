@@ -12,6 +12,7 @@
 * Turn off "Remote Login"
 * Disable "Play sound on startup"
 * Disable "Show recent applications in dock"
+* Set "Minimise windows using" to "Scale effect"
 * Enable "Show Bluetooth in menu bar"git
 * Enable "Show Sound in menu bar"
 * Enable "Finder > View > Show Path Bar"
@@ -26,7 +27,7 @@
 
 ### Applications
 
-First, install Homebrew.
+First, install Homebrew and XCode.
 
 Then, use Homebrew to install:
 
