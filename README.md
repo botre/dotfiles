@@ -112,7 +112,6 @@ plugins=(
   fzf
   gh
   git
-  history
   node
   npm
   terraform
