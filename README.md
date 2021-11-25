@@ -103,6 +103,11 @@ git config --global diff.colorMoved zebra
 ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
 ```
 
+## Xcode
+
+- Accept License Agreement
+- Configure Locations > Command Line Tools
+
 ## Zsh
 
 .zshrc
