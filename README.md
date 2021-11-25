@@ -13,6 +13,7 @@
 * Turn off "Remote Login"
 * Disable "Play sound on startup"
 * Disable "Show recent applications in dock"
+* Disable "Hot Corners"
 * Set "Minimise windows using" to "Scale effect"
 * Enable "Show Bluetooth in menu bar"git
 * Enable "Show Sound in menu bar"
@@ -24,7 +25,6 @@
 * Change default shell to Zsh
 * Create "Development" directory in user directory and add it to favorites
 * Set "Development" as default directory for iTerm
-* Enable Slack notifications
 
 ### Applications
 
