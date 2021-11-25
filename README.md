@@ -80,6 +80,13 @@ git config --global core.editor code
 * Point shell path to Zsh
 * Set "Open project in" to "New window"
 
+## VST plugins
+
+* Bitspeek
+* KORG Collection
+* Sylenth1
+* Voxengo SPAN
+
 ## Zsh
 
 .zshrc
