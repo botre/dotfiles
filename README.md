@@ -92,6 +92,7 @@ git config --global diff.colorMoved zebra
     * Enable "Get Settings from Account"
 * Point shell path to Zsh
 * Set "Open project in" to "New window"
+* Help > Change Memory Settings > 4096 MiB
 
 ## iTerm2
 
