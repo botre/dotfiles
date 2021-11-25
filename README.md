@@ -6,10 +6,16 @@
 
 * Sign in with Apple ID
 * Change user picture
-* Turn on firewall
+* Delete widgets
+* Enable automatic software updates
+* Turn on "Firewall"
+* Turn on "FileVault"
+* Turn off "Remote Login"
 * Disable "Play sound on startup"
 * Disable "Show recent applications in dock"
-* Enable "Show Bluetooth in menu bar"
+* Disable "Hot Corners"
+* Set "Minimise windows using" to "Scale effect"
+* Enable "Show Bluetooth in menu bar"git
 * Enable "Show Sound in menu bar"
 * Enable "Finder > View > Show Path Bar"
 * Enable "Finder > View > Show Status Bar"
@@ -22,26 +28,29 @@
 
 ### Applications
 
-First, install Homebrew.
+First, install Homebrew and XCode.
 
 Then, use Homebrew to install:
 
 * 1Password
 * AWS CLI
-* Docker
 * Discord
+* Docker
 * Freedom
 * fzf
 * Git
 * GitHub CLI
 * Google Chrome
 * Google Drive
+* GPG Suite
 * IntelliJ
 * iTerm2
 * jq
-* Oh My Zsh
 * n
+* Oh My Zsh
+* Rectangle
 * Slack
+* Sops
 * tfenv
 * Visual Studio Code
 * Yarn
@@ -53,6 +62,7 @@ Then, use Homebrew to install:
 * Docker
 * Freedom
 * Google Drive
+* Rectangle
 
 ## AWS
 
@@ -60,12 +70,15 @@ Then, use Homebrew to install:
 
 ## Git
 
-* Configure user and editor
+* Global configurations
 
 ```bash
 git config --global user.name "botre"
 git config --global user.email "git@bjornkrols.com"
-git config --global core.editor code
+git config --global pull.rebase true
+git config --global fetch.prune true
+git config --global core.editor nano
+git config --global diff.colorMoved zebra
 ```
 
 * Create machine-specific GitHub personal access token
@@ -79,6 +92,22 @@ git config --global core.editor code
     * Enable "Get Settings from Account"
 * Point shell path to Zsh
 * Set "Open project in" to "New window"
+* Help > Change Memory Settings > 4096 MiB
+
+## iTerm2
+
+* Disable "Preferences > General > Confirm Quit iTerm2"
+
+## SSH
+
+```bash
+ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
+```
+
+## Xcode
+
+- Accept License Agreement
+- Configure Locations > Command Line Tools
 
 ## VST plugins
 
@@ -96,7 +125,19 @@ export ZSH="/Users/bjorn/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
 
-plugins=(aws docker fzf gh git node npm terraform yarn)
+plugins=(
+  aws
+  brew
+  docker
+  fzf
+  gh
+  git
+  node
+  npm
+  terraform
+  vscode
+  yarn
+)
 
 source $ZSH/oh-my-zsh.sh
 
