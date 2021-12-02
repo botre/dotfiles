@@ -64,6 +64,11 @@ Then, use Homebrew to install:
 * Google Drive
 * Rectangle
 
+### Windows keyboard mappings
+
+* Control -> Command
+* Command -> Control
+
 ## AWS
 
 * Run `aws configure`
