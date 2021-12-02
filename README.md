@@ -103,6 +103,12 @@ git config --global diff.colorMoved zebra
 
 * Disable "Preferences > General > Confirm Quit iTerm2"
 
+## NPM
+
+Global packages.
+
+* npm-check-updates
+
 ## SSH
 
 ```bash
