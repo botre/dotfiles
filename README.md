@@ -52,6 +52,7 @@ Then, use Homebrew to install:
 * Slack
 * Sops
 * tfenv
+* Transmission
 * Visual Studio Code
 * Yarn
 * Zsh
