@@ -54,6 +54,7 @@ Then, use Homebrew to install:
 * tfenv
 * Transmission
 * Visual Studio Code
+* VLC
 * Yarn
 * Zsh
 
