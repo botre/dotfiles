@@ -158,7 +158,7 @@ source $ZSH/oh-my-zsh.sh
 alias awsconfig="code ~/.aws/config"
 alias awscredentials="code ~/.aws/credentials"
 alias brewup="brew update; brew upgrade; brew cleanup; brew doctor"
-alias dockerkill"docker kill $(docker ps -q)"
+alias dockerkill="docker kill $(docker ps -q)"
 alias omzshconfig="code ~/.oh-my-zsh"
 alias zshconfig="code ~/.zshrc"
 ```
