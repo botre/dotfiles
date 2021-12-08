@@ -33,6 +33,7 @@ First, install Homebrew and XCode.
 Then, use Homebrew to install:
 
 * 1Password
+* act
 * AWS CLI
 * Discord
 * Docker
