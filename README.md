@@ -47,6 +47,7 @@ Then, use Homebrew to install:
 * iTerm2
 * jq
 * n
+* ngrok 
 * Oh My Zsh
 * Rectangle
 * Slack
