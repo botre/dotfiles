@@ -34,6 +34,8 @@ Then, use Homebrew to install:
 
 * 1Password
 * act
+* bat
+* curl
 * AWS CLI
 * Discord
 * Docker
@@ -48,13 +50,14 @@ Then, use Homebrew to install:
 * iTerm2
 * jq
 * n
-* ngrok 
+* ngrok
 * Oh My Zsh
 * Rectangle
 * Slack
 * Sops
 * tfenv
 * Transmission
+* tree
 * Visual Studio Code
 * VLC
 * Yarn
@@ -161,6 +164,7 @@ source $ZSH/oh-my-zsh.sh
 alias awsconfig="code ~/.aws/config"
 alias awscredentials="code ~/.aws/credentials"
 alias brewup="brew update; brew upgrade; brew cleanup; brew doctor"
-alias omzshconfig="code ~/.oh-my-zsh"
+alias omzsh="code ~/.oh-my-zsh"
 alias zshconfig="code ~/.zshrc"
 ```
+
