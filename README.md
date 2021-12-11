@@ -111,6 +111,7 @@ git config --global diff.colorMoved zebra
 
 Global packages:
 
+* degit
 * http-server
 * npm-check-updates
 
