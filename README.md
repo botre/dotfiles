@@ -9,6 +9,7 @@
 * Delete widgets
 * Enable automatic software updates
 * Turn on "Firewall"
+* Require password "immediately" after sleep or screen saver begins
 * Turn on "FileVault"
 * Turn off "Remote Login"
 * Disable "Play sound on startup"
@@ -35,10 +36,13 @@ Then, use Homebrew to install:
 * 1Password
 * act
 * bat
+* bash
+* coreutils
 * curl
 * AWS CLI
 * Discord
 * Docker
+* Firefox
 * Freedom
 * fzf
 * Git
