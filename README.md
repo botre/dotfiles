@@ -145,6 +145,7 @@ ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
 .zshrc
 
 ```bash
+export PATH="/usr/local/sbin:$PATH"
 export ZSH="/Users/bjorn/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
