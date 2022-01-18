@@ -119,6 +119,7 @@ git config --global diff.colorMoved zebra
 Global packages:
 
 * degit
+* eas-cli
 * http-server
 * npm-check-updates
 
