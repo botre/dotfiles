@@ -60,6 +60,7 @@ Then, use Homebrew to install:
 * Slack
 * Sops
 * tfenv
+* The Unarchiver
 * Transmission
 * tree
 * Visual Studio Code
