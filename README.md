@@ -56,7 +56,6 @@ Then, use Homebrew to install:
 * n
 * ngrok
 * Oh My Zsh
-* rar
 * Rectangle
 * Slack
 * Sops
