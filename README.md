@@ -8,6 +8,8 @@
 * Change user picture
 * Delete widgets
 * Enable automatic software updates
+* Add device to "Find My"
+* Add device serial number to password manager
 * Turn on "Firewall"
 * Require password "immediately" after sleep or screen saver begins
 * Turn on "FileVault"
