@@ -16,6 +16,7 @@ brew "wget"
 brew "zsh"
 
 cask "1password"
+cask "ableton-live-suite"
 cask "discord"
 cask "docker"
 cask "firefox"
