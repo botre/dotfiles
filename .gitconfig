@@ -1,0 +1,11 @@
+[user]
+        name = botre
+        email = git@bjornkrols.com
+[pull]
+        rebase = true
+[fetch]
+        prune = true
+[core]
+        editor = vi
+[diff]
+        colorMoved = zebra

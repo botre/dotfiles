@@ -36,7 +36,7 @@
 
 1. Install Homebrew
 2. Install XCode
-3. `brew bundle` the Brewfile
+3. `brew bundle` the `Brewfile`
 4. Install Oh My Zsh
 
 ### Startup applications
@@ -80,17 +80,7 @@ asdf global yarn latest
 
 ## Git
 
-* Global configurations
-
-```bash
-git config --global user.name "botre"
-git config --global user.email "git@bjornkrols.com"
-git config --global pull.rebase true
-git config --global fetch.prune true
-git config --global core.editor nano
-git config --global diff.colorMoved zebra
-```
-
+* Import `.gitconfig`
 * Create machine-specific GitHub personal access token
 * Authorize GitHub CLI
 
