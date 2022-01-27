@@ -115,11 +115,6 @@ npm install -g npm-check-updates
 ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
 ```
 
-## Xcode
-
-- Accept License Agreement
-- Configure Locations > Command Line Tools
-
 ## VST plugins
 
 * Bitspeek
@@ -127,3 +122,7 @@ ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
 * Sylenth1
 * Voxengo SPAN
 
+## Xcode
+
+- Accept License Agreement
+- Configure Locations > Command Line Tools
