@@ -5,8 +5,8 @@
 ### Configuration
 
 * Create "bjorn" user
-* Sign in with Apple ID
 * Change user picture
+* Sign in with Apple ID
 * Remove all widgets
 * Enable automatic software updates
 * Add device to "Find My"
@@ -20,7 +20,7 @@
 * Disable "Show recent applications in dock"
 * Disable all "Hot Corners"
 * Set "Minimise windows using" to "Scale effect"
-* Enable "Show Bluetooth in menu bar"git
+* Enable "Show Bluetooth in menu bar"
 * Set "Show Sound in menu bar" to "always"
 * Enable "Finder > View > Show Path Bar"
 * Enable "Finder > View > Show Status Bar"
@@ -49,7 +49,7 @@
 
 ## AWS
 
-* Run `aws configure`
+* Import `config` and `credentials` files from password manager
 
 ## Git
 
@@ -73,8 +73,6 @@ git config --global diff.colorMoved zebra
 * Enable "IDE Settings Sync"
     * Enable "Sync Plugins Silently"
     * Enable "Get Settings from Account"
-* Point shell path to Zsh
-* Set "Open project in" to "New window"
 * Help > Change Memory Settings > 8192 MiB
 
 ## iTerm2
@@ -85,10 +83,12 @@ git config --global diff.colorMoved zebra
 
 Global packages:
 
-* degit
-* eas-cli
-* http-server
-* npm-check-updates
+```bash
+npm install -g degit
+npm install -g eas-cli
+npm install -g http-server
+npm install -g npm-check-updates
+```
 
 ## SSH
 
