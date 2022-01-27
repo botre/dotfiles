@@ -31,6 +31,8 @@
 * Set "Scroll direction" to "Natural"
 * Set "Show scroll bars" to "always"
 * Disable "Ask Siri"
+* Enable "Allow Handoff between this Mac and your iCloud devices"
+* Set default web browser to "Google Chrome"
 
 ### Applications
 

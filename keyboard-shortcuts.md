@@ -1,5 +1,9 @@
 # Keyboard shortcuts
 
+## 1Password
+
+* Show 1Password mini = <kbd>CTRL</kbd> + <kbd>ALT</kbd> + <kbd>\\</kbd>
+
 ## QWERTY
 
 ### French accents
