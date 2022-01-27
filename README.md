@@ -4,71 +4,35 @@
 
 ### Configuration
 
+* Create "bjorn" user
 * Sign in with Apple ID
 * Change user picture
-* Delete widgets
+* Remove all widgets
 * Enable automatic software updates
 * Add device to "Find My"
 * Add device serial number to password manager
 * Turn on "Firewall"
 * Require password "immediately" after sleep or screen saver begins
 * Turn on "FileVault"
+* Add "FileVault" key to password manager
 * Turn off "Remote Login"
 * Disable "Play sound on startup"
 * Disable "Show recent applications in dock"
-* Disable "Hot Corners"
+* Disable all "Hot Corners"
 * Set "Minimise windows using" to "Scale effect"
 * Enable "Show Bluetooth in menu bar"git
-* Enable "Show Sound in menu bar"
+* Set "Show Sound in menu bar" to "always"
 * Enable "Finder > View > Show Path Bar"
 * Enable "Finder > View > Show Status Bar"
 * Set "Scroll direction" to "Natural"
-* Set "Show scroll bars" to "Always"
-* Change default browser to Google Chrome
-* Change default shell to Zsh
-* Create "Development" directory in user directory and add it to favorites
-* Set "Development" as default directory for iTerm
+* Set "Show scroll bars" to "always"
 
 ### Applications
 
-First, install Homebrew and XCode.
-
-Then, use Homebrew to install:
-
-* 1Password
-* act
-* bat
-* bash
-* coreutils
-* curl
-* AWS CLI
-* Discord
-* Docker
-* Firefox
-* Freedom
-* fzf
-* Git
-* GitHub CLI
-* Google Chrome
-* Google Drive
-* GPG Suite
-* IntelliJ
-* iTerm2
-* jq
-* n
-* ngrok
-* Oh My Zsh
-* Rectangle
-* Slack
-* Sops
-* tfenv
-* The Unarchiver
-* Transmission
-* tree
-* Visual Studio Code
-* VLC
-* Yarn
-* Zsh
+1. Install Homebrew
+2. Install XCode
+3. `brew bundle` the Brewfile
+4. Install Oh My Zsh
 
 ### Startup applications
 
@@ -111,7 +75,7 @@ git config --global diff.colorMoved zebra
     * Enable "Get Settings from Account"
 * Point shell path to Zsh
 * Set "Open project in" to "New window"
-* Help > Change Memory Settings > 4096 MiB
+* Help > Change Memory Settings > 8192 MiB
 
 ## iTerm2
 
