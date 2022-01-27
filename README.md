@@ -4,12 +4,15 @@
 
 ### Configuration
 
+* Change computer name
 * Create "bjorn" user
 * Change user picture
 * Sign in with Apple ID
 * Remove all widgets
 * Enable automatic software updates
+* Enable "Touch ID"
 * Add device to "Find My"
+* Disable "Share Mac Analytics"
 * Add device serial number to password manager
 * Turn on "Firewall"
 * Require password "immediately" after sleep or screen saver begins
@@ -18,6 +21,7 @@
 * Turn off "Remote Login"
 * Disable "Play sound on startup"
 * Disable "Show recent applications in dock"
+* Clear dock
 * Disable all "Hot Corners"
 * Set "Minimise windows using" to "Scale effect"
 * Enable "Show Bluetooth in menu bar"
@@ -26,6 +30,7 @@
 * Enable "Finder > View > Show Status Bar"
 * Set "Scroll direction" to "Natural"
 * Set "Show scroll bars" to "always"
+* Disable "Ask Siri"
 
 ### Applications
 
@@ -46,6 +51,12 @@
 
 * Control -> Command
 * Command -> Control
+
+### Cleanup
+
+* Remove device from "Find My"
+* Remove device from "Freedom"
+* Revoke machine-specific GitHub personal access token
 
 ## asdf
 
