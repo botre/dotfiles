@@ -47,6 +47,22 @@
 * Control -> Command
 * Command -> Control
 
+## asdf
+
+```bash
+asdf plugin add nodejs
+asdf install nodejs latest
+asdf global nodejs latest
+
+asdf plugin-add terraform https://github.com/asdf-community/asdf-hashicorp.git
+asdf install terraform latest
+asdf global terraform latest
+
+asdf plugin add yarn
+asdf install yarn latest
+asdf global yarn latest
+```
+
 ## AWS
 
 * Import `config` and `credentials` files from password manager
@@ -107,38 +123,4 @@ ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
 * KORG Collection
 * Sylenth1
 * Voxengo SPAN
-
-## Zsh
-
-.zshrc
-
-```bash
-export PATH="/usr/local/sbin:$PATH"
-export ZSH="/Users/bjorn/.oh-my-zsh"
-
-ZSH_THEME="robbyrussell"
-
-plugins=(
-  aws
-  brew
-  docker
-  fzf
-  gh
-  git
-  node
-  npm
-  terraform
-  vscode
-  yarn
-)
-
-source $ZSH/oh-my-zsh.sh
-
-alias awsconfig='code ~/.aws/config'
-alias awscredentials='code ~/.aws/credentials'
-alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
-alias dockerfresh='docker kill $(docker ps -q); docker system prune --volumes --force'
-alias omzsh='code ~/.oh-my-zsh'
-alias zshconfig='code ~/.zshrc'
-```
 
