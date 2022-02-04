@@ -44,6 +44,7 @@
 ### Startup applications
 
 * 1Password
+* Alfred
 * Docker
 * Freedom
 * Google Drive
@@ -79,6 +80,11 @@ asdf global yarn latest
 ## AWS
 
 * Import `config` and `credentials` files from password manager
+
+## Freedom
+
+* Create the device
+* Add the device to all relevant sessions
 
 ## Git
 

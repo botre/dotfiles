@@ -42,3 +42,7 @@
 * Search everywhere = <kbd>SHIFT</kbd> + <kbd>SHIFT</kbd>
 * View recent files = <kbd>CTRL</kbd> + <kbd>e</kbd>
 * Jump to next error = <kbd>F2</kbd>
+
+## Alfred
+
+* Open = <kbd>ALT</kbd> + <kbd>⎵</kbd>

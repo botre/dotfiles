@@ -17,6 +17,7 @@ brew "zsh"
 
 cask "1password"
 cask "ableton-live-suite"
+cask "alfred"
 cask "discord"
 cask "docker"
 cask "firefox"
