@@ -43,6 +43,6 @@
 * View recent files = <kbd>CTRL</kbd> + <kbd>e</kbd>
 * Jump to next error = <kbd>F2</kbd>
 
-## Alfred
+## Raycast
 
 * Open = <kbd>ALT</kbd> + <kbd>⎵</kbd>

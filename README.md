@@ -44,10 +44,10 @@
 ### Startup applications
 
 * 1Password
-* Alfred
 * Docker
 * Freedom
 * Google Drive
+* Raycast
 * Rectangle
 
 ### Windows keyboard mappings
