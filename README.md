@@ -34,7 +34,7 @@
 * Enable "Allow Handoff between this Mac and your iCloud devices"
 * Set default web browser to "Google Chrome"
 * Disable Spotlight shortcuts
-* `defaults write com.apple.finder AppleShowAllFiles true`
+* `defaults write com.apple.finder AppleShowAllFiles true && killall Finder`
 
 ### Applications
 
