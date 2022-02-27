@@ -46,6 +46,7 @@
 
 * 1Password
 * Docker
+* Dropbox
 * Freedom
 * Google Drive
 * Raycast
