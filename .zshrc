@@ -14,6 +14,7 @@ plugins=(
   node
   npm
   terraform
+  vi-mode # https://github.com/jeffreytse/zsh-vi-mode#as-an-oh-my-zsh-custom-plugin
   yarn
 )
 
