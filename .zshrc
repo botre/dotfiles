@@ -3,6 +3,8 @@ export ZSH="/Users/bjorn/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
 
+ZVM_INIT_MODE=sourcing
+
 plugins=(
   asdf
   aws
