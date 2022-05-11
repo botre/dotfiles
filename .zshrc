@@ -3,21 +3,21 @@ export ZSH="/Users/bjorn/.oh-my-zsh"
 
 ZSH_THEME="robbyrussell"
 
-ZVM_INIT_MODE=sourcing
+VI_MODE_SET_CURSOR=true
 
 plugins=(
   asdf
   aws
   brew
   docker
-  fzf
   gh
   git
   node
   npm
   terraform
+  vi-mode
+  fzf # must be after vi-mode
   yarn
-  zsh-vi-mode # https://github.com/jeffreytse/zsh-vi-mode#as-an-oh-my-zsh-custom-plugin
 )
 
 source $ZSH/oh-my-zsh.sh
