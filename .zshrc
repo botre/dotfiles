@@ -29,3 +29,4 @@ alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --forc
 alias docupd='docker compose up -d'
 alias omzsh='vi ~/.oh-my-zsh'
 alias zshconfig='vi ~/.zshrc'
+alias zshsource='source ~/.zshrc'
