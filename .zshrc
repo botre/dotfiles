@@ -1,6 +1,9 @@
 export PATH="/usr/local/sbin:$PATH"
 export ZSH="/Users/bjorn/.oh-my-zsh"
 
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+
 ZSH_THEME="robbyrussell"
 
 VI_MODE_SET_CURSOR=true
