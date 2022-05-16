@@ -6,6 +6,9 @@ export LANG=en_US.UTF-8
 
 ZSH_THEME="robbyrussell"
 
+export VISUAL=nvim
+export EDITOR="$VISUAL"
+
 VI_MODE_SET_CURSOR=true
 
 plugins=(

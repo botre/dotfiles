@@ -5,7 +5,5 @@
         rebase = true
 [fetch]
         prune = true
-[core]
-        editor = vi
 [diff]
         colorMoved = zebra
