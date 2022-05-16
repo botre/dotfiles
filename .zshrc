@@ -25,11 +25,16 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
+alias vi="nvim"
+alias vim="nvim"
+
 alias awsconfig='vi ~/.aws/config'
 alias awscredentials='vi ~/.aws/credentials'
+
 alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
+
 alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
 alias docupd='docker compose up -d'
-alias omzsh='vi ~/.oh-my-zsh'
+
 alias zshconfig='vi ~/.zshrc'
 alias zshsource='source ~/.zshrc'
