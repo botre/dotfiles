@@ -118,6 +118,15 @@ npm install -g npm-check-updates
 npm install -g prettier
 ```
 
+### Go:
+
+Global modules:
+
+```bash
+go install github.com/cosmtrek/air@latest
+```
+
+
 ## SSH
 
 ```bash
