@@ -126,7 +126,6 @@ Global modules:
 go install github.com/cosmtrek/air@latest
 ```
 
-
 ## SSH
 
 ```bash
