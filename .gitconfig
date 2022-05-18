@@ -7,3 +7,5 @@
         prune = true
 [diff]
         colorMoved = zebra
+[http]
+        postBuffer = 524288000
