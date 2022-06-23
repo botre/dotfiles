@@ -11,7 +11,7 @@ set incsearch
 map Q gq
 
 " Yank to system clipboard
-set clipboard+=unnamedplus
+set clipboard+=unnamed
 
 " Highlight selection on yank
 set highlightedyank
