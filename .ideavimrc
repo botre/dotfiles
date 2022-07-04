@@ -13,5 +13,8 @@ map Q gq
 " Yank to system clipboard
 set clipboard+=unnamed
 
-" Highlight selection on yank
+" Highlight selection on yank (emulates vim-highlightedyank)
 set highlightedyank
+
+" Surrounding commands (emulates vim-surround)
+set surround
