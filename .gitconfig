@@ -1,11 +1,18 @@
-[user]
-        name = botre
-        email = git@bjornkrols.com
-[pull]
-        rebase = true
-[fetch]
-        prune = true
+[core]
+    editor = nvim
+    pager = bat
 [diff]
-        colorMoved = zebra
+    colorMoved = zebra
+[fetch]
+    prune = true
 [http]
-        postBuffer = 524288000
+    postBuffer = 524288000
+[hub]
+    protocol = https
+[pull]
+    rebase = true
+[push]
+    autoSetupRemote = true
+[user]
+    email = git@bjornkrols.com
+    name = botre
