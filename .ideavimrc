@@ -18,3 +18,6 @@ set highlightedyank
 
 " Surrounding commands (emulates vim-surround)
 set surround
+
+" Commentary commands (emulates vim-commentary)
+set commentary
