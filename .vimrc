@@ -1,3 +1,9 @@
+" Precede each line with its line number
+set number
+
+" Show the line number relative to the line with the cursor in front of each line
+set relativenumber
+
 " Use <Space> as <Leader>
 let mapleader = " "
 
