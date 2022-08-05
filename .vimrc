@@ -4,6 +4,9 @@ set number
 " Show the line number relative to the line with the cursor in front of each line
 set relativenumber
 
+" Causes all text matching the current search to be highlighted
+set hlsearch
+
 " Use <Space> as <Leader>
 let mapleader = " "
 
