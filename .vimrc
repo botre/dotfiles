@@ -4,6 +4,12 @@ set number
 " Show the line number relative to the line with the cursor in front of each line
 set relativenumber
 
+" Ignore case in search patterns
+set smartcase
+
+" Override the 'ignorecase' option if the search pattern contains upper case characters
+set ignorecase
+
 " Use <Space> as <Leader>
 let mapleader = " "
 
