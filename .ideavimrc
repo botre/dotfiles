@@ -1,9 +1,6 @@
 " Source .vimrc
 source ~/.vimrc
 
-" Show a few lines of context around the cursor
-set scrolloff=5
-
 " Highlight selection on yank (emulates vim-highlightedyank)
 set highlightedyank
 

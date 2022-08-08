@@ -4,6 +4,9 @@ set number
 " Show the line number relative to the line with the cursor in front of each line
 set relativenumber
 
+" Show a few lines of context around the cursor
+set scrolloff=5
+
 " Ignore case in search patterns
 set smartcase
 
