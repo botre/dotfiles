@@ -7,8 +7,7 @@ set scrolloff=5
 " Don't use Ex mode, use Q for formatting
 map Q gq
 
-" Yank to system clipboard
-set clipboard+=unnamed
+
 
 " Highlight selection on yank (emulates vim-highlightedyank)
 set highlightedyank

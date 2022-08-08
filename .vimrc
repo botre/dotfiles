@@ -13,6 +13,9 @@ set ignorecase
 " While typing a search command, show where the pattern, as it was typed so far, matches
 set incsearch
 
+" Yank to system clipboard
+set clipboard=unnamed
+
 " Use <Space> as <Leader>
 let mapleader = " "
 
