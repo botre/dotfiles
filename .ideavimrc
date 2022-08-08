@@ -4,11 +4,6 @@ source ~/.vimrc
 " Show a few lines of context around the cursor
 set scrolloff=5
 
-" Don't use Ex mode, use Q for formatting
-map Q gq
-
-
-
 " Highlight selection on yank (emulates vim-highlightedyank)
 set highlightedyank
 
