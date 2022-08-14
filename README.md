@@ -28,6 +28,7 @@
 * Set "Show Sound in menu bar" to "always"
 * Enable "Finder > View > Show Path Bar"
 * Enable "Finder > View > Show Status Bar"
+* "Finder > View > Show View Options" - Group By: none, Sort By: name, Use as Defaults
 * Set "Scroll direction" to "Natural"
 * Set "Show scroll bars" to "always"
 * Disable "Ask Siri"
