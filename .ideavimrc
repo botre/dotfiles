@@ -12,3 +12,6 @@ set surround
 
 " Commentary commands (emulates vim-commentary)
 set commentary
+
+" Mapping for rename refactoring
+map <leader>rn <Action>(RenameElement)
