@@ -31,6 +31,10 @@ noremap <Down> <Nop>
 noremap <Left> <Nop>
 noremap <Right> <Nop>
 
+" Disable backspace and carriage return keys
+noremap <Backspace> <Nop>
+noremap <CR> <Nop>
+
 " Black hole variants
 nnoremap <leader>c "_c
 vnoremap <leader>c "_c
