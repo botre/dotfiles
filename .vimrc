@@ -13,6 +13,9 @@ set smartcase
 " Override the 'ignorecase' option if the search pattern contains upper case characters
 set ignorecase
 
+" Causes all text matching the current search to be highlighted
+set hlsearch
+
 " While typing a search command, show where the pattern, as it was typed so far, matches
 set incsearch
 
