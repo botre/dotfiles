@@ -1,6 +1,9 @@
 " Source .vimrc
 source ~/.vimrc
 
+" Keep the mode that was enabled before starting a refactoring
+set idearefactormode=keep
+
 " Highlight selection on yank (emulates vim-highlightedyank)
 set highlightedyank
 
