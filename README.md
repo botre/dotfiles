@@ -29,6 +29,7 @@
 * Enable "Finder > View > Show Path Bar"
 * Enable "Finder > View > Show Status Bar"
 * "Finder > View > Show View Options" - Group By: none, Sort By: name, Use as Defaults
+* "Finder > Preferences > General > New Finder windows show" user
 * Set "Scroll direction" to "Natural"
 * Set "Show scroll bars" to "always"
 * Disable "Ask Siri"
