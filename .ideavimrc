@@ -13,14 +13,17 @@ set surround
 " Commentary commands (emulates vim-commentary)
 set commentary
 
-# Tree explorer (emulates NERDTree)
+" Tree explorer (emulates NERDTree)
 set NERDTree
-
-" IDE mappings
-map <leader>fu <Action>(FindUsages)
-map <leader>rn <Action>(RenameElement)
 
 " NERDTree mappings
 nnoremap <C-n> :NERDTree<CR>
 nnoremap <C-t> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>
+
+" IDE mappings
+map <leader>fu <Action>(FindUsages)
+map <leader>rn <Action>(RenameElement)
+
+" IDE commands
+command! Zen action ToggleDistractionFreeMode
