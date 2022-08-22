@@ -36,6 +36,7 @@
 * Enable "Allow Handoff between this Mac and your iCloud devices"
 * Set default web browser to "Google Chrome"
 * Disable Spotlight shortcuts
+* System Preferences > Keyboard > Dictation > Set "Shortcut" to "Microphone key"
 
 ### Applications
 
