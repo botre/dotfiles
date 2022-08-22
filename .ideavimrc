@@ -13,6 +13,12 @@ set surround
 " Commentary commands (emulates vim-commentary)
 set commentary
 
+# Tree explorer (emulates NERDTree)
+set NERDTree
+
 " IDE mappings
 map <leader>fu <Action>(FindUsages)
 map <leader>rn <Action>(RenameElement)
+
+nnoremap <C-t> :NERDTreeToggle<CR>
+nnoremap <C-f> :NERDTreeFind<CR>
