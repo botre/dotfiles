@@ -50,7 +50,6 @@
 * 1Password
 * Docker
 * Dropbox
-* Freedom
 * Google Drive
 * Raycast
 * Rectangle
@@ -63,7 +62,6 @@
 ### Cleanup
 
 * Remove device from "Find My"
-* Remove device from "Freedom"
 * Revoke machine-specific GitHub personal access token
 
 ## asdf
@@ -85,11 +83,6 @@ asdf global yarn latest
 ## AWS
 
 * Import `config` and `credentials` files from password manager
-
-## Freedom
-
-* Create the device
-* Add the device to all relevant sessions
 
 ## Git
 
