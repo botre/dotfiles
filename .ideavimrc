@@ -13,6 +13,9 @@ set surround
 " Commentary commands (emulates vim-commentary)
 set commentary
 
+" Text objects for entire buffers (emulates vim-textobj-entire)
+set textobj-entire
+
 " Tree explorer (emulates NERDTree)
 set NERDTree
 
