@@ -31,6 +31,8 @@ source $ZSH/oh-my-zsh.sh
 alias vi="nvim"
 alias vim="nvim"
 
+alias idea='open -na "IntelliJ IDEA.app"'
+
 alias awsconfig='vi ~/.aws/config'
 alias awscredentials='vi ~/.aws/credentials'
 
