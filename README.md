@@ -101,6 +101,8 @@ asdf global yarn latest
 ## iTerm2
 
 * Disable "Preferences > General > Confirm Quit iTerm2"
+* Enable "Preferences > Profiles > Default > Text > Blinking cursor"
+* Set "Preferences > Profiles > Default > Window" to "Maximized"
 
 ## NPM
 
