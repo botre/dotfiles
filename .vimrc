@@ -7,6 +7,9 @@ set relativenumber
 " Show a few lines of context around the cursor
 set scrolloff=5
 
+" Enable cursor blink in all modes
+set guicursor+=a:-blinkwait175-blinkoff150-blinkon175
+
 " Ignore case in search patterns
 set smartcase
 
