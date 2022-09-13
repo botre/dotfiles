@@ -27,6 +27,7 @@ nnoremap <C-f> :NERDTreeFind<CR>
 " IDE mappings
 map <leader>fu <Action>(FindUsages)
 map <leader>rn <Action>(RenameElement)
+vmap = <Action>(ReformatCode)
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
