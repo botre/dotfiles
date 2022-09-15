@@ -13,6 +13,9 @@ set surround
 " Commentary commands (emulates vim-commentary)
 set commentary
 
+" Extended matching with "%" (emulates matchit)
+set matchit
+
 " Text objects for entire buffers (emulates vim-textobj-entire)
 set textobj-entire
 
