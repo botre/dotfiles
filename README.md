@@ -98,11 +98,6 @@ asdf global yarn latest
     * Enable "Get Settings from Account"
 * Help > Change Memory Settings > 8192 MiB
 
-## iTerm2
-
-* Disable "Preferences > General > Confirm Quit iTerm2"
-* Enable "Preferences > Profiles > Default > Text > Blinking cursor"
-
 ## NPM
 
 Global packages:
