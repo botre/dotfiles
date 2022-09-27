@@ -1,5 +1,8 @@
-export PATH="/usr/local/sbin:$PATH"
-export ZSH="/Users/bjorn/.oh-my-zsh"
+path+=("/usr/local/sbin")
+path+=("$HOME/.cargo/bin")
+export PATH
+
+export ZSH="$HOME/.oh-my-zsh"
 
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
