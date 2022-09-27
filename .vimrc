@@ -1,3 +1,6 @@
+" Enable true colors support
+set termguicolors
+
 " Precede each line with its line number
 set number
 
