@@ -25,6 +25,9 @@ set hlsearch
 " While typing a search command, show where the pattern, as it was typed so far, matches
 set incsearch
 
+" Spelling
+set spelllang=en
+
 " Yank to system clipboard
 set clipboard=unnamed
 
