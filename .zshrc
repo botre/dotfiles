@@ -31,21 +31,15 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-# FZF theme (Catppuccin)
-export FZF_DEFAULT_OPTS='--color=bg+:#302D41,bg:#1E1E2E,spinner:#F8BD96,hl:#F28FAD --color=fg:#D9E0EE,header:#F28FAD,info:#DDB6F2,pointer:#F8BD96 --color=marker:#F8BD96,fg+:#F2CDCD,prompt:#DDB6F2,hl+:#F28FAD'
+# FZF theme (Dracula)
+export FZF_DEFAULT_OPTS='--color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9 --color=fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9 --color=info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6 --color=marker:#ff79c6,spinner:#ffb86c,header:#6272a4'
 
 alias vi="nvim"
 alias vim="nvim"
 
 alias idea='open -na "IntelliJ IDEA.app"'
 
-alias awsconfig='vi ~/.aws/config'
-alias awscredentials='vi ~/.aws/credentials'
-
 alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
 alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
 alias docupd='docker compose up -d'
-
-alias zshconfig='vi ~/.zshrc'
-alias zshsource='source ~/.zshrc'

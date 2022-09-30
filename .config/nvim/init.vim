@@ -13,11 +13,11 @@ endif
 " Plugins
 call plug#begin()
     " Color scheme
-    Plug 'catppuccin/nvim', {'as': 'catppuccin'}
+    Plug 'dracula/vim', { 'as': 'dracula' }
 call plug#end()
 
 " Set color scheme
-colorscheme catppuccin
+colorscheme dracula
 
 " Highlight selection on yank
 au TextYankPost * silent! lua vim.highlight.on_yank()
