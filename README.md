@@ -1,4 +1,4 @@
-# Computer setup
+# dotfiles
 
 ## Mac
 
@@ -106,6 +106,7 @@ Global packages:
 npm install -g degit
 npm install -g eas-cli
 npm install -g http-server
+npm install -g mdanki
 npm install -g npm-check-updates
 npm install -g prettier
 ```
@@ -128,6 +129,7 @@ ssh-keygen -t rsa -b 4096 -C "bjorn@system-identifier"
 
 * Bitspeek
 * KORG Collection
+* MSoundFactory
 * Sylenth1
 * Voxengo SPAN
 
