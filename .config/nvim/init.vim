@@ -12,8 +12,12 @@ endif
 
 " Plugins
 call plug#begin()
-    " Color scheme
+    Plug 'adelarsq/vim-matchit'
     Plug 'dracula/vim', { 'as': 'dracula' }
+    Plug 'kana/vim-textobj-entire'
+    Plug 'kana/vim-textobj-user'
+    Plug 'tpope/vim-commentary'
+    Plug 'tpope/vim-surround'
 call plug#end()
 
 " Set color scheme
