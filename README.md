@@ -48,6 +48,7 @@
 ### Startup applications
 
 * 1Password
+* AltTab
 * Docker
 * Dropbox
 * Google Drive
