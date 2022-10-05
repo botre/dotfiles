@@ -58,7 +58,7 @@
 ### Windows keyboard mappings
 
 * Option -> Command
-* Command -> Option 
+* Command -> Option
 
 ### Cleanup
 
