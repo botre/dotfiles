@@ -57,8 +57,8 @@
 
 ### Windows keyboard mappings
 
-* Control -> Command
-* Command -> Control
+* Option -> Command
+* Command -> Option 
 
 ### Cleanup
 
