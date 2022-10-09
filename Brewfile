@@ -1,3 +1,10 @@
+## Taps
+tap 'homebrew/cask'
+tap 'homebrew/cask-fonts'
+tap 'homebrew/cask-versions'
+tap 'homebrew/bundle'
+
+## Binaries
 brew "asdf"
 brew "awscli"
 brew "bash"
@@ -13,10 +20,12 @@ brew "go"
 brew "gpg"
 brew "htop"
 brew "jq"
+brew "lsd"
 brew "neovim"
 brew "nmap"
 brew "rust"
 brew "sops"
+brew "starship"
 brew "tree"
 brew "unzip"
 brew "watchman"
@@ -24,6 +33,7 @@ brew "wget"
 brew "yq"
 brew "zsh"
 
+## Casks
 cask "1password"
 cask "ableton-live-suite"
 cask "alacritty"
@@ -45,3 +55,6 @@ cask "spotify"
 cask "the-unarchiver"
 cask "transmission"
 cask "vlc"
+
+## Fonts
+cask "font-jetbrains-mono-nerd-font"

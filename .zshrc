@@ -7,8 +7,6 @@ export ZSH="$HOME/.oh-my-zsh"
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-ZSH_THEME="robbyrussell"
-
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 
@@ -37,9 +35,14 @@ export FZF_DEFAULT_OPTS='--color=fg:#f8f8f2,bg:#282a36,hl:#bd93f9 --color=fg+:#f
 alias vi="nvim"
 alias vim="nvim"
 
+alias bat="cat"
+alias ls="lsd"
+
 alias idea='open -na "IntelliJ IDEA.app"'
 
 alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
 alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
 alias docupd='docker compose up -d'
+
+eval "$(starship init zsh)"
