@@ -36,7 +36,7 @@ alias vi="nvim"
 alias vim="nvim"
 
 alias cat="bat"
-alias ls="lsd"
+alias ls="exa --icons"
 
 alias idea='open -na "IntelliJ IDEA.app"'
 
