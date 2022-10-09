@@ -57,4 +57,4 @@ cask "transmission"
 cask "vlc"
 
 ## Fonts
-cask "font-jetbrains-mono-nerd-font"
+cask "font-hack-nerd-font"
