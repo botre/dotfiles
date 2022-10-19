@@ -31,7 +31,7 @@ nnoremap <C-f> :NERDTreeFind<CR>
 map <leader>fu <Action>(FindUsages)
 map <leader>rn <Action>(RenameElement)
 map <leader>rf <Action>(RenameFile)
-vmap = <Action>(ReformatCode)
+map <silent>K <Action>(QuickJavaDoc) " Shows documentation popup
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
