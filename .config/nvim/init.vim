@@ -18,6 +18,7 @@ call plug#begin()
     Plug 'kana/vim-textobj-user'
     Plug 'tpope/vim-commentary'
     Plug 'tpope/vim-surround'
+    Plug 'preservim/nerdtree'
 call plug#end()
 
 " Set color scheme

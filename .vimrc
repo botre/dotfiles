@@ -54,3 +54,8 @@ vnoremap <leader>x "_x
 
 " Make Y to work from the cursor to the end of line (which is more logical, but not vi-compatible)
 map Y y$
+
+" NERDTree mappings
+nnoremap <C-n> :NERDTree<CR>
+nnoremap <C-t> :NERDTreeToggle<CR>
+nnoremap <C-f> :NERDTreeFind<CR>
