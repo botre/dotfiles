@@ -13,7 +13,7 @@ endif
 " Plugins
 call plug#begin()
     Plug 'adelarsq/vim-matchit'
-    Plug 'dracula/vim', { 'as': 'dracula' }
+    Plug 'catppuccin/vim', { 'as': 'catppuccin' }
     Plug 'kana/vim-textobj-entire'
     Plug 'kana/vim-textobj-user'
     Plug 'tpope/vim-commentary'
@@ -22,7 +22,12 @@ call plug#begin()
 call plug#end()
 
 " Set color scheme
-colorscheme dracula
+lua << EOF
+require("catppuccin").setup {
+    flavour = "macchiato"
+}
+EOF
+colorscheme catppuccin
 
 " Highlight selection on yank
 au TextYankPost * silent! lua vim.highlight.on_yank()
