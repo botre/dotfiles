@@ -51,6 +51,8 @@ nnoremap <leader>d "_d
 vnoremap <leader>d "_d
 nnoremap <leader>x "_x
 vnoremap <leader>x "_x
+nnoremap <leader>s "_s
+vnoremap <leader>s "_s
 
 " Make Y to work from the cursor to the end of line (which is more logical, but not vi-compatible)
 map Y y$
