@@ -41,6 +41,8 @@ alias vim="nvim"
 alias cat="bat"
 alias ls="exa --icons"
 
+alias notify='terminal-notifier'
+
 alias idea='open -na "IntelliJ IDEA.app"'
 
 alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
