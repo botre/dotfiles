@@ -49,8 +49,6 @@ nnoremap <leader>c "_c
 vnoremap <leader>c "_c
 nnoremap <leader>d "_d
 vnoremap <leader>d "_d
-nnoremap <leader>s "_r
-vnoremap <leader>s "_r
 nnoremap <leader>s "_s
 vnoremap <leader>s "_s
 nnoremap <leader>x "_x
