@@ -51,3 +51,5 @@ alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --forc
 alias docupd='docker compose up -d'
 
 eval "$(starship init zsh)"
+eval "$(jump shell)"
+
