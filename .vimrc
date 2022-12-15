@@ -34,6 +34,9 @@ set spelllang=en
 " Yank to system clipboard
 set clipboard=unnamed
 
+" Remove <Space> functionality
+noremap <Space> <NOP>
+
 " Use <Space> as <Leader>
 let mapleader = " "
 
@@ -57,8 +60,26 @@ vnoremap <leader>s "_s
 nnoremap <leader>x "_x
 vnoremap <leader>x "_x
 
+" Add a new line below the current line, stay in command mode
+nmap <leader>o o<Esc>
+" Add a new line above the current line, stay in command mode
+nmap <leader>O O<Esc>
+
 " Make Y to work from the cursor to the end of line (which is more logical, but not vi-compatible)
 map Y y$
+
+" Clear search highlights
+nmap <silent> <leader><space> :noh<cr>
+
+" Toggle between absolute and relative line numbers
+nnoremap <leader>n :call NumberToggle()<cr>
+   function! NumberToggle()
+     if(&relativenumber == 1)
+       set norelativenumber
+     else
+       set relativenumber
+     endif
+   endfunction
 
 " NERDTree mappings
 nnoremap <C-n> :NERDTree<CR>
