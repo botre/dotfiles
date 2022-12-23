@@ -13,21 +13,21 @@ endif
 " Plugins
 call plug#begin()
     Plug 'adelarsq/vim-matchit'
-    Plug 'catppuccin/vim', { 'as': 'catppuccin' }
+    Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
     Plug 'kana/vim-textobj-entire'
     Plug 'kana/vim-textobj-user'
+    Plug 'nvim-lua/plenary.nvim'
+    Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' }
     Plug 'tpope/vim-commentary'
     Plug 'tpope/vim-surround'
     Plug 'preservim/nerdtree'
 call plug#end()
 
 " Set color scheme
-lua << EOF
-require("catppuccin").setup {
-    flavour = "macchiato"
-}
-EOF
-colorscheme catppuccin
+colorscheme catppuccin-macchiato
 
 " Highlight selection on yank
 au TextYankPost * silent! lua vim.highlight.on_yank()
+
+" Telescope mappings
+nnoremap <leader>ff <cmd>Telescope find_files<cr>
