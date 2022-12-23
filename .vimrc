@@ -1,6 +1,9 @@
 " Enable true colors support
 set termguicolors
 
+" Faster updates
+set updatetime=750
+
 " Show mode
 set showmode
 
