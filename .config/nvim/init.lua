@@ -1,3 +1,5 @@
+vim.api.nvim_exec(
+        [[
 " Source .vimrc
 set runtimepath^=~/.vim runtimepath+=~/.vim/after
 let &packpath=&runtimepath
@@ -55,3 +57,4 @@ require'nvim-treesitter.configs'.setup {
   },
 }
 EOF
+        ]], false)
