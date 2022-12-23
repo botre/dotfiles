@@ -1,18 +1,24 @@
+-- Source .vimrc
 vim.api.nvim_exec(
         [[
-" Source .vimrc
 set runtimepath^=~/.vim runtimepath+=~/.vim/after
 let &packpath=&runtimepath
 source ~/.vimrc
+        ]], false)
 
-" Install vim-plug
+-- Install vim-plug
+vim.api.nvim_exec(
+        [[
 if empty(glob('~/.config/nvim/autoload/plug.vim'))
     silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
         \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
     autocmd VimEnter * PlugInstall
 endif
+        ]], false)
 
-" Plugins
+-- Install plugins
+vim.api.nvim_exec(
+        [[
 call plug#begin()
     Plug 'adelarsq/vim-matchit'
     Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
@@ -25,12 +31,15 @@ call plug#begin()
     Plug 'tpope/vim-surround'
     Plug 'preservim/nerdtree'
 call plug#end()
+        ]], false)
 
-" Set color scheme
+-- Set color scheme
+vim.api.nvim_exec(
+        [[
 colorscheme catppuccin-macchiato
+        ]], false)
 
-" Highlight selection on yank
-lua << EOF
+-- Highlight selection on yank
 vim.api.nvim_create_autocmd('TextYankPost', {
     group = yank_group,
     pattern = '*',
@@ -40,21 +49,21 @@ vim.api.nvim_create_autocmd('TextYankPost', {
         })
     end,
 })
-EOF
 
-" Telescope mappings
+-- Telescope mappings
+vim.api.nvim_exec(
+        [[
 nnoremap <leader>ff <cmd>Telescope find_files<cr>
-
-" Treesitter configuration
-lua << EOF
-require'nvim-treesitter.configs'.setup {
-  ensure_installed = "all",
-  sync_install = false,
-  auto_install = true,
-  highlight = {
-    enable = true,
-    additional_vim_regex_highlighting = false,
-  },
-}
-EOF
         ]], false)
+
+-- Treesitter configuration
+require('nvim-treesitter.configs').setup({
+    ensure_installed = "all",
+    sync_install = false,
+    auto_install = true,
+    highlight = {
+        enable = true,
+        additional_vim_regex_highlighting = false,
+    },
+})
+
