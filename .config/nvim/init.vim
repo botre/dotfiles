@@ -28,7 +28,17 @@ call plug#end()
 colorscheme catppuccin-macchiato
 
 " Highlight selection on yank
-au TextYankPost * silent! lua vim.highlight.on_yank()
+lua << EOF
+vim.api.nvim_create_autocmd('TextYankPost', {
+    group = yank_group,
+    pattern = '*',
+    callback = function()
+        vim.highlight.on_yank({
+            timeout = 60
+        })
+    end,
+})
+EOF
 
 " Telescope mappings
 nnoremap <leader>ff <cmd>Telescope find_files<cr>
