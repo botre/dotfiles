@@ -18,6 +18,7 @@ call plug#begin()
     Plug 'kana/vim-textobj-user'
     Plug 'nvim-lua/plenary.nvim'
     Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' }
+    Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
     Plug 'tpope/vim-commentary'
     Plug 'tpope/vim-surround'
     Plug 'preservim/nerdtree'
@@ -31,3 +32,16 @@ au TextYankPost * silent! lua vim.highlight.on_yank()
 
 " Telescope mappings
 nnoremap <leader>ff <cmd>Telescope find_files<cr>
+
+" Treesitter configuration
+lua << EOF
+require'nvim-treesitter.configs'.setup {
+  ensure_installed = "all",
+  sync_install = false,
+  auto_install = true,
+  highlight = {
+    enable = true,
+    additional_vim_regex_highlighting = false,
+  },
+}
+EOF
