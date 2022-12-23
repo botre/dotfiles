@@ -34,10 +34,7 @@ call plug#end()
         ]], false)
 
 -- Set color scheme
-vim.api.nvim_exec(
-        [[
-colorscheme catppuccin-macchiato
-        ]], false)
+vim.cmd.colorscheme('catppuccin-macchiato')
 
 -- Highlight selection on yank
 vim.api.nvim_create_autocmd('TextYankPost', {
@@ -51,10 +48,8 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 })
 
 -- Telescope mappings
-vim.api.nvim_exec(
-        [[
-nnoremap <leader>ff <cmd>Telescope find_files<cr>
-        ]], false)
+local builtin = require('telescope.builtin')
+vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
 
 -- Treesitter configuration
 require('nvim-treesitter.configs').setup({
