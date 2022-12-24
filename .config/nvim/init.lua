@@ -6,32 +6,41 @@ let &packpath=&runtimepath
 source ~/.vimrc
         ]], false)
 
--- Install vim-plug
-vim.api.nvim_exec(
-        [[
-if empty(glob('~/.config/nvim/autoload/plug.vim'))
-    silent !curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs
-        \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-    autocmd VimEnter * PlugInstall
-endif
-        ]], false)
+-- Install packer
+local install_packer_if_not_exists = function()
+    local fn = vim.fn
+    local install_path = fn.stdpath('data') .. '/site/pack/packer/start/packer.nvim'
+    if fn.empty(fn.glob(install_path)) > 0 then
+        fn.system({ 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path })
+        vim.cmd [[packadd packer.nvim]]
+        return true
+    end
+    return false
+end
+
+local installed_packer = install_packer_if_not_exists()
 
 -- Install plugins
-vim.api.nvim_exec(
-        [[
-call plug#begin()
-    Plug 'adelarsq/vim-matchit'
-    Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
-    Plug 'kana/vim-textobj-entire'
-    Plug 'kana/vim-textobj-user'
-    Plug 'nvim-lua/plenary.nvim'
-    Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' }
-    Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-    Plug 'tpope/vim-commentary'
-    Plug 'tpope/vim-surround'
-    Plug 'preservim/nerdtree'
-call plug#end()
-        ]], false)
+vim.cmd [[packadd packer.nvim]]
+
+require('packer').startup(function(use)
+    use { 'wbthomason/packer.nvim' }
+
+    use { 'adelarsq/vim-matchit' }
+    use { 'catppuccin/nvim', as = 'catppuccin' }
+    use { 'kana/vim-textobj-entire' }
+    use { 'kana/vim-textobj-user' }
+    use { 'nvim-lua/plenary.nvim' }
+    use { 'nvim-telescope/telescope.nvim', tag = '0.1.0' }
+    use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
+    use { 'tpope/vim-commentary' }
+    use { 'tpope/vim-surround' }
+    use { 'preservim/nerdtree' }
+
+    if installed_packer then
+        require('packer').sync()
+    end
+end)
 
 -- Set color scheme
 vim.cmd.colorscheme('catppuccin-macchiato')
@@ -61,4 +70,3 @@ require('nvim-treesitter.configs').setup({
         additional_vim_regex_highlighting = false,
     },
 })
-
