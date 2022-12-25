@@ -65,6 +65,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- Telescope mappings
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
+vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 
 -- Treesitter configuration
 require('nvim-treesitter.configs').setup({
