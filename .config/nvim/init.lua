@@ -1,9 +1,9 @@
 -- Source .vimrc
 vim.api.nvim_exec(
         [[
-set runtimepath^=~/.vim runtimepath+=~/.vim/after
-let &packpath=&runtimepath
-source ~/.vimrc
+        set runtimepath^=~/.vim runtimepath+=~/.vim/after
+        let &packpath=&runtimepath
+        source ~/.vimrc
         ]], false)
 
 -- Install packer
@@ -30,6 +30,12 @@ require('packer').startup(function(use)
     use { 'catppuccin/nvim', as = 'catppuccin' }
     use { 'kana/vim-textobj-entire' }
     use { 'kana/vim-textobj-user' }
+    use {
+        'lewis6991/gitsigns.nvim',
+        config = function()
+            require('gitsigns').setup()
+        end
+    }
     use { 'nvim-lua/plenary.nvim' }
     use { 'nvim-telescope/telescope.nvim', tag = '0.1.0' }
     use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
