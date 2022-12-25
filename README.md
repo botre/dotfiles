@@ -74,6 +74,10 @@ asdf plugin add nodejs
 asdf install nodejs latest
 asdf global nodejs latest
 
+asdf plugin add ruby
+asdf install ruby latest
+asdf global ruby latest
+
 asdf plugin-add terraform https://github.com/asdf-community/asdf-hashicorp.git
 asdf install terraform latest
 asdf global terraform latest
