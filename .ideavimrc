@@ -25,9 +25,10 @@ set NERDTree
 " IDE mappings
 map <leader>ff <Action>(GotoFile)
 map <leader>fu <Action>(FindUsages)
-map <leader>rn <Action>(RenameElement)
 map <leader>rf <Action>(RenameFile)
-map <silent>K <Action>(QuickJavaDoc) " Shows documentation popup
+map <leader>rn <Action>(RenameElement)
+map <silent>K <Action>(QuickJavaDoc)
+map gd <Action>(GotoDeclaration)
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
