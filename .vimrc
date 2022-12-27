@@ -85,6 +85,5 @@ nnoremap <leader>n :call NumberToggle()<cr>
    endfunction
 
 " NERDTree mappings
-nnoremap <C-n> :NERDTree<CR>
 nnoremap <C-t> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>

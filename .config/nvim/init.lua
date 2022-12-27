@@ -39,11 +39,11 @@ require('packer').startup(function(use)
     use { 'nvim-lua/plenary.nvim' }
     use { 'nvim-telescope/telescope.nvim', tag = '0.1.0' }
     use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
+    use { 'preservim/nerdtree' }
     use { 'tpope/vim-commentary' }
     use { 'tpope/vim-eunuch' }
     use { 'tpope/vim-fugitive' }
     use { 'tpope/vim-surround' }
-    use { 'preservim/nerdtree' }
     use {
         'VonHeikemen/lsp-zero.nvim',
         requires = {
@@ -95,6 +95,7 @@ require('gitsigns').setup()
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
 vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
+vim.keymap.set('n', '<leader>fr', builtin.oldfiles, {})
 vim.keymap.set('n', '<leader>fu', builtin.lsp_references, {})
 
 -- Treesitter

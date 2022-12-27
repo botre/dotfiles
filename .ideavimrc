@@ -24,6 +24,7 @@ set NERDTree
 
 " IDE mappings
 map <leader>ff <Action>(GotoFile)
+map <leader>fr <Action>(RecentFiles)
 map <leader>fu <Action>(FindUsages)
 map <leader>rf <Action>(RenameFile)
 map <leader>rn <Action>(RenameElement)
