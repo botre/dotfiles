@@ -36,6 +36,10 @@ require('packer').startup(function(use)
             require('gitsigns').setup()
         end
     }
+    use {
+        'nvim-lualine/lualine.nvim',
+        requires = { 'kyazdani42/nvim-web-devicons', opt = true }
+    }
     use { 'nvim-lua/plenary.nvim' }
     use { 'nvim-telescope/telescope.nvim', tag = '0.1.0' }
     use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
@@ -90,6 +94,9 @@ vim.keymap.set('n', '<leader>rf', ':Rename ', {})
 
 -- Git decorations
 require('gitsigns').setup()
+
+-- Status line
+require('lualine').setup()
 
 -- Telescope
 local builtin = require('telescope.builtin')
