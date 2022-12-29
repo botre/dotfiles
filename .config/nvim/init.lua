@@ -86,6 +86,7 @@ end)
 
 -- Color scheme
 require('catppuccin').setup({
+    flavour = 'macchiato',
     integrations = {
         mason = true,
         native_lsp = {
