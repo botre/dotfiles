@@ -175,4 +175,13 @@ map('n', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
 map('i', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
 map('x', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
 
-require('nvim-tree').setup()
+require('nvim-tree').setup({
+    view = {
+        mappings = {
+            list = {
+                { key = '<C-t>', action = '' },
+                { key = '<C-n>', action = 'tabnew' },
+            },
+        },
+    },
+})
