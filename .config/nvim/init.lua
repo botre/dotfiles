@@ -123,9 +123,10 @@ lsp.preset('recommended')
 
 lsp.on_attach(function(_, bufnr)
     local options = { buffer = bufnr, remap = false }
-    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, options)
-    vim.keymap.set('n', 'K', vim.lsp.buf.hover, options)
+    vim.keymap.set('n', '<leader>=', function() vim.lsp.buf.format({ async = true }) end, options)
     vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, options)
+    vim.keymap.set('n', 'K', vim.lsp.buf.hover, options)
+    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, options)
 end)
 
 lsp.setup()
