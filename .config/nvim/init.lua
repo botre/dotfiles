@@ -171,8 +171,8 @@ map('n', '<C-t>', '<CMD>NvimTreeToggle<CR>')
 map('i', '<C-t>', '<CMD>NvimTreeToggle<CR>')
 map('x', '<C-t>', '<CMD>NvimTreeToggle<CR>')
 
-map('n', '<C-f>', '<CMD>NvimTreeFindFile<CR>')
-map('i', '<C-f>', '<CMD>NvimTreeFindFile<CR>')
-map('x', '<C-f>', '<CMD>NvimTreeFindFile<CR>')
+map('n', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
+map('i', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
+map('x', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
 
 require('nvim-tree').setup()
