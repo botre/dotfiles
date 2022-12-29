@@ -6,6 +6,10 @@ vim.api.nvim_exec(
         source ~/.vimrc
         ]], false)
 
+-- Disable netrw
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- Install packer
 local install_packer_if_not_exists = function()
     local fn = vim.fn
@@ -42,8 +46,13 @@ require('packer').startup(function(use)
     }
     use { 'nvim-lua/plenary.nvim' }
     use { 'nvim-telescope/telescope.nvim', tag = '0.1.0' }
+    use {
+        'nvim-tree/nvim-tree.lua',
+        requires = {
+            'nvim-tree/nvim-web-devicons',
+        },
+    }
     use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
-    use { 'preservim/nerdtree' }
     use { 'tpope/vim-commentary' }
     use { 'tpope/vim-eunuch' }
     use { 'tpope/vim-fugitive' }
@@ -75,7 +84,17 @@ require('packer').startup(function(use)
     end
 end)
 
--- Set color scheme
+-- Color scheme
+require('catppuccin').setup({
+    integrations = {
+        mason = true,
+        native_lsp = {
+            enabled = true
+        },
+        nvimtree = true,
+        telescope = true,
+    }
+})
 vim.cmd.colorscheme('catppuccin-macchiato')
 
 -- Highlight selection on yank
@@ -94,7 +113,12 @@ vim.keymap.set('n', '<leader>rf', ':Rename ', {})
 require('gitsigns').setup()
 
 -- Status line
-require('lualine').setup()
+require('lualine').setup({
+    options = {
+        theme = 'catppuccin',
+        disabled_filetypes = { 'packer', 'NvimTree' },
+    },
+})
 
 -- Telescope
 local builtin = require('telescope.builtin')
@@ -136,3 +160,18 @@ lsp.setup()
 vim.diagnostic.config({
     virtual_text = true,
 })
+
+-- File tree
+local function map(m, k, v)
+    vim.keymap.set(m, k, v, { silent = true })
+end
+
+map('n', '<C-t>', '<CMD>NvimTreeToggle<CR>')
+map('i', '<C-t>', '<CMD>NvimTreeToggle<CR>')
+map('x', '<C-t>', '<CMD>NvimTreeToggle<CR>')
+
+map('n', '<C-f>', '<CMD>NvimTreeFindFile<CR>')
+map('i', '<C-f>', '<CMD>NvimTreeFindFile<CR>')
+map('x', '<C-f>', '<CMD>NvimTreeFindFile<CR>')
+
+require('nvim-tree').setup()
