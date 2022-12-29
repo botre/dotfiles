@@ -23,7 +23,7 @@ set textobj-entire
 set NERDTree
 
 " IDE mappings
-map <leader>= <Action>(ReformatCode)
+map <leader>== <Action>(ReformatCode)
 map <leader>ff <Action>(GotoFile)
 map <leader>fr <Action>(RecentFiles)
 map <leader>fu <Action>(FindUsages)
