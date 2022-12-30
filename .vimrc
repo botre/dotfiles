@@ -71,6 +71,10 @@ nmap <leader>O O<Esc>
 " Make Y to work from the cursor to the end of line (which is more logical, but not vi-compatible)
 map Y y$
 
+" Move lines of text vertically
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv
+
 " Clear search highlights
 nmap <silent> <leader><space> :noh<cr>
 
