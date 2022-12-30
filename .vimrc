@@ -87,7 +87,3 @@ nnoremap <leader>n :call NumberToggle()<cr>
        set relativenumber
      endif
    endfunction
-
-" NERDTree mappings
-nnoremap <C-t> :NERDTreeToggle<CR>
-nnoremap <C-f> :NERDTreeFind<CR>
