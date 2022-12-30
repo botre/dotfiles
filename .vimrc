@@ -75,8 +75,8 @@ map Y y$
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" Clear search highlights
-nmap <silent> <leader><space> :noh<cr>
+" Toggle search highlights
+nmap <silent> <leader><space> :set hlsearch!<cr>
 
 " Toggle between absolute and relative line numbers
 nnoremap <leader>n :call NumberToggle()<cr>
