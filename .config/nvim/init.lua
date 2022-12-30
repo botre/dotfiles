@@ -195,7 +195,6 @@ require('nvim-tree').setup({
         mappings = {
             list = {
                 { key = '<C-t>', action = '' },
-                { key = '<C-n>', action = 'tabnew' },
             },
         },
     },
