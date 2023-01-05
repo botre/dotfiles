@@ -26,6 +26,8 @@ nnoremap <C-f> :NERDTreeFind<CR>
 
 " IDE mappings
 map <leader>== <Action>(ReformatCode)
+map <leader>e[ <Action>(GotoPreviousError)
+map <leader>e] <Action>(GotoNextError)
 map <leader>ff <Action>(GotoFile)
 map <leader>fr <Action>(RecentFiles)
 map <leader>fu <Action>(FindUsages)
