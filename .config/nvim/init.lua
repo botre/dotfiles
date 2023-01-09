@@ -144,6 +144,23 @@ local lsp = require('lsp-zero')
 
 lsp.preset('recommended')
 
+lsp.ensure_installed(
+        {
+            'dockerls',
+            'emmet_ls',
+            'eslint',
+            'graphql',
+            'html',
+            'jsonls',
+            'rust_analyzer',
+            'sumneko_lua',
+            'taplo',
+            'tsserver',
+            'vimls',
+            'yamlls',
+        }
+)
+
 local cmp = require('cmp')
 local cmp_select = { behavior = cmp.SelectBehavior.Select }
 local cmp_mappings = lsp.defaults.cmp_mappings({
