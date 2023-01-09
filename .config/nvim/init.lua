@@ -32,6 +32,7 @@ require('packer').startup(function(use)
 
     use { 'adelarsq/vim-matchit' }
     use { 'catppuccin/nvim', as = 'catppuccin' }
+    use { 'jiangmiao/auto-pairs' }
     use { 'kana/vim-textobj-entire' }
     use { 'kana/vim-textobj-user' }
     use {
