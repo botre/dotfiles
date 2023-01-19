@@ -70,6 +70,10 @@
 ## asdf
 
 ```bash
+asdf plugin add deno https://github.com/asdf-community/asdf-deno.git
+asdf install deno latest
+asdf global deno latest
+
 asdf plugin add nodejs
 asdf install nodejs latest
 asdf global nodejs latest
@@ -78,7 +82,7 @@ asdf plugin add ruby
 asdf install ruby latest
 asdf global ruby latest
 
-asdf plugin-add terraform https://github.com/asdf-community/asdf-hashicorp.git
+asdf plugin add terraform https://github.com/asdf-community/asdf-hashicorp.git
 asdf install terraform latest
 asdf global terraform latest
 
