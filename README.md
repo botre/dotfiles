@@ -54,13 +54,10 @@
 * Docker
 * Dropbox
 * Google Drive
+* Hammerspoon
+* Loom
 * Raycast
 * Rectangle
-
-### Windows keyboard mappings
-
-* Option -> Command
-* Command -> Option
 
 ### Cleanup
 
