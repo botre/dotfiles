@@ -55,7 +55,6 @@
 * Dropbox
 * Google Drive
 * Hammerspoon
-* Loom
 * Raycast
 * Rectangle
 
