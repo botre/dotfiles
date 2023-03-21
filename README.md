@@ -110,6 +110,7 @@ asdf global yarn latest
 Global packages:
 
 ```bash
+npm install -g commitizen
 npm install -g degit
 npm install -g eas-cli
 npm install -g http-server
