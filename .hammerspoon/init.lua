@@ -5,7 +5,7 @@ local hyper = require('hyper')
 hyper.install('F18')
 -- Browser
 hyper.bindKey('b', function()
-    am.switchToAndFromApp("com.google.chrome")
+    am.switchToAndFromApp("com.microsoft.edgemac")
 end)
 -- Code editor
 hyper.bindKey('c', function()
