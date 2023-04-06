@@ -41,8 +41,6 @@ alias vim="nvim"
 alias cat="bat"
 alias ls="exa --icons"
 
-alias idea='open -na "IntelliJ IDEA.app"'
-
 alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
 alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
