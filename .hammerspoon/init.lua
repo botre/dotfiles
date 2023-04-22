@@ -1,8 +1,10 @@
 local am = require('app-management')
 
---[[ Hyper ]]
+-- # Hyper
 local hyper = require('hyper')
 hyper.install('F18')
+
+-- ## Applications
 -- Browser
 hyper.bindKey('b', function()
     am.switchToAndFromApp("com.microsoft.edgemac")
@@ -26,4 +28,10 @@ end)
 -- Tasks ('v' represents a tick)
 hyper.bindKey('v', function()
     am.switchToAndFromApp("com.TickTick.task.mac")
+end)
+
+-- ## Utilities
+-- Space to click
+hyper.bindKey('space', function()
+    hs.eventtap.leftClick(hs.mouse.getAbsolutePosition())
 end)
