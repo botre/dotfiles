@@ -75,6 +75,10 @@ map Y y$
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
+" Kakoune-inspired mappings
+nnoremap gl $
+nnoremap gh 0
+
 " Toggle search highlights
 nmap <silent> <leader><space> :set hlsearch!<cr>
 
