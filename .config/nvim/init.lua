@@ -180,14 +180,30 @@ lsp.on_attach(function(_, bufnr)
     vim.keymap.set('n', '<leader>==', function()
         vim.lsp.buf.format({ async = true })
     end, options)
+
+    -- Error navigation
     vim.keymap.set('n', '<leader>[e', function()
         vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR })
     end, options)
     vim.keymap.set('n', '<leader>]e', function()
         vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR })
     end, options)
+
+    -- Function navigation
+    vim.keymap.set('n', '<leader>[f', function()
+        -- TODO: jump to previous function
+    end, options)
+    vim.keymap.set('n', '<leader>]f', function()
+        -- TODO: jump to next function
+    end, options)
+
+    -- Rename symbol
     vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, options)
+
+    -- Show documentation
     vim.keymap.set('n', 'K', vim.lsp.buf.hover, options)
+
+    -- Go to definition
     vim.keymap.set('n', 'gd', vim.lsp.buf.definition, options)
 end)
 

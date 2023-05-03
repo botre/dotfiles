@@ -79,6 +79,10 @@ vnoremap K :m '<-2<CR>gv=gv
 nnoremap gl $
 nnoremap gh 0
 
+" Tab navigation
+nmap <leader>[t gT
+nmap <leader>]t gt
+
 " Toggle search highlights
 nmap <silent> <leader><space> :set hlsearch!<cr>
 

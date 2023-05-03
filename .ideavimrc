@@ -26,10 +26,10 @@ map <C-f> :NERDTreeFind<CR>
 
 " IDE mappings
 map <leader>== <Action>(ReformatCode)
-map <leader>e[ <Action>(GotoPreviousError)
-map <leader>e] <Action>(GotoNextError)
-map <leader>f[ <Action>(MethodUp)
-map <leader>f] <Action>(MethodDown)
+map <leader>[e <Action>(GotoPreviousError)
+map <leader>]e <Action>(GotoNextError)
+map <leader>[f <Action>(MethodUp)
+map <leader>]f <Action>(MethodDown)
 map <leader>ff <Action>(GotoFile)
 map <leader>fr <Action>(RecentFiles)
 map <leader>fu <Action>(FindUsages)
