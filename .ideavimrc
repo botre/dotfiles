@@ -21,8 +21,8 @@ set textobj-entire
 
 " Tree explorer (emulates NERDTree)
 set NERDTree
-map <C-t> :NERDTreeToggle<CR>
-map <C-f> :NERDTreeFind<CR>
+map <leader>tt :NERDTreeToggle<CR>
+map <leader>tf :NERDTreeFind<CR>
 
 " IDE mappings
 map <leader>== <Action>(ReformatCode)

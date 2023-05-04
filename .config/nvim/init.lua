@@ -219,20 +219,12 @@ local function map(m, k, v)
     vim.keymap.set(m, k, v, { silent = true })
 end
 
-map('n', '<C-t>', '<CMD>NvimTreeToggle<CR>')
-map('i', '<C-t>', '<CMD>NvimTreeToggle<CR>')
-map('x', '<C-t>', '<CMD>NvimTreeToggle<CR>')
+map('n', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
+map('i', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
+map('x', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 
-map('n', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
-map('i', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
-map('x', '<C-f>', '<CMD>NvimTreeFindFileToggle<CR>')
+map('n', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
+map('i', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
+map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 
-require('nvim-tree').setup({
-    view = {
-        mappings = {
-            list = {
-                { key = '<C-t>', action = '' },
-            },
-        },
-    },
-})
+require('nvim-tree').setup()
