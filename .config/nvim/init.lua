@@ -220,11 +220,9 @@ local function map(m, k, v)
 end
 
 map('n', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
-map('i', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 map('x', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 
 map('n', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
-map('i', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 
 require('nvim-tree').setup()
