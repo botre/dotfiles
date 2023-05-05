@@ -53,14 +53,20 @@ noremap <Right> <Nop>
 noremap <Backspace> <Nop>
 noremap <CR> <Nop>
 
-" Black hole variants
+" Black hole variants (normal)
+nnoremap <leader>C "_C
+nnoremap <leader>D "_D
+nnoremap <leader>S "_S
+nnoremap <leader>X "_X
 nnoremap <leader>c "_c
-vnoremap <leader>c "_c
 nnoremap <leader>d "_d
-vnoremap <leader>d "_d
 nnoremap <leader>s "_s
-vnoremap <leader>s "_s
 nnoremap <leader>x "_x
+
+" Black hole variants (visual)
+vnoremap <leader>c "_c
+vnoremap <leader>d "_d
+vnoremap <leader>s "_s
 vnoremap <leader>x "_x
 
 " Add a new line below the current line, stay in command mode
@@ -68,7 +74,7 @@ nmap <leader>o o<Esc>
 " Add a new line above the current line, stay in command mode
 nmap <leader>O O<Esc>
 
-" Make Y to work from the cursor to the end of line (which is more logical, but not vi-compatible)
+" Make Y to work from the cursor to the end of line
 map Y y$
 
 " Move lines of text vertically
