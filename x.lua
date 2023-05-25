@@ -1,10 +1,3 @@
-local am = require('app-management')
-
--- # Hyper
-local hyper = require('hyper')
-hyper.install('F18')
-
--- ## Applications
 for _, item in ipairs({
     { key = 'b', description = 'Browser', application = "com.microsoft.edgemac" },
     { key = 'c', description = 'Code editor', application = "com.jetbrains.intellij" },
@@ -14,13 +7,4 @@ for _, item in ipairs({
     { key = 'v', description = 'Tasks', application = "com.TickTick.task.mac" },
 }) do
     print('Binding ' .. item.description .. ' to Hyper+' .. item.key)
-    hyper.bindKey(item.key, function()
-        am.switchToAndFromApp(item.app)
-    end)
 end
-
--- ## Utilities
--- Space to click
-hyper.bindKey('space', function()
-    hs.eventtap.leftClick(hs.mouse.getAbsolutePosition())
-end)
