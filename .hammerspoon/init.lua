@@ -10,12 +10,13 @@ for _, item in ipairs({
     { key = 'c', description = 'Code editor', application = "com.jetbrains.intellij" },
     { key = 'f', description = 'Finder', application = "com.apple.finder" },
     { key = 'm', description = 'Music', application = "com.spotify.client" },
+    { key = 'p', description = 'Password manager', application = "com.1password.1password" },
     { key = 't', description = 'Terminal', application = "org.alacritty" },
     { key = 'v', description = 'Tasks', application = "com.TickTick.task.mac" },
 }) do
     print('Binding ' .. item.description .. ' to Hyper+' .. item.key)
     hyper.bindKey(item.key, function()
-        am.switchToAndFromApp(item.app)
+        am.switchToAndFromApp(item.application)
     end)
 end
 
