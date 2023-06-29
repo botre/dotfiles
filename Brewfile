@@ -67,6 +67,7 @@ cask "spotify"
 cask "the-unarchiver"
 cask "ticktick"
 cask "transmission"
+cask "tunnelblick"
 cask "vlc"
 
 ## Fonts
