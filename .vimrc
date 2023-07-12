@@ -92,6 +92,10 @@ nmap <leader>]t gt
 " Toggle search highlights
 nmap <silent> <leader><space> :set hlsearch!<cr>
 
+" Improved window splitting
+noremap <C-w>- <C-w>s
+noremap <C-w>\ <C-w>v
+
 " Toggle between absolute and relative line numbers
 nnoremap <leader>n :call NumberToggle()<cr>
    function! NumberToggle()
