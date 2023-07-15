@@ -13,7 +13,6 @@ export EDITOR="$VISUAL"
 VI_MODE_SET_CURSOR=true
 
 plugins=(
-  asdf
   aws
   brew
   docker
@@ -46,6 +45,7 @@ alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
 alias docupd='docker compose up -d'
 
-eval "$(starship init zsh)"
-eval "$(jump shell)"
+ eval "$(starship init zsh)"
+ eval "$(jump shell)"
+ eval "$(rtx activate zsh)"
 

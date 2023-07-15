@@ -5,7 +5,6 @@ tap 'homebrew/cask-versions'
 tap 'homebrew/bundle'
 
 ## Binaries
-brew "asdf"
 brew "awscli"
 brew "bash"
 brew "bat"
@@ -29,6 +28,7 @@ brew "neovim"
 brew "nmap"
 brew "redis"
 brew "ripgrep"
+brew "rtx"
 brew "starship"
 brew "tmux"
 brew "tree"
