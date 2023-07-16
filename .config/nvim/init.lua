@@ -58,6 +58,7 @@ require('packer').startup(function(use)
     use { 'tpope/vim-eunuch' }
     use { 'tpope/vim-fugitive' }
     use { 'tpope/vim-surround' }
+    use { 'unblevable/quick-scope' }
     use {
         'VonHeikemen/lsp-zero.nvim',
         requires = {

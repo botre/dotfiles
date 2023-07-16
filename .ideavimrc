@@ -19,6 +19,9 @@ set matchit
 " Text objects for entire buffers (emulates vim-textobj-entire)
 set textobj-entire
 
+" Unique character highlighting (emulates quick-scope)
+set quickscope
+
 " Tree explorer (emulates NERDTree)
 set NERDTree
 map <leader>tt :NERDTreeToggle<CR>

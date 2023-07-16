@@ -105,3 +105,6 @@ nnoremap <leader>n :call NumberToggle()<cr>
        set relativenumber
      endif
    endfunction
+
+" Trigger a quick-scope highlight in the appropriate direction when pressing f, F, t and T keys
+let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
