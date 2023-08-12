@@ -1,5 +1,4 @@
 ## Taps
-tap 'homebrew/cask'
 tap 'homebrew/cask-fonts'
 tap 'homebrew/cask-versions'
 tap 'homebrew/bundle'
@@ -47,6 +46,7 @@ cask "alacritty"
 cask "alt-tab"
 cask "android-studio"
 cask "anki"
+cask "cron"
 cask "discord"
 cask "dropbox"
 cask "firefox"
