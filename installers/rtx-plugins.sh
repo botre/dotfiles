@@ -15,6 +15,10 @@ rtx global lua
 # Node
 rtx global nodejs
 
+# pnpm
+rtx plugin add pnpm https://github.com/jonathanmorley/asdf-pnpm.git
+rtx global pnpm
+
 # Python
 rtx global python
 
