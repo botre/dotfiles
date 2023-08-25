@@ -45,7 +45,8 @@ alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
 alias docupd='docker compose up -d'
 
- eval "$(starship init zsh)"
- eval "$(jump shell)"
- eval "$(rtx activate zsh)"
+alias ip='curl ipv4.icanhazip.com'
 
+eval "$(starship init zsh)"
+eval "$(jump shell)"
+eval "$(rtx activate zsh)"
