@@ -35,4 +35,3 @@ rtx global terraform
 
 # Yarn
 rtx global yarn
-

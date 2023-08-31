@@ -182,6 +182,14 @@ lsp.on_attach(function(_, bufnr)
         vim.lsp.buf.format({ async = true })
     end, options)
 
+    -- Change navigation
+    vim.keymap.set('n', '<leader>[c', function()
+        -- TODO: jump to previous VCS change marker
+    end, options)
+    vim.keymap.set('n', '<leader>]c', function()
+        -- TODO: jump to next VCS change marker
+    end, options)
+
     -- Error navigation
     vim.keymap.set('n', '<leader>[e', function()
         vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR })

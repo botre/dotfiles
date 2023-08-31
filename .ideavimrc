@@ -29,6 +29,8 @@ map <leader>tf :NERDTreeFind<CR>
 
 " IDE mappings
 map <leader>== <Action>(ReformatCode)
+map <leader>[c <Action>(VcsShowPrevChangeMarker)
+map <leader>]c <Action>(VcsShowNextChangeMarker)
 map <leader>[e <Action>(GotoPreviousError)
 map <leader>]e <Action>(GotoNextError)
 map <leader>[f <Action>(MethodUp)
