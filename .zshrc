@@ -38,7 +38,7 @@ alias vi="nvim"
 alias vim="nvim"
 
 alias cat="bat"
-alias ls="exa --icons"
+alias ls="eza --icons"
 
 alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
