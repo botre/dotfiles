@@ -25,7 +25,7 @@ set quickscope
 " Tree explorer (emulates NERDTree)
 set NERDTree
 map <leader>tt :NERDTreeToggle<CR>
-map <leader>tf :NERDTreeFind<CR>
+map <leader>ft :NERDTreeFind<CR>
 
 " IDE mappings
 map <leader>== <Action>(ReformatCode)

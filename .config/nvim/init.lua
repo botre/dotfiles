@@ -231,7 +231,7 @@ end
 map('n', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 map('x', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 
-map('n', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
-map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
+map('n', '<leader>ft', '<CMD>NvimTreeFindFileToggle<CR>')
+map('x', '<leader>ft', '<CMD>NvimTreeFindFileToggle<CR>')
 
 require('nvim-tree').setup()
