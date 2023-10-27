@@ -2,6 +2,7 @@
     a = add
     c = commit
     cm = commit -m
+    co = checkout
     cp = cherry-pick
     p = push
     rh = reset --hard
