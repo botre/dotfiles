@@ -49,4 +49,4 @@ alias ip='curl ipv4.icanhazip.com'
 
 eval "$(starship init zsh)"
 eval "$(jump shell)"
-eval "$(rtx activate zsh)"
+eval "$(mise activate zsh)"
