@@ -5,6 +5,7 @@ tap 'homebrew/bundle'
 
 ## Binaries
 brew "awscli"
+brew "asdf"
 brew "bash"
 brew "bat"
 brew "cocoapods"
@@ -20,7 +21,6 @@ brew "git"
 brew "imagemagick"
 brew "jq"
 brew "jump"
-brew "mise"
 brew "neovim"
 brew "nmap"
 brew "ollama"
