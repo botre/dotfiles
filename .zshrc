@@ -13,6 +13,7 @@ export EDITOR="$VISUAL"
 VI_MODE_SET_CURSOR=true
 
 plugins=(
+  asdf
   aws
   brew
   docker
