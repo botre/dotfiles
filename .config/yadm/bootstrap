@@ -1,18 +1,8 @@
 #!/usr/bin/env bash
 
-# Homebrew
 ~/installers/homebrew
-
-# ASDF
 ~/installers/asdf-plugins
-
-# Software packages
 ~/installers/go-modules
 ~/installers/npm-packages
 ~/installers/python-packages
-
-# IntelliJ CLI
 ~/installers/intellij-cli
-
-# ML models
-~/installers/ollama-models
