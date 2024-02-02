@@ -49,7 +49,6 @@ local modifiers = {
     { 'alt', 'cmd', 'shift', 'ctrl' }
 }
 
--- Binds the enter/exit functions of the Hyper modal to all combinations of modifiers
 function This.install(hotKey)
     for _, m in ipairs(modifiers) do
         hs.hotkey.bind(m, hotKey, enterHyperMode, exitHyperMode)

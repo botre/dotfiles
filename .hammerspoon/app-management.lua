@@ -5,6 +5,7 @@ local previousApp = ""
 function This.switchToAndFromApp(bundleID)
     print('Switching to ' .. bundleID)
     local focusedWindow = hs.window.focusedWindow()
+
     if focusedWindow == nil then
         hs.application.launchOrFocusByBundleID(bundleID)
     elseif focusedWindow:application():bundleID() == bundleID then
