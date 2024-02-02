@@ -3,3 +3,5 @@
 pip install jupyterlab
 pip install poetry
 pip install virtualenv
+
+asdf reshim python
