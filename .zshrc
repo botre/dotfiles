@@ -41,7 +41,8 @@ alias vim="nvim"
 alias cat="bat"
 alias ls="eza --icons"
 
-alias brewup='brew update; brew upgrade; brew upgrade --cask --greedy; brew cleanup; brew doctor'
+alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
+alias brewupcask='brew update; brew upgrade --cask --greedy; brew cleanup; brew doctor'
 
 alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
 alias docupd='docker compose up -d'
