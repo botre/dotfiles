@@ -7,4 +7,12 @@ windows:
       panes:
         - yarn nx serve backend
         - yarn nx serve customer-dashboard
+        - echo "To run the driver application: nx start driver-app -c"
         - git status
+        - echo "EOL
+          line 1, ${kernel}
+          line 2,
+          line 3, ${distro}
+          line 4
+          line ...
+          EOL"
