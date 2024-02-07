@@ -1,0 +1,10 @@
+name: mobvious
+root: ~/development/mobvious-platform
+
+windows:
+  - main:
+      layout: main-vertical
+      panes:
+        - yarn nx serve backend
+        - yarn nx serve customer-dashboard
+        - git status
