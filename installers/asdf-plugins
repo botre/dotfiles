@@ -45,6 +45,11 @@ asdf plugin add terraform https://github.com/asdf-community/asdf-hashicorp.git
 asdf install terraform latest
 asdf global terraform latest
 
+# Volta
+asdf plugin add volta https://github.com/chudnyi/asdf-volta.git
+asdf install volta latest
+asdf global volta latest
+
 # Yarn
 asdf plugin add yarn
 asdf install yarn 1.22.19
