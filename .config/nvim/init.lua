@@ -111,10 +111,10 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 })
 
 -- File utilities
-vim.keymap.set('n', '<leader>rf', ':Rename', {})
+vim.keymap.set('n', '<leader>rf', ':Rename ', {}) -- The whitespace is intentional
 
 -- Git
-vim.keymap.set('n', '<leader>gg', ':LazyGit', {})
+vim.keymap.set('n', '<leader>gg', ':LazyGit<CR>', {})
 
 -- Git decorations
 require('gitsigns').setup()
