@@ -110,6 +110,11 @@ nmap <silent> <leader><space> :set hlsearch!<cr>
 " Improved window splitting
 noremap <C-w>- <C-w>s
 noremap <C-w>\ <C-w>v
+noremap <leader>w- <C-w>s
+noremap <leader>w\ <C-w>v
+
+" Save
+noremap <C-s> :w<cr>
 
 " Toggle between absolute and relative line numbers
 nnoremap <leader>n :call NumberToggle()<cr>

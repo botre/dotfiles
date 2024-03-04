@@ -110,6 +110,9 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- File utilities
 vim.keymap.set('n', '<leader>rf', ':Rename ', {})
 
+-- Git
+-- TODO: <leader>gg to open LazyGit
+
 -- Git decorations
 require('gitsigns').setup()
 

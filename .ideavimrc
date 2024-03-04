@@ -39,12 +39,13 @@ map <leader>ff <Action>(GotoFile)
 map <leader>fr <Action>(RecentFiles)
 map <leader>fu <Action>(FindUsages)
 map <leader>gd <Action>(GotoDeclaration)
+map <leader>gg <Action>(CheckinProject)
 map <leader>rf <Action>(RenameFile)
 map <leader>rn <Action>(RenameElement)
-map <silent>K <Action>(QuickJavaDoc)
-map gd <Action>(GotoDeclaration)
 map <leader><tab>9 <Action>(GoToLastTab)
 map <leader><tab>d <Action>(CloseContent)
+map <silent>K <Action>(QuickJavaDoc)
+map gd <Action>(GotoDeclaration)
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
