@@ -76,7 +76,7 @@ nmap <leader>o o<Esc>
 nmap <leader>O O<Esc>
 
 " Make Y to work from the cursor to the end of line
-map Y y$`
+map Y y$
 
 " Move lines of text vertically, in visual mode
 vnoremap J :m '>+1<CR>gv=gv
