@@ -71,19 +71,22 @@ vnoremap <leader>x "_x
 
 " Add a new line below the current line, stay in command mode
 nmap <leader>o o<Esc>
+
 " Add a new line above the current line, stay in command mode
 nmap <leader>O O<Esc>
 
 " Make Y to work from the cursor to the end of line
-map Y y$
+map Y y$`
 
-" Move lines of text vertically
+" Move lines of text vertically, in visual mode
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" Kakoune-inspired mappings
-nnoremap gl $
+" Go to the beginning of the line (Kakoune)
 nnoremap gh 0
+
+" Go to the end of the line (Kakoune)
+nnoremap gl $
 
 " Tabs
 noremap <leader>[t gT

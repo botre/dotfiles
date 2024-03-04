@@ -43,15 +43,13 @@ require('packer').startup(function(use)
 	}
 	use {
 		'nvim-lualine/lualine.nvim',
-		requires = { 'kyazdani42/nvim-web-devicons', opt = true }
+		requires = { 'kyazdani42/nvim-web-devicons' }
 	}
 	use { 'nvim-lua/plenary.nvim' }
 	use { 'nvim-telescope/telescope.nvim' }
+	use { 'nvim-tree/nvim-web-devicons' }
 	use {
 		'nvim-tree/nvim-tree.lua',
-		requires = {
-			'nvim-tree/nvim-web-devicons',
-		},
 	}
 	use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
 	use { 'tpope/vim-commentary' }
@@ -237,3 +235,4 @@ map('n', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 
 require('nvim-tree').setup()
+require('nvim-web-devicons').setup()
