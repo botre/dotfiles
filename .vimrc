@@ -85,20 +85,21 @@ vnoremap K :m '<-2<CR>gv=gv
 nnoremap gl $
 nnoremap gh 0
 
-" Jump to previous/next tab
-nmap <leader>[t gT
-nmap <leader>]t gt
-
-" Jump to specific tab
-noremap <leader>1 1gt
-noremap <leader>2 2gt
-noremap <leader>3 3gt
-noremap <leader>4 4gt
-noremap <leader>5 5gt
-noremap <leader>6 6gt
-noremap <leader>7 7gt
-noremap <leader>8 8gt
-noremap <leader>9 9gt
+" Tabs
+noremap <leader>[t gT
+noremap <leader>]t gt
+noremap <leader><tab>[ gT
+noremap <leader><tab>] gt
+noremap <leader><tab>1 1gt
+noremap <leader><tab>2 2gt
+noremap <leader><tab>3 3gt
+noremap <leader><tab>4 4gt
+noremap <leader><tab>5 5gt
+noremap <leader><tab>6 6gt
+noremap <leader><tab>7 7gt
+noremap <leader><tab>8 8gt
+noremap <leader><tab>9 :tablast<cr>
+noremap <leader><tab>d :tabclose<cr>
 
 " Toggle search highlights
 nmap <silent> <leader><space> :set hlsearch!<cr>

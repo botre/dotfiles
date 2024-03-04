@@ -43,6 +43,8 @@ map <leader>rf <Action>(RenameFile)
 map <leader>rn <Action>(RenameElement)
 map <silent>K <Action>(QuickJavaDoc)
 map gd <Action>(GotoDeclaration)
+map <leader><tab>9 <Action>(GotoTabLast)
+map <leader><tab>d <Action>(CloseContent)
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
