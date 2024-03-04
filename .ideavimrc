@@ -24,6 +24,7 @@ set quickscope
 
 " Tree explorer (emulates NERDTree)
 set NERDTree
+map <C-t> :NERDTreeToggle<CR>
 map <leader>tt :NERDTreeToggle<CR>
 map <leader>tf :NERDTreeFind<CR>
 

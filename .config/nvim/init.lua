@@ -231,6 +231,9 @@ local function map(m, k, v)
 	vim.keymap.set(m, k, v, { silent = true })
 end
 
+map('n', '<C-t>', '<CMD>NvimTreeToggle<CR>')
+map('x', '<C-t>', '<CMD>NvimTreeToggle<CR>')
+
 map('n', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 map('x', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 
