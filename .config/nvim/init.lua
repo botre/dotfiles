@@ -35,6 +35,9 @@ require('packer').startup(function(use)
 	use { 'jiangmiao/auto-pairs' }
 	use { 'kana/vim-textobj-entire' }
 	use { 'kana/vim-textobj-user' }
+	use({
+        'kdheepak/lazygit.nvim',
+    })
 	use {
 		'lewis6991/gitsigns.nvim',
 		config = function()
@@ -108,10 +111,10 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 })
 
 -- File utilities
-vim.keymap.set('n', '<leader>rf', ':Rename ', {})
+vim.keymap.set('n', '<leader>rf', ':Rename', {})
 
 -- Git
--- TODO: <leader>gg to open LazyGit
+vim.keymap.set('n', '<leader>gg', ':LazyGit', {})
 
 -- Git decorations
 require('gitsigns').setup()
