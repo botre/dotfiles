@@ -53,4 +53,4 @@ alias docupd='docker compose up -d'
 alias ip='curl ipv4.icanhazip.com'
 
 eval "$(starship init zsh)"
-eval "$(zoxide init zsh --command cd)"
+eval "$(zoxide init zsh --cmd cd)"
