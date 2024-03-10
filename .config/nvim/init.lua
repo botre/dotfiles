@@ -170,7 +170,7 @@ require('mason-lspconfig').setup({
 	},
 })
 
-local cmp = require('cmp')
+local cmp = require('cmp') -- TODO
 local cmp_select = { behavior = cmp.SelectBehavior.Select }
 cmp.setup({
 	mapping = cmp.mapping.preset.insert({
