@@ -47,7 +47,7 @@ async function getPackageJson() {
 
 async function detectPackageManager() {
     const cwd = process.cwd();
-    for (let [packageManager, lockFileName] of Object.entries(lockFileNames)) {
+    for (const [packageManager, lockFileName] of Object.entries(lockFileNames)) {
         const lockFilePath = path.join(cwd, lockFileName);
         if (await fileExists(lockFilePath)) {
             return packageManager;
@@ -85,10 +85,20 @@ async function processCommand(args) {
         console.log(`No aliases found for command: ${command}`);
         return;
     }
-    for (let alias of aliases) {
-        if (scripts[alias]) {
-            console.log(commandArgs)
-            spawn(`${packageManager} run ${command}`, commandArgs);
+    for (const alias of aliases) {
+        const matchedAlias = scripts[alias];
+        if (matchedAlias) {
+            const spawned = spawn(packageManager, [
+                "run",
+                matchedAlias,
+                ...commandArgs,
+            ]);
+            spawned.stdout.on("data", (data) => {
+                console.log(data);
+            });
+            spawned.stderr.on("data", (data) => {
+                console.error(data);
+            });
             return;
         }
     }
