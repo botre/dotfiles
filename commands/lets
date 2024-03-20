@@ -64,7 +64,7 @@ async function detectPackageManager() {
 }
 
 async function processCommand(args) {
-    const [command, commandArgs] = args;
+    const [command, ...commandArgs] = args;
     if (!command) {
         console.log("No command provided");
         return;
@@ -88,7 +88,7 @@ async function processCommand(args) {
     for (let alias of aliases) {
         if (scripts[alias]) {
             console.log(commandArgs)
-            spawn(`${packageManager} run ${command}`);
+            spawn(`${packageManager} run ${command}`, commandArgs);
             return;
         }
     }
