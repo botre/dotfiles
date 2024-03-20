@@ -88,11 +88,7 @@ async function processCommand(args) {
     for (const alias of aliases) {
         const hasAlias = !!scripts[alias];
         if (hasAlias) {
-            const spawned = spawn(packageManager, [
-                "run",
-                alias,
-                ...commandArgs,
-            ]);
+            const spawned = spawn(packageManager, ["run", alias, ...commandArgs]);
             spawned.stdout.on("data", (data) => {
                 console.log(`${data}`);
             });
