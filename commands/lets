@@ -89,13 +89,17 @@ async function processCommand(args) {
     const packageJson = await getPackageJson();
     const scripts = packageJson.scripts;
     const aliases = commandAliases[command];
+    if(!aliases) {
+        console.log(`No aliases found for command: ${command}`);
+        return
+    }
     for (let alias in aliases) {
         if (scripts[alias]) {
             executeScript(packageManager, alias);
             return;
         }
     }
-    console.log(`Unknown command: ${command}`);
+    console.log(`No script found for command: ${command}`);
 }
 
 processCommand(args);
