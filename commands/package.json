@@ -1,7 +1,0 @@
-{
-  "type": "module",
-  "dependencies": {
-    "execa": "^8.0.1"
-  },
-  "bin":{"lets":"./lets.mjs"}
-}
