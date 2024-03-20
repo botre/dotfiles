@@ -2,7 +2,7 @@
 
 const fs = require("fs").promises;
 const path = require("path");
-const { spawn } = require("child_process");
+const {execa} = require("execa");
 
 const args = process.argv.slice(2);
 
@@ -88,13 +88,9 @@ async function processCommand(args) {
     for (const alias of aliases) {
         const hasAlias = !!scripts[alias];
         if (hasAlias) {
-            const spawned = spawn(packageManager, ["run", alias, ...commandArgs]);
-            spawned.stdout.on("data", (data) => {
-                console.log(`${data}`);
-            });
-            spawned.stderr.on("data", (data) => {
-                console.error(`${data}`);
-            });
+            execa(packageManager, ["run", alias, ...commandArgs]).then(({all}) => {
+                console.log(all);
+            })
             return;
         }
     }
