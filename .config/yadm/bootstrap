@@ -2,6 +2,7 @@
 
 ~/installers/homebrew
 ~/installers/asdf-plugins
+~/installers/commands
 ~/installers/go-modules
 ~/installers/npm-packages
 ~/installers/python-packages
