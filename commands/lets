@@ -48,7 +48,8 @@ async function getPackageJson() {
 
 async function detectPackageManager() {
     const cwd = process.cwd();
-    for (let [packageManager, lockFileName] in Object.entries(lockFileNames)) {
+    for (let [packageManager, lockFileName] of Object.entries(lockFileNames)) {
+        console.log(packageManager, lockFileName)
         const lockFilePath = path.join(cwd, lockFileName);
         console.debug('Looking for lock file:', lockFilePath)
         if (await fileExists(lockFilePath)) {
@@ -98,7 +99,7 @@ async function processCommand(args) {
         console.log(`No aliases found for command: ${command}`);
         return
     }
-    for (let alias in aliases) {
+    for (let alias of aliases) {
         if (scripts[alias]) {
             executeScript(packageManager, alias);
             return;
