@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "dependencies": {
     "execa": "^8.0.1"
   }
