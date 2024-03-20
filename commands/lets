@@ -2,7 +2,7 @@
 
 const fs = require("fs").promises;
 const path = require("path");
-const {exec} = require("child_process");
+const { spawn } = require("child_process");
 
 const args = process.argv.slice(2);
 
@@ -38,20 +38,17 @@ async function getPackageJson() {
     try {
         const cwd = process.cwd();
         const packageJsonPath = path.join(cwd, packageJsonName);
-        console.debug('Looking for package.json:', packageJsonPath)
         const packageJson = await fs.readFile(packageJsonPath, "utf8");
         return JSON.parse(packageJson);
     } catch {
-        return null
+        return null;
     }
 }
 
 async function detectPackageManager() {
     const cwd = process.cwd();
     for (let [packageManager, lockFileName] of Object.entries(lockFileNames)) {
-        console.log(packageManager, lockFileName)
         const lockFilePath = path.join(cwd, lockFileName);
-        console.debug('Looking for lock file:', lockFilePath)
         if (await fileExists(lockFilePath)) {
             return packageManager;
         }
@@ -66,19 +63,8 @@ async function detectPackageManager() {
     return null;
 }
 
-function executeScript(command, script) {
-    const commandToRun = `${command} run ${script} `;
-    exec(commandToRun, (error, stdout) => {
-        if (error) {
-            console.error(error);
-            return;
-        }
-        console.log(stdout);
-    });
-}
-
 async function processCommand(args) {
-    const [command] = args;
+    const [command, commandArgs] = args;
     if (!command) {
         console.log("No command provided");
         return;
@@ -95,13 +81,13 @@ async function processCommand(args) {
     }
     const scripts = packageJson.scripts;
     const aliases = commandAliases[command];
-    if(!aliases) {
+    if (!aliases) {
         console.log(`No aliases found for command: ${command}`);
-        return
+        return;
     }
     for (let alias of aliases) {
         if (scripts[alias]) {
-            executeScript(packageManager, alias);
+            spawn(`${packageManager} run ${command}`, commandArgs);
             return;
         }
     }
