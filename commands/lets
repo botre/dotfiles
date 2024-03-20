@@ -87,7 +87,8 @@ async function processCommand(args) {
     }
     for (let alias of aliases) {
         if (scripts[alias]) {
-            spawn(`${packageManager} run ${command}`, commandArgs);
+            console.log(commandArgs)
+            spawn(`${packageManager} run ${command}`);
             return;
         }
     }
