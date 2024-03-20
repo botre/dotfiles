@@ -1,0 +1,94 @@
+#!/usr/bin/env node
+
+const fs = require('fs').promises;
+const path = require('path');
+const {exec} = require('child_process');
+
+const args = process.argv.slice(2);
+
+// Asynchronously read and parse the package.json
+async function getPackageJson() {
+    try {
+        const cwd = process.cwd();
+        const packageJsonPath = path.join(cwd, 'package.json');
+        const packageJson = await fs.readFile(packageJsonPath, 'utf8');
+        return JSON.parse(packageJson);
+    } catch (error) {
+        console.error('Error reading package.json:', error);
+        process.exit(1);
+    }
+}
+
+// Detect the package manager in use
+async function detectPackageManager() {
+    const cwd = process.cwd();
+    const packageLockJsonPath = path.join(cwd, 'package-lock.json');
+    const yarnLockPath = path.join(cwd, 'yarn.lock');
+    const packageJsonPath = path.join(cwd, 'package.json');
+
+    if (await fileExists(packageLockJsonPath)) {
+        return 'npm';
+    } else if (await fileExists(yarnLockPath)) {
+        return 'yarn';
+    } else if (await fileExists(packageJsonPath)) {
+        console.log("Found package.json but no lockfile. Assuming npm");
+        return 'npm';
+    }
+}
+
+// Check if a file exists
+async function fileExists(filePath) {
+    try {
+        await fs.access(filePath);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// Execute the script command
+function executeScript(command, script) {
+    const commandToRun = `${command} run ${script} `;
+    exec(commandToRun, (error, stdout) => {
+        if (error) {
+            console.error(error);
+            return;
+        }
+        console.log(stdout);
+    });
+}
+
+// Main function to process commands
+async function processCommand(command) {
+    if (!command) {
+        console.log("No command provided");
+        return;
+    }
+
+    const aliases = {
+        dev: ['dev', 'develop'],
+        fmt: ['fmt', 'format'],
+        lint: ['eslint', 'lint'],
+        typecheck: ['typecheck', 'tc', 'check-types']
+    };
+
+    const packageManager = await detectPackageManager();
+    if (!packageManager) {
+        console.log("No package manager detected (npm or yarn)");
+        return;
+    }
+
+    const packageJson = await getPackageJson();
+    const scripts = packageJson.scripts;
+
+    for (let key in aliases) {
+        if (aliases[key].includes(command) && scripts[key]) {
+            executeScript(packageManager, key);
+            return;
+        }
+    }
+
+    console.log(`Unknown command: ${command}`);
+}
+
+processCommand(args[0]);
