@@ -43,8 +43,8 @@ noremap <Space> <NOP>
 " Use <Space> as <Leader>
 let mapleader = " "
 
-" Map <Esc> to <C-c> in normal mode
-noremap <Esc> <C-c>
+" Map <Esc> to <C-c>
+inoremap <Esc> <C-c>
 
 " Disable arrow keys
 noremap <Up> <Nop>
