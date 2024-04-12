@@ -22,7 +22,15 @@ for _, item in ipairs({
 end
 
 -- ## Utilities
--- Space to click
+-- Click with space
 hyper.bindKey('space', function()
     hs.eventtap.leftClick(hs.mouse.getAbsolutePosition())
+end)
+-- Screenshot
+hyper.bindKey('s', function()
+    hs.eventtap.keyStroke({ 'cmd', 'shift' }, '4')
+end)
+-- Record screen
+hyper.bindKey('r', function()
+    hs.eventtap.keyStroke({ 'cmd', 'shift' }, '5')
 end)
