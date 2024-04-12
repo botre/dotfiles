@@ -3,8 +3,10 @@
     c = commit
     cm = commit -m
     co = checkout
+    cob = checkout -b
     cp = cherry-pick
     p = push
+    pl = pull
     rh = reset --hard
     s = status
     recent = "!git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'"
