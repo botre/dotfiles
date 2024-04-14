@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 
+# Brew
 ~/installers/homebrew
+
+# Languages
 ~/installers/asdf-plugins
+~/installers/conda
+
+# Language packages
 ~/installers/go-modules
 ~/installers/npm-packages
 ~/installers/python-packages
+
+# Other
 ~/installers/intellij-cli

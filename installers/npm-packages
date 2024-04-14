@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 npm install -g @nestjs/cli
 npm install -g degit
 npm install -g eas-cli

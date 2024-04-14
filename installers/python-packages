@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 pip install jupyterlab
 pip install poetry
 pip install virtualenv

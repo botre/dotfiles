@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Download installer
+download_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh"
+curl -L -o miniforge.sh $download_url
+
+# Make installer executable
+chmod +x miniforge.sh
+
+# Run installer
+./miniforge.sh
+
+# Remove installer
+rm miniforge.sh
+
