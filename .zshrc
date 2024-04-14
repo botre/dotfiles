@@ -64,8 +64,7 @@ else
     if [ -f "~/miniforge3/etc/profile.d/conda.sh" ]; then
         . "~/miniforge3/etc/profile.d/conda.sh"
     else
-        print $PATH
-        PATH+=("~/miniforge3/bin")
+        export PATH="~/miniforge3/bin:$PATH"
     fi
 fi
 unset __conda_setup
