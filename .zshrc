@@ -64,6 +64,7 @@ else
     if [ -f "~/miniforge3/etc/profile.d/conda.sh" ]; then
         . "~/miniforge3/etc/profile.d/conda.sh"
     else
+        print $PATH
         PATH+=("~/miniforge3/bin")
     fi
 fi
