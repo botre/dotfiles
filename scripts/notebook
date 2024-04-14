@@ -18,7 +18,7 @@ source activate "$project_name"
 # Install Jupyter
 conda install -y jupyter
 
-## Create empty Notebook
+## Create an empty Notebook
 echo '{
  "cells": [],
  "metadata": {},
@@ -26,6 +26,6 @@ echo '{
  "nbformat_minor": 2
 }' > Notebook.ipynb
 
-# Open Notebook
+# Open the Notebook
 jupyter notebook Notebook.ipynb
 
