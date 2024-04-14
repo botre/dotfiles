@@ -1,6 +1,6 @@
 path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
-path+=("~/miniconda3/bin")
+path+=("~/miniforge3/bin")
 export PATH
 
 export ZSH="$HOME/.oh-my-zsh"
