@@ -1,5 +1,6 @@
 path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
+path+=("$HOME/scripts")
 path+=("$HOME/miniforge3/bin")
 export PATH
 
