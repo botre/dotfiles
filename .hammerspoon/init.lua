@@ -28,7 +28,7 @@ hyper.bindKey('space', function()
 end)
 -- Screenshot
 hyper.bindKey('s', function()
-    hs.eventtap.keyStroke({ 'cmd', 'shift' }, '4')
+    hs.eventtap.keyStroke({ 'cmd', 'control', 'shift' }, '4')
 end)
 -- Record screen
 hyper.bindKey('r', function()
