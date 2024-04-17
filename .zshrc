@@ -1,5 +1,6 @@
 path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
+path+=("$HOME/scripts")
 path+=("$HOME/miniforge3/bin")
 export PATH
 
@@ -55,45 +56,16 @@ alias docupd='docker compose up -d'
 
 alias ip='curl ipv4.icanhazip.com'
 
+# Print local branches that have been merged into main (or master).
 function git-clean-branches () {
-    # Auto-detect whether to use main/master
+    # Auto-detect whether to use main/master.
     local DEFAULT_BRANCH=$(git branch | grep -Ew "main|master" | sed "s/\* //")
 
-    # Just print the names
-    # If you're on a branch that has been merged (has a "*"), don't print it
+    # Just print the names.
+    # If you're on a branch that has been merged (has a "*"), don't print it.
     git branch --merged $DEFAULT_BRANCH | grep -v "\*" | grep -Evw $DEFAULT_BRANCH
 
     echo "Use 'git-clean-branches | xargs git branch -d' to actually delete these." >&2
-}
-
-function notebook () {
-    # Prompt for a name
-    echo "Enter the name of the project:"
-    read project_name
-
-    # Create a directory with the entered name
-    mkdir "$project_name"
-    cd "$project_name"
-
-    # Create a Conda environment with the entered name
-    conda create -y -n "$project_name" python
-
-    # Activate the Conda environment
-    source activate "$project_name"
-
-    # Install Jupyter
-    conda install -y jupyter
-
-    ## Create an empty Notebook
-    echo '{
-     "cells": [],
-     "metadata": {},
-     "nbformat": 4,
-     "nbformat_minor": 2
-    }' > Notebook.ipynb
-
-    # Open the Notebook
-    jupyter notebook Notebook.ipynb
 }
 
 eval "$(starship init zsh)"

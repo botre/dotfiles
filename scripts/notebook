@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Prompt for a name
+read -p "Enter project name: " project_name
+
+# Create a directory with the entered name
+mkdir "$project_name"
+cd "$project_name"
+
+# Create a Conda environment with the entered name
+conda create -y -n "$project_name" python
+
+# Activate the Conda environment
+source activate "$project_name"
+
+# Install Jupyter
+conda install -y jupyter
+
+## Create an empty Notebook
+echo '{
+ "cells": [],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 2
+}' > Notebook.ipynb
+
+# Open the Notebook
+jupyter notebook Notebook.ipynb
+
