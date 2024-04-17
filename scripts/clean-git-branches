@@ -2,11 +2,20 @@
 
 set -e
 
-# Auto-detect whether to use main/master
-default_branch=$(git branch | grep -Ew "main|master" | sed "s/\* //")
+# Check if inside a Git repository
+if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    echo "Not inside a Git repository. Aborting." >&2
+    exit 1
+fi
 
-# Just print the names
-# If you're on a branch that has been merged (has a "*"), don't print it
-git branch --merged "$default_branch" | grep -v "\*" | grep -Evw "$default_branch"
+# Auto-detect whether to use main/master
+default_branch=$(git symbolic-ref --short HEAD)
+default_branch=${default_branch:-master}
+
+# List merged branches except the current branch
+git branch --merged "$default_branch" | grep -vE '^\*|\s*'"$default_branch"'$' | sed 's/^[ *]*//' || {
+    echo "No branches found to clean."
+    exit 0
+}
 
 echo "Use 'git-clean-branches | xargs git branch -d' to actually delete these." >&2
