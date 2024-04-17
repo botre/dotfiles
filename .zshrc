@@ -68,7 +68,8 @@ function git-clean-branches () {
 
 function notebook () {
     # Prompt for a name
-    read -p "Enter project name: " project_name
+    echo "Enter the name of the project:"
+    read project_name
 
     # Create a directory with the entered name
     mkdir "$project_name"
