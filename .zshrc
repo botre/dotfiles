@@ -56,5 +56,17 @@ alias docupd='docker compose up -d'
 
 alias ip='curl ipv4.icanhazip.com'
 
+# Print local branches that have been merged into main (or master).
+function git-clean-branches () {
+    # Auto-detect whether to use main/master.
+    local DEFAULT_BRANCH=$(git branch | grep -Ew "main|master" | sed "s/\* //")
+
+    # Just print the names.
+    # If you're on a branch that has been merged (has a "*"), don't print it.
+    git branch --merged $DEFAULT_BRANCH | grep -v "\*" | grep -Evw $DEFAULT_BRANCH
+
+    echo "Use 'git-clean-branches | xargs git branch -d' to actually delete these." >&2
+}
+
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
