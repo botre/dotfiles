@@ -2,16 +2,11 @@
 
 set -e
 
-clean-git-branches () {
-    # Auto-detect whether to use main/master
-    local DEFAULT_BRANCH=$(git branch | grep -Ew "main|master" | sed "s/\* //")
+# Auto-detect whether to use main/master
+default_branch=$(git branch | grep -Ew "main|master" | sed "s/\* //")
 
-    # Just print the names
-    # If you're on a branch that has been merged (has a "*"), don't print it
-    git branch --merged $DEFAULT_BRANCH | grep -v "\*" | grep -Evw $DEFAULT_BRANCH
+# Just print the names
+# If you're on a branch that has been merged (has a "*"), don't print it
+git branch --merged "$default_branch" | grep -v "\*" | grep -Evw "$default_branch"
 
-    echo "Use 'git-clean-branches | xargs git branch -d' to actually delete these." >&2
-}
-
-# Call the function
-clean-git-branches
+echo "Use 'git-clean-branches | xargs git branch -d' to actually delete these." >&2
