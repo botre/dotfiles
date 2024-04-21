@@ -68,5 +68,6 @@ function git-clean-branches () {
     echo "Use 'git-clean-branches | xargs git branch -d' to actually delete these." >&2
 }
 
-eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
+eval "$(thefuck --alias)"
+eval "$(starship init zsh)"
