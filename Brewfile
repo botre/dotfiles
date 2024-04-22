@@ -38,7 +38,6 @@ brew "watch"
 brew "watchman"
 brew "wget"
 brew "yq"
-brew "zellij"
 brew "zoxide"
 brew "zsh"
 
