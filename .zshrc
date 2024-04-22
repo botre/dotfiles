@@ -42,9 +42,6 @@ alias v='fzf --preview "bat --color \"always\" {}"'
 alias cat="bat"
 alias ls="eza --icons"
 
-alias tx="tmux"
-alias txr="tmuxinator"
-
 alias vi="nvim"
 alias vim="nvim"
 
