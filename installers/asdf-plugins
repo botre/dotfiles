@@ -27,11 +27,6 @@ asdf plugin add pnpm https://github.com/jonathanmorley/asdf-pnpm.git
 asdf install pnpm latest
 asdf global pnpm latest
 
-# Python
-asdf plugin add python
-asdf install python latest
-asdf global python latest
-
 # Ruby
 asdf plugin add ruby
 asdf install ruby latest
