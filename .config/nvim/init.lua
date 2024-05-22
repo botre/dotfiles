@@ -44,6 +44,7 @@ require('packer').startup(function(use)
 			require('gitsigns').setup()
 		end
 	}
+    use { 'letieu/btw.nvim' }
 	use {
 		'nvim-lualine/lualine.nvim',
 		requires = { 'kyazdani42/nvim-web-devicons' }
@@ -86,6 +87,11 @@ require('packer').startup(function(use)
 		require('packer').sync()
 	end
 end)
+
+-- Start message
+require('btw').setup({
+  text = "Neovim BTW",
+})
 
 -- Color scheme
 require('catppuccin').setup({
