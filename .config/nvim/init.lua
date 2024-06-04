@@ -95,7 +95,7 @@ require('btw').setup({
 
 -- Color scheme
 require('catppuccin').setup({
-	flavour = 'macchiato',
+	flavour = 'latte',
 	integrations = {
 		mason = true,
 		native_lsp = {
@@ -105,7 +105,7 @@ require('catppuccin').setup({
 		telescope = true,
 	}
 })
-vim.cmd.colorscheme('catppuccin-macchiato')
+vim.cmd.colorscheme('catppuccin-latte')
 
 -- Highlight selection on yank
 vim.api.nvim_create_autocmd('TextYankPost', {
