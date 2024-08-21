@@ -5,7 +5,6 @@
 
 # Languages
 ~/installers/asdf-plugins
-~/installers/conda
 
 # Language packages
 ~/installers/go-modules
