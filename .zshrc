@@ -51,6 +51,9 @@ alias docupd='docker compose up -d'
 
 alias ip='curl ipv4.icanhazip.com'
 
+alias py='python3'
+alias python='python3'
+
 # Print local branches that have been merged into main (or master).
 function git-clean-branches () {
     # Auto-detect whether to use main/master.
