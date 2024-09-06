@@ -4,8 +4,8 @@ tap 'homebrew/cask-versions'
 tap 'homebrew/bundle'
 
 ## Binaries
-brew "awscli"
 brew "asdf"
+brew "awscli"
 brew "bash"
 brew "bat"
 brew "cocoapods"
@@ -33,11 +33,12 @@ brew "sops"
 brew "starship"
 brew "thefuck"
 brew "tree"
-brew "yadm"
 brew "unzip"
+brew "uv"
 brew "watch"
 brew "watchman"
 brew "wget"
+brew "yadm"
 brew "yq"
 brew "zoxide"
 brew "zsh"
