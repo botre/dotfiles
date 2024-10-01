@@ -7,7 +7,11 @@ sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownl
 # Enable automatic check for software updates
 sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
 # Enable automatic installation of macOS updates
-sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticInstallMacOSUpdates -bool true
+sudo defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool true
+
+# Set time zone automatically using current location
+sudo systemsetup -setusingnetworktime on
+sudo defaults write /Library/Preferences/com.apple.timezone.auto Active -bool true
 
 # Disable sharing of Mac Analytics
 sudo defaults write /Library/Application\ Support/CrashReporter/DiagnosticMessagesHistory.plist AutoSubmit -bool false
