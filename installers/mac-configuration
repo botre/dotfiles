@@ -2,11 +2,9 @@
 
 echo "Configuring Mac settings..."
 
-# Enable automatic download of software updates
-sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool true
-# Enable automatic check for software updates
+# Enable automatic updates
 sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
-# Enable automatic installation of macOS updates
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool true
 sudo defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool true
 
 # Set time zone automatically using current location
