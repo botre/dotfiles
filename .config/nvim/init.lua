@@ -166,7 +166,7 @@ require('mason-lspconfig').setup({
 		'lua_ls',
 		'rust_analyzer',
 		'taplo',
-		'tsserver',
+		'ts_ls',
 		'vimls',
 		'yamlls',
 	}
