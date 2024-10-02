@@ -55,6 +55,8 @@ defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
 # Avoid creating .DS_Store files on USB volumes
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+# Enable snap-to-grid
+defaults write com.apple.finder SnapToGrid -bool true
 
 # Disable window opening and closing animations
 defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
@@ -80,11 +82,6 @@ defaults write com.apple.speech.recognition.AppleSpeechRecognition.prefs Dictati
 defaults write "com.apple.systemsound" "com.apple.sound.uiaudio.enabled" -int 0
 # Set alert volume to 0
 osascript -e 'set volume alert volume 0'
-
-# Enable snap to grid for desktop icons
-/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist
-# Enable auto-organize for desktop icons
-/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:autoArrange true" ~/Library/Preferences/com.apple.finder.plist
 
 # Disable Spotlight indexing
 sudo mdutil -a -i off
