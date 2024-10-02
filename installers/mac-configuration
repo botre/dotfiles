@@ -13,27 +13,35 @@ sudo defaults write /Library/Preferences/com.apple.timezone.auto Active -bool tr
 
 # Disable sharing of Mac Analytics
 sudo defaults write /Library/Application\ Support/CrashReporter/DiagnosticMessagesHistory.plist AutoSubmit -bool false
+
 # Enable Firewall
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+
 # Require password immediately after sleep or screen saver begins
 defaults write com.apple.screensaver askForPassword -int 1
 defaults write com.apple.screensaver askForPasswordDelay -int 0
 
 # Always show scroll bars
 defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
+
 # Disable natural scrolling (reverse the scroll direction)
 defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
+
 # Disable click to reveal desktop
 defaults write com.apple.WindowManager EnableStandardClickToShowDesktop -bool FALSE
+
 # Remove all dashboard widgets
 defaults write com.apple.dashboard mcx-disabled -boolean YES
 
 # Disable showing recent applications in Dock
 defaults write com.apple.dock show-recents -bool false
+
 # Set window minimization effect to scale
 defaults write com.apple.dock mineffect -string "scale"
+
 # Speed up Dock auto-hide animation
 defaults write com.apple.dock autohide-time-modifier -float 0.15
+
 # Reduce Dock auto-hide delay
 defaults write com.apple.dock autohide-delay -float 0
 
@@ -45,46 +53,72 @@ defaults write com.apple.dock wvous-br-corner -int 0
 
 # Show path bar in Finder
 defaults write com.apple.finder ShowPathbar -bool true
+
 # Show status bar in Finder
 defaults write com.apple.finder ShowStatusBar -bool true
+
 # Disable animations in Finder
 defaults write com.apple.finder DisableAllAnimations -bool true
+
 # Show all filename extensions in Finder
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+
 # Avoid creating .DS_Store files on network volumes
 defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+
 # Avoid creating .DS_Store files on USB volumes
 defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
 # Enable snap-to-grid
 defaults write com.apple.finder SnapToGrid -bool true
 
 # Disable window opening and closing animations
 defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
+
 # Disable smooth scrolling
 defaults write NSGlobalDomain NSScrollAnimationEnabled -bool false
+
 # Increase window resize speed
 defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
+
 # Speed up Mission Control animations
 defaults write com.apple.dock expose-animation-duration -float 0.1
+
 # Disable animations when opening Quick Look windows
 defaults write -g QLPanelAnimationDuration -float 0
 
+# Disable animations when opening applications from the Dock
+defaults write com.apple.dock launchanim -bool false
+
+# Speed up Launchpad animations
+defaults write com.apple.dock springboard-show-duration -float 0.1
+defaults write com.apple.dock springboard-hide-duration -float 0.1
+
+# Faster Dock hiding
+defaults write com.apple.dock autohide-delay -float 0
+defaults write com.apple.dock autohide-time-modifier -float 0.5
+
 # Disable Siri
 defaults write com.apple.assistant.support "Assistant Enabled" -bool false
+
 # Disable Dictation
 defaults write com.apple.speech.recognition.AppleSpeechRecognition.prefs DictationIMMasterDictationEnabled -bool false
+
 # Disable Character Viewer
 defaults write com.apple.CharacterPaletteIM CharacterPaletteVisible -bool false
+
 # Set Dictation shortcut to "Microphone key"
 defaults write com.apple.speech.recognition.AppleSpeechRecognition.prefs DictationIMKeyboardShortcut -int 2
 
 # Disable system alert sound
 defaults write "com.apple.systemsound" "com.apple.sound.uiaudio.enabled" -int 0
+
 # Set alert volume to 0
 osascript -e 'set volume alert volume 0'
 
 # Disable Spotlight indexing
 sudo mdutil -a -i off
+
 # Disable Spotlight shortcut
 sudo defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
 
