@@ -81,4 +81,14 @@ defaults write "com.apple.systemsound" "com.apple.sound.uiaudio.enabled" -int 0
 # Set alert volume to 0
 osascript -e 'set volume alert volume 0'
 
+# Enable snap to grid for desktop icons
+/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:arrangeBy grid" ~/Library/Preferences/com.apple.finder.plist
+# Enable auto-organize for desktop icons
+/usr/libexec/PlistBuddy -c "Set :DesktopViewSettings:IconViewSettings:autoArrange true" ~/Library/Preferences/com.apple.finder.plist
+
+# Disable Spotlight indexing
+sudo mdutil -a -i off
+# Disable Spotlight shortcut
+sudo defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
+
 echo "Mac settings have been configured. Some changes may require a logout or restart to take full effect."
