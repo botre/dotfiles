@@ -128,4 +128,7 @@ sudo mdutil -a -i off
 # Disable Spotlight shortcut
 sudo defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
 
+# Disable the Ctrl+Space shortcut for switching input methods
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 60 "<dict><key>enabled</key><false/></dict>"
+
 echo "Mac settings have been configured. Some changes may require a logout or restart to take full effect."
