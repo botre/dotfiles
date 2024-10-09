@@ -125,4 +125,7 @@ osascript -e 'set volume alert volume 0'
 # Disable Spotlight indexing
 sudo mdutil -a -i off
 
+# Disable Spotlight shortcut
+sudo defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
+
 echo "Mac settings have been configured. Some changes may require a logout or restart to take full effect."
