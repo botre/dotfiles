@@ -2,8 +2,8 @@
 
 The order of execution matters:
 
-- scripts/mac-settings
-- scripts/homebrew
+- scripts/mac-settings (macOS only)
+- scripts/homebrew (macOS only)
 - scripts/oh-my-zsh
 - scripts/asdf-plugins
 - scripts/npm-packages
@@ -84,10 +84,3 @@ The order of execution matters:
 | yq                 | ✅                         | ✅                           |
 | zoxide             | ✅                         | ✅                           |
 | zsh                | ✅                         | ✅                           |
-
-## Specific to macOS
-
-- Brew
-- Hammerspoon
-- scripts/mac-settings
-- scripts/homebrew
