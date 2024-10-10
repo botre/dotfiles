@@ -24,12 +24,11 @@ The order of execution matters:
 | bash               | ✅                          | ✅                           |
 | bat                | ✅                          | ✅                           |
 | beeper             | ✅                          | ✅                           |
-| cocoapods          | ✅                          | ✅                           |
+| cocoapods          | ✅                          | ❌                           |
 | coreutils          | ✅                          | ✅                           |
 | curl               | ✅                          | ✅                           |
 | discord            | ✅                          | ✅                           |
 | docker             | ❌ (alternative = orbstack) | ✅                           |
-| dropbox            | ✅                          | ✅                           |
 | eza                | ✅                          | ✅                           |
 | fastlane           | ✅                          | ✅                           |
 | firefox            | ✅                          | ✅                           |
