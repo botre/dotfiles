@@ -72,8 +72,8 @@ cask "the-unarchiver"
 cask "ticktick"
 cask "transmission"
 cask "tunnelblick"
+cask "utm"
 cask "vanilla"
-cask "virtualbox"
 cask "vlc"
 
 ## Fonts
