@@ -11,8 +11,8 @@ The order of execution matters:
 
 ## Applications
 
-| Name               | macOS                      | Fedora                       |
-| ------------------ | -------------------------- | ---------------------------- |
+| Name               | macOS                     | Fedora                      |
+|--------------------|---------------------------|-----------------------------|
 | 1password          | ✅                         | ✅                           |
 | ableton-live-suite | ✅                         | ❌                           |
 | alacritty          | ✅                         | ✅                           |
@@ -28,6 +28,7 @@ The order of execution matters:
 | coreutils          | ✅                         | ✅                           |
 | curl               | ✅                         | ✅                           |
 | discord            | ✅                         | ✅                           |
+| docker             | ✅                         | ✅                           |
 | dropbox            | ✅                         | ✅                           |
 | eza                | ✅                         | ✅                           |
 | fastlane           | ✅                         | ✅                           |
