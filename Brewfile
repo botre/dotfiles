@@ -73,6 +73,7 @@ cask "ticktick"
 cask "transmission"
 cask "tunnelblick"
 cask "vanilla"
+cask "virtualbox"
 cask "vlc"
 
 ## Fonts
