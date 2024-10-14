@@ -1,0 +1,15 @@
+{
+  "serverUrl": "https://api.languagetoolplus.com",
+  "autoCheckDelay": 3000,
+  "shouldAutoCheck": true,
+  "languageVariety": {
+    "en": "en-US",
+    "de": "de-DE",
+    "pt": "pt-BR",
+    "ca": "ca-ES"
+  },
+  "syncDictionary": true,
+  "pickyMode": false,
+  "username": "",
+  "apikey": ""
+}
