@@ -28,6 +28,17 @@ echo "Uninstallation complete."
 echo "Updating the system..."
 sudo dnf update -y
 
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Installing homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+if [ -f "$HOME/Brewfile" ]; then
+  echo "Updating homebrew bundle..."
+  brew bundle
+fi
+
 if ! command -v flatpak &> /dev/null
 then
     echo "Flatpak not found. Installing Flatpak..."
@@ -38,30 +49,6 @@ else
     echo "Flatpak is already installed."
 fi
 
-dnf_repositories=(
-  "https://download.opensuse.org/repositories/home:TheLocehiliosan:yadm/Fedora_40/home:TheLocehiliosan:yadm.repo"
-)
-
-echo "Adding specified DNF repositories..."
-for repo in "${dnf_repositories[@]}"
-do
-    echo "Adding $repo..."
-    sudo dnf config-manager --add-repo "$repo"
-done
-
-dnf_applications=(
-    "alacritty"
-    "curl"
-    "fzf"
-    "git"
-    "starship"
-    "thefuck"
-    "ulauncher"
-    "yadm"
-    "zoxide"
-    "zsh"
-)
-
 flatpak_applications=(
     "com.jetbrains.IntelliJ-IDEA-Ultimate"
     "com.slack.Slack"
@@ -69,13 +56,6 @@ flatpak_applications=(
     "org.mozilla.firefox"
     "org.videolan.VLC"
 )
-
-echo "Installing DNF applications..."
-for app in "${dnf_applications[@]}"
-do
-    echo "Installing $app via DNF..."
-    sudo dnf install -y "$app"
-done
 
 echo "Installing Flatpak applications..."
 for app in "${flatpak_applications[@]}"
