@@ -17,7 +17,6 @@ plugins=(
   aws
   brew
   docker
-  fzf
   gcloud
   gh
   git
@@ -25,6 +24,7 @@ plugins=(
   npm
   terraform
   vi-mode
+  fzf # must be after vi-mode
   yarn
 )
 
