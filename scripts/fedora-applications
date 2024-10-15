@@ -1,20 +1,45 @@
 #!/bin/bash
 
+echo "Starting script..."
+
+# List of packages to uninstall
+packages=(
+    "fedora-media-writer"
+    "gnome-boxes"
+    "gnome-contacts"
+    "gnome-maps"
+    "gnome-tour"
+    "gnome-weather"
+    "rhythmbox"
+)
+
+# Uninstall packages
+echo "Uninstalling specified packages..."
+for package in "${packages[@]}"
+do
+    echo "Removing $package..."
+    sudo dnf remove -y "$package"
+done
+echo "Uninstallation complete."
+
 # Update the system
+echo "Updating the system..."
 sudo dnf update -y
 
 # Install Flatpak if not already installed
 if ! command -v flatpak &> /dev/null
 then
-    echo "Installing Flatpak..."
+    echo "Flatpak not found. Installing Flatpak..."
     sudo dnf install -y flatpak
+    echo "Adding Flathub repository..."
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+else
+    echo "Flatpak is already installed."
 fi
 
-# DNF applications
+# DNF applications to install
 dnf_apps=(
     "alacritty"
-    "asdf"
     "curl"
     "fzf"
     "git"
@@ -22,7 +47,7 @@ dnf_apps=(
     "zsh"
 )
 
-# Flatpak applications
+# Flatpak applications to install
 flatpak_apps=(
     "com.jetbrains.IntelliJ-IDEA-Ultimate"
     "com.slack.Slack"
@@ -30,6 +55,7 @@ flatpak_apps=(
 )
 
 # Install DNF applications
+echo "Installing DNF applications..."
 for app in "${dnf_apps[@]}"
 do
     echo "Installing $app via DNF..."
@@ -37,10 +63,15 @@ do
 done
 
 # Install Flatpak applications
+echo "Installing Flatpak applications..."
 for app in "${flatpak_apps[@]}"
 do
     echo "Installing $app via Flatpak..."
     flatpak install -y flathub "$app"
 done
 
-echo "Installation complete!"
+# Clean up any unused dependencies
+echo "Cleaning up unused dependencies..."
+sudo dnf autoremove -y
+
+echo "Script completed."
