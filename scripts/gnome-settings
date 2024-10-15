@@ -27,4 +27,7 @@ gsettings set org.gnome.desktop.interface enable-animations false
 gsettings set org.gnome.mutter dynamic-workspaces false
 gsettings set org.gnome.desktop.wm.preferences num-workspaces 1
 
+# Disable alert sounds
+gsettings set org.gnome.desktop.sound event-sounds false
+
 echo "GNOME settings configured. Logout or restart may be required for full effect."

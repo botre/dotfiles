@@ -113,7 +113,7 @@ defaults write com.apple.CharacterPaletteIM CharacterPaletteVisible -bool false
 # Set Dictation shortcut to "Microphone key"
 defaults write com.apple.speech.recognition.AppleSpeechRecognition.prefs DictationIMKeyboardShortcut -int 2
 
-# Disable system alert sounds
+# Disable alert sounds
 defaults write "com.apple.systemsound" "com.apple.sound.uiaudio.enabled" -int 0
 
 # Set alert volume to 0
