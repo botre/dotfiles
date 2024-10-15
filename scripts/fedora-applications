@@ -54,8 +54,10 @@ dnf_applications=(
     "curl"
     "fzf"
     "git"
+    "thefuck"
     "ulauncher"
     "yadm"
+    "zoxide"
     "zsh"
 )
 
