@@ -9,3 +9,5 @@ npm install -g firebase-tools
 npm install -g http-server
 npm install -g npm-check-updates
 npm install -g prettier
+
+echo "Done"

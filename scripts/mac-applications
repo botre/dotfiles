@@ -8,6 +8,8 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 if [ -f "$HOME/Brewfile" ]; then
-  echo "Updating homebrew bundle..."
+  echo "Installing homebrew dependencies..."
   brew bundle
 fi
+
+echo "Done"

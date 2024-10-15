@@ -46,3 +46,5 @@ asdf global terraform latest
 asdf plugin add yarn
 asdf install yarn 1.22.19
 asdf global yarn 1.22.19
+
+echo "Done"

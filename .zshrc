@@ -63,6 +63,10 @@ alias v="nvim"
 alias vi="nvim"
 alias vim="nvim"
 
+if [[ -d /home/linuxbrew/.linuxbrew ]]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
 eval "$(zoxide init zsh --cmd cd)"
 eval "$(thefuck --alias)"
 eval "$(starship init zsh)"
