@@ -19,7 +19,6 @@ The order of execution matters:
 | alacritty          | ✅                          | ✅                           |
 | alt-tab            | ✅                          | ❌                           |
 | android-studio     | ✅                          | ✅                           |
-| anki               | ✅                          | ✅                           |
 | asdf               | ✅                          | ✅                           |
 | awscli             | ✅                          | ✅                           |
 | bash               | ✅                          | ✅                           |
@@ -55,9 +54,7 @@ The order of execution matters:
 | neovim             | ✅                          | ✅                           |
 | nmap               | ✅                          | ✅                           |
 | obsidian           | ✅                          | ✅                           |
-| openvpn            | ✅                          | ✅                           |
 | orbstack           | ✅                          | ❌ (alternative = docker)    |
-| podman             | ✅                          | ✅                           |
 | postgresql         | ✅                          | ✅                           |
 | python             | ✅                          | ✅                           |
 | raycast            | ✅                          | ❌ (alternative = ulauncher) |
