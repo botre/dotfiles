@@ -38,12 +38,22 @@ else
     echo "Flatpak is already installed."
 fi
 
+dnf_repositories=(
+  "https://download.opensuse.org/repositories/home:TheLocehiliosan:yadm/Fedora_40/home:TheLocehiliosan:yadm.repo"
+)
+
+echo "Adding specified DNF repositories..."
+for repo in "${dnf_repositories[@]}"
+do
+    echo "Adding $repo..."
+    sudo dnf config-manager --add-repo "$repo"
+done
+
 dnf_applications=(
     "alacritty"
     "curl"
     "fzf"
     "git"
-    "nvim"
     "ulauncher"
     "yadm"
     "zsh"

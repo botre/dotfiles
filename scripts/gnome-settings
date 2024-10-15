@@ -32,6 +32,9 @@ gsettings set org.gnome.desktop.wm.preferences num-workspaces 1
 # Reset the app picker layout to sort applications alphabetically
 gsettings set org.gnome.shell app-picker-layout "[]"
 
+# Disable screen brightness auto-adjustment
+gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled false
+
 # Disable alert sounds
 gsettings set org.gnome.desktop.sound event-sounds false
 
