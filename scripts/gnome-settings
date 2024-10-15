@@ -23,4 +23,11 @@ gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll false
 # Disable animations
 gsettings set org.gnome.desktop.interface enable-animations false
 
+# Always show the dock
+gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
+
+# Disable workspaces
+gsettings set org.gnome.mutter dynamic-workspaces false
+gsettings set org.gnome.desktop.wm.preferences num-workspaces 1
+
 echo "GNOME settings configured. Logout or restart may be required for full effect."
