@@ -2,6 +2,7 @@
 
 The order of execution matters:
 
+- scripts/gnome-settings (Fedora only)
 - scripts/mac-settings (macOS only)
 - scripts/homebrew (macOS only)
 - scripts/oh-my-zsh

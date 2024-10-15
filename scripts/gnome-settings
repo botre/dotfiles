@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "Configuring GNOME settings..."
+
+# Set time zone automatically based on location
+gsettings set org.gnome.system.location enabled true
+
+# Disable GNOME usage data collection
+gsettings set org.gnome.desktop.privacy send-software-usage-stats false
+gsettings set org.gnome.desktop.privacy report-technical-problems false
+
+# Require immediate password after sleep/screen saver
+gsettings set org.gnome.desktop.screensaver lock-enabled true
+gsettings set org.gnome.desktop.screensaver lock-delay 0
+
+# Always show scroll bars
+gsettings set org.gnome.desktop.interface overlay-scrolling false
+
+# Disable natural scrolling
+gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false
+gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll false
+
+# Disable animations
+gsettings set org.gnome.desktop.interface enable-animations false
+
+echo "GNOME settings configured. Logout or restart may be required for full effect."
