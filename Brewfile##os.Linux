@@ -36,3 +36,6 @@ brew "yadm"
 brew "yq"
 brew "zoxide"
 brew "zsh"
+
+## Fonts
+cask "font-hack-nerd-font"
