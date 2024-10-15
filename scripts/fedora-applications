@@ -29,6 +29,42 @@ install() {
     done
 }
 
+install_nerd_font() {
+    local FONT_NAME="$1"
+    local FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/${FONT_NAME}.zip"
+    local FONT_DIR="$HOME/.local/share/fonts/${FONT_NAME}"
+    local TEMP_DIR=$(mktemp -d)
+
+    cleanup() {
+        rm -rf "$TEMP_DIR"
+    }
+
+    trap cleanup EXIT
+
+    mkdir -p "$FONT_DIR"
+
+    echo "Downloading ${FONT_NAME} Nerd Font..."
+    if ! curl -L "$FONT_URL" -o "${TEMP_DIR}/${FONT_NAME}.zip"; then
+        echo "Failed to download the font."
+        return 1
+    fi
+
+    echo "Extracting the font..."
+    if ! unzip -q "${TEMP_DIR}/${FONT_NAME}.zip" -d "$TEMP_DIR"; then
+        echo "Failed to extract the font."
+        return 1
+    fi
+
+    echo "Installing the font..."
+    cp "${TEMP_DIR}"/*.ttf "$FONT_DIR"
+
+    echo "Updating font cache..."
+    fc-cache -fv
+
+    echo "${FONT_NAME} Nerd Font has been successfully installed!"
+    echo "You may need to restart your applications or log out and back in to use the new font."
+}
+
 packages_to_remove=(
     "gnome-boxes"
     "gnome-calendar"
@@ -75,6 +111,8 @@ if ! command -v flatpak &> /dev/null; then
 fi
 
 install "flatpak" "${flatpak_applications[@]}"
+
+install_nerd_font "Hack"
 
 echo "Cleaning up unused dependencies..."
 sudo dnf autoremove -y
