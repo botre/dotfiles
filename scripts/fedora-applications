@@ -93,6 +93,9 @@ remove "${packages_to_remove[@]}"
 echo "Updating the system..."
 sudo dnf update -y
 
+echo "Installing development tools..."
+sudo yum groupinstall 'Development Tools'
+
 if ! command -v brew >/dev/null 2>&1; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
