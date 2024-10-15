@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Update the system
+sudo dnf update -y
+
+# Install Flatpak if not already installed
+if ! command -v flatpak &> /dev/null
+then
+    echo "Installing Flatpak..."
+    sudo dnf install -y flatpak
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+fi
+
+# DNF applications
+dnf_apps=(
+    "alacritty"
+    "asdf"
+    "curl"
+    "fzf"
+    "git"
+    "ulauncher"
+    "zsh"
+)
+
+# Flatpak applications
+flatpak_apps=(
+    "com.jetbrains.IntelliJ-IDEA-Ultimate"
+    "com.slack.Slack"
+    "com.spotify.Client"
+)
+
+# Install DNF applications
+for app in "${dnf_apps[@]}"
+do
+    echo "Installing $app via DNF..."
+    sudo dnf install -y "$app"
+done
+
+# Install Flatpak applications
+for app in "${flatpak_apps[@]}"
+do
+    echo "Installing $app via Flatpak..."
+    flatpak install -y flathub "$app"
+done
+
+echo "Installation complete!"
