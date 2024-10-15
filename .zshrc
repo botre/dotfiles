@@ -15,8 +15,8 @@ VI_MODE_SET_CURSOR=true
 plugins=(
   asdf
   aws
-  brew
   docker
+  fzf
   gcloud
   gh
   git

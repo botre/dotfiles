@@ -43,6 +43,7 @@ dnf_applications=(
     "curl"
     "fzf"
     "git"
+    "nvim"
     "ulauncher"
     "yadm"
     "zsh"
@@ -52,6 +53,7 @@ flatpak_applications=(
     "com.jetbrains.IntelliJ-IDEA-Ultimate"
     "com.slack.Slack"
     "com.spotify.Client"
+    "org.mozilla.firefox"
     "org.videolan.VLC"
 )
 
