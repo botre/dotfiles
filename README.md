@@ -51,7 +51,6 @@ The order of execution matters:
 | lazydocker         | ✅                          | ✅                           |
 | lazygit            | ✅                          | ✅                           |
 | libpq              | ✅                          | ✅                           |
-| microsoft-edge     | ✅                          | ✅                           |
 | neovim             | ✅                          | ✅                           |
 | nmap               | ✅                          | ✅                           |
 | obsidian           | ✅                          | ✅                           |

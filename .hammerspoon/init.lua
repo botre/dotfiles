@@ -6,7 +6,7 @@ hyper.install('F18')
 
 -- ## Applications
 for _, item in ipairs({
-    { key = 'b', description = 'Browser', application = "com.microsoft.edgemac" },
+    { key = 'b', description = 'Browser', application = "org.mozilla.firefox" },
     { key = 'c', description = 'Code editor', application = "com.jetbrains.intellij" },
     { key = 'f', description = 'Finder', application = "com.apple.finder" },
     { key = 'm', description = 'Music', application = "com.spotify.client" },
