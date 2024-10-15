@@ -49,6 +49,7 @@ The order of execution matters:
 | jq                 | ✅                          | ✅                           |
 | karabiner-elements | ✅                          | ❌                           |
 | languagetool       | ✅                          | ✅                           |
+| lazydocker         | ✅                          | ✅                           |
 | lazygit            | ✅                          | ✅                           |
 | libpq              | ✅                          | ✅                           |
 | microsoft-edge     | ✅                          | ✅                           |

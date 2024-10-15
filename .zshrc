@@ -35,37 +35,32 @@ export FZF_DEFAULT_OPTS=" \
 --color=fg:#4c4f69,header:#d20f39,info:#8839ef,pointer:#dc8a78 \
 --color=marker:#dc8a78,fg+:#4c4f69,prompt:#8839ef,hl+:#d20f39"
 
-alias v='fzf --preview "bat --color \"always\" {}"'
+alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
 alias cat="bat"
-alias ls="eza --icons"
 
-alias vi="nvim"
-alias vim="nvim"
+alias d='docker'
+alias dfresh='docker kill $(docker ps -q); docker system prune --volumes --force'
+alias dcupd='docker compose up -d'
 
-alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
-alias brewcup='brew update; brew upgrade --cask --greedy; brew cleanup; brew doctor'
-
-alias dofresh='docker kill $(docker ps -q); docker system prune --volumes --force'
-alias docupd='docker compose up -d'
+alias g='git'
 
 alias ip='curl ipv4.icanhazip.com'
 
+alias ls='eza -lh --group-directories-first --icons'
+alias lsa="ls -a"
+
+alias lzd="lazydocker"
+alias lzg="lazygit"
+
+alias p='python3'
 alias py='python3'
 alias python='python3'
 alias pip='pip3'
 
-# Print local branches that have been merged into main (or master).
-function git-clean-branches () {
-    # Auto-detect whether to use main/master.
-    local DEFAULT_BRANCH=$(git branch | grep -Ew "main|master" | sed "s/\* //")
-
-    # Just print the names.
-    # If you're on a branch that has been merged (has a "*"), don't print it.
-    git branch --merged $DEFAULT_BRANCH | grep -v "\*" | grep -Evw $DEFAULT_BRANCH
-
-    echo "Use 'git-clean-branches | xargs git branch -d' to actually delete these." >&2
-}
+alias v="nvim"
+alias vi="nvim"
+alias vim="nvim"
 
 eval "$(zoxide init zsh --cmd cd)"
 eval "$(thefuck --alias)"
