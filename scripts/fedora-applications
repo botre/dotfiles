@@ -4,13 +4,17 @@ echo "Starting script..."
 
 # List of packages to uninstall
 packages=(
-    "fedora-media-writer"
-    "gnome-boxes"
-    "gnome-contacts"
-    "gnome-maps"
-    "gnome-tour"
-    "gnome-weather"
-    "rhythmbox"
+  "fedora-media-writer"
+  "gnome-boxes"
+  "gnome-calendar"
+  "gnome-clocks"
+  "gnome-contacts"
+  "gnome-help"
+  "gnome-maps"
+  "gnome-tour"
+  "gnome-weather"
+  "rhythmbox"
+  "simple-scan"
 )
 
 # Uninstall packages
