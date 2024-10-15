@@ -4,9 +4,10 @@ import = [
 
 [env]
 TERM = "xterm-256color"
+WINIT_X11_SCALE_FACTOR = "1.0"
 
 [font]
-size = 14.0
+size = 12.0
 
 [font.bold]
 family = "Hack Nerd Font"
@@ -28,7 +29,6 @@ multiplier = 3
 decorations = "full"
 dynamic_title = false
 opacity = 1
-title = "🏔️"
 
 [window.padding]
 x = 6
