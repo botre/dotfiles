@@ -54,7 +54,7 @@ dnf_applications=(
     "curl"
     "fzf"
     "git"
-    "startship"
+    "starship"
     "thefuck"
     "ulauncher"
     "yadm"
