@@ -52,6 +52,7 @@ flatpak_applications=(
     "com.jetbrains.IntelliJ-IDEA-Ultimate"
     "com.slack.Slack"
     "com.spotify.Client"
+    "org.videolan.VLC"
 )
 
 echo "Installing DNF applications..."

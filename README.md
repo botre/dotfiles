@@ -26,13 +26,11 @@ The order of execution matters:
 | bash               | ✅                          | ✅                           |
 | bat                | ✅                          | ✅                           |
 | beeper             | ✅                          | ✅                           |
-| cocoapods          | ✅                          | ❌                           |
 | coreutils          | ✅                          | ✅                           |
 | curl               | ✅                          | ✅                           |
 | discord            | ✅                          | ✅                           |
 | docker             | ❌ (alternative = orbstack) | ✅                           |
 | eza                | ✅                          | ✅                           |
-| fastlane           | ✅                          | ✅                           |
 | firefox            | ✅                          | ✅                           |
 | flyctl             | ✅                          | ✅                           |
 | fzf                | ✅                          | ✅                           |
@@ -62,7 +60,6 @@ The order of execution matters:
 | python             | ✅                          | ✅                           |
 | raycast            | ✅                          | ❌ (alternative = ulauncher) |
 | rectangle          | ✅                          | ❌                           |
-| redis              | ✅                          | ✅                           |
 | ripgrep            | ✅                          | ✅                           |
 | slack              | ✅                          | ✅                           |
 | sops               | ✅                          | ✅                           |
