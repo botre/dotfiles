@@ -4,8 +4,8 @@ export PATH
 
 export ZSH="$HOME/.oh-my-zsh"
 
-export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 
 export VISUAL=nvim
 export EDITOR="$VISUAL"
@@ -17,13 +17,14 @@ plugins=(
   aws
   brew
   docker
+  fzf
+  gcloud
   gh
   git
   node
   npm
   terraform
   vi-mode
-  fzf # must be after vi-mode
   yarn
 )
 
@@ -47,7 +48,7 @@ alias g='git'
 
 alias ip='curl ipv4.icanhazip.com'
 
-alias ls='eza -lh --group-directories-first --icons'
+alias ls='eza --icons'
 alias lsa="ls -a"
 
 alias lzd="lazydocker"

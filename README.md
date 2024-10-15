@@ -2,11 +2,12 @@
 
 The order of execution matters:
 
-- scripts/gnome-settings (Fedora only)
+- scripts/fedora-settings (Fedora only)
 - scripts/fedora-applications (Fedora only)
+- scripts/gnome-settings (Fedora only)
 - scripts/mac-settings (macOS only)
-- scripts/homebrew (macOS only)
-- scripts/oh-my-zsh
+- scripts/map-applications (macOS only)
+- scripts/zsh
 - scripts/asdf-plugins
 - scripts/npm-packages
 - scripts/intellij-cli

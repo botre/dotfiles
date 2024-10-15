@@ -1,9 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-echo "Starting script..."
+set -e
 
-# List of packages to uninstall
-packages=(
+packages_to_uninstall=(
   "gnome-boxes"
   "gnome-calendar"
   "gnome-clocks"
@@ -18,20 +17,17 @@ packages=(
   "yelp"
 )
 
-# Uninstall packages
 echo "Uninstalling specified packages..."
-for package in "${packages[@]}"
+for package in "${packages_to_uninstall[@]}"
 do
     echo "Removing $package..."
     sudo dnf remove -y "$package"
 done
 echo "Uninstallation complete."
 
-# Update the system
 echo "Updating the system..."
 sudo dnf update -y
 
-# Install Flatpak if not already installed
 if ! command -v flatpak &> /dev/null
 then
     echo "Flatpak not found. Installing Flatpak..."
@@ -42,41 +38,35 @@ else
     echo "Flatpak is already installed."
 fi
 
-# DNF applications to install
-dnf_apps=(
+dnf_applications=(
     "alacritty"
     "curl"
     "fzf"
     "git"
     "ulauncher"
+    "yadm"
     "zsh"
 )
 
-# Flatpak applications to install
-flatpak_apps=(
+flatpak_applications=(
     "com.jetbrains.IntelliJ-IDEA-Ultimate"
     "com.slack.Slack"
     "com.spotify.Client"
 )
 
-# Install DNF applications
 echo "Installing DNF applications..."
-for app in "${dnf_apps[@]}"
+for app in "${dnf_applications[@]}"
 do
     echo "Installing $app via DNF..."
     sudo dnf install -y "$app"
 done
 
-# Install Flatpak applications
 echo "Installing Flatpak applications..."
-for app in "${flatpak_apps[@]}"
+for app in "${flatpak_applications[@]}"
 do
     echo "Installing $app via Flatpak..."
     flatpak install -y flathub "$app"
 done
 
-# Clean up any unused dependencies
 echo "Cleaning up unused dependencies..."
 sudo dnf autoremove -y
-
-echo "Script completed."
