@@ -4,7 +4,6 @@ echo "Starting script..."
 
 # List of packages to uninstall
 packages=(
-  "gedit"
   "gnome-boxes"
   "gnome-calendar"
   "gnome-clocks"
@@ -16,7 +15,6 @@ packages=(
   "media-writer"
   "rhythmbox"
   "simple-scan"
-  "totem"
   "yelp"
 )
 
