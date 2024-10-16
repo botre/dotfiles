@@ -1,3 +1,7 @@
+if [[ -d /home/linuxbrew/.linuxbrew ]]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
 path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
 export PATH
@@ -62,10 +66,6 @@ alias pip='pip3'
 alias v="nvim"
 alias vi="nvim"
 alias vim="nvim"
-
-if [[ -d /home/linuxbrew/.linuxbrew ]]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
 
 eval "$(zoxide init zsh --cmd cd)"
 eval "$(thefuck --alias)"
