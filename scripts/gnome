@@ -48,6 +48,9 @@ gsettings set org.gnome.desktop.interface overlay-scrolling false
 gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false
 gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll false
 
+# Enable touchpad click emulation in fingers mode
+gsettings set org.gnome.desktop.peripherals.touchpad click-method 'fingers'
+
 # Disable animations
 gsettings set org.gnome.desktop.interface enable-animations false
 
