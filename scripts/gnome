@@ -6,14 +6,13 @@ GNOME_SHELL_VERSION=$(gnome-shell --version | cut -d' ' -f3 | cut -d'.' -f1,2)
 
 echo "Installing GNOME extensions..."
 
+declare -A extensions
 extensions=(
-    ("dash-to-dock" "dash-to-dock@micxgx.gmail.com" "https://extensions.gnome.org/extension-data/dash-to-dockmicxgx.gmail.com.v${GNOME_SHELL_VERSION}.shell-extension.zip")
+    ["dash-to-dock"]="dash-to-dock@micxgx.gmail.com https://extensions.gnome.org/extension-data/dash-to-dockmicxgx.gmail.com.v${GNOME_SHELL_VERSION}.shell-extension.zip"
 )
 
-for extension in "${extensions[@]}"; do
-    name="${extension[0]}"
-    package="${extension[1]}"
-    repo="${extension[2]}"
+for name in "${!extensions[@]}"; do
+    IFS=' ' read -r package repo <<< "${extensions[$name]}"
     wget -O "/tmp/${name}.zip" "$repo"
     gnome-extensions install -f "/tmp/${name}.zip"
     gnome-extensions enable "$package"
