@@ -25,7 +25,7 @@ apt_applications=(
     ("gnome-shell-extension-manager" "")
     ("gnome-shell-extensions" "")
     ("gnome-tweaks" "")
-    ("procps")
+    ("procps" "")
     ("ulauncher" "ppa:agornostal/ulauncher")
 )
 
@@ -37,36 +37,67 @@ flatpak_applications=(
     "org.videolan.VLC"
 )
 
+# Function to check if a package is installed
+is_installed() {
+    dpkg -s "$1" &> /dev/null
+}
+
+# Remove junk applications
 for package in "${junk_applications[@]}"; do
-    sudo apt remove -y "$package"
+    if is_installed "$package"; then
+        echo "Removing $package..."
+        sudo apt remove -y "$package"
+    else
+        echo "$package is not installed. Skipping..."
+    fi
 done
 
 sudo apt update && sudo apt upgrade -y
 
+# Install APT applications
 for app in "${apt_applications[@]}"; do
     name=${app[0]}
     repo=${app[1]}
-    if [ -n "$repo" ]; then
-        sudo add-apt-repository -y "$repo"
+    if ! is_installed "$name"; then
+        if [ -n "$repo" ]; then
+            sudo add-apt-repository -y "$repo"
+        fi
+        echo "Installing $name..."
+        sudo apt install -y "$name"
+    else
+        echo "$name is already installed. Skipping..."
     fi
-    sudo apt install -y "$name"
 done
 
-if ! command -v brew >/dev/null 2>&1; then
+# Install Homebrew if not already installed
+if ! is_installed "linuxbrew-wrapper" && ! command -v brew >/dev/null 2>&1; then
+    echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+else
+    echo "Homebrew is already installed. Skipping..."
 fi
 
 if [ -f "$HOME/Brewfile" ]; then
     brew bundle
 fi
 
-if ! command -v flatpak &> /dev/null; then
+# Install Flatpak if not already installed
+if ! is_installed "flatpak"; then
+    echo "Installing Flatpak..."
     sudo apt install -y flatpak
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+else
+    echo "Flatpak is already installed. Skipping..."
 fi
 
+# Install Flatpak applications
 for app in "${flatpak_applications[@]}"; do
-    flatpak install -y flathub "$app"
+    if ! flatpak list | grep -q "$app"; then
+        echo "Installing $app..."
+        flatpak install -y flathub "$app"
+    else
+        echo "$app is already installed. Skipping..."
+    fi
 done
 
 sudo apt autoremove -y
