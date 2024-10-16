@@ -25,6 +25,7 @@ apt_applications=(
     ["build-essential"]=""
     ["procps"]=""
     ["yadm"]=""
+    ["pipx"]=""
     ["gnome-shell-extensions"]=""
     ["gnome-tweaks"]=""
     ["gnome-shell-extension-manager"]=""
