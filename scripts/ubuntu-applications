@@ -17,17 +17,18 @@ junk_applications=(
     "yelp"
 )
 
+declare -A apt_applications
 apt_applications=(
-    ("curl" "")
-    ("file" "")
-    ("git" "")
-    ("build-essential" "")
-    ("procps" "")
-    ("yadm" "")
-    ("gnome-shell-extensions" "")
-    ("gnome-tweaks" "")
-    ("gnome-shell-extension-manager" "")
-    ("ulauncher" "ppa:agornostal/ulauncher")
+    ["curl"]=""
+    ["file"]=""
+    ["git"]=""
+    ["build-essential"]=""
+    ["procps"]=""
+    ["yadm"]=""
+    ["gnome-shell-extensions"]=""
+    ["gnome-tweaks"]=""
+    ["gnome-shell-extension-manager"]=""
+    ["ulauncher"]="ppa:agornostal/ulauncher"
 )
 
 flatpak_applications=(
@@ -56,9 +57,8 @@ done
 sudo apt update && sudo apt upgrade -y
 
 # Install APT applications
-for app in "${apt_applications[@]}"; do
-    name=${app[0]}
-    repo=${app[1]}
+for name in "${!apt_applications[@]}"; do
+    repo=${apt_applications[$name]}
     if ! is_installed "$name"; then
         if [ -n "$repo" ]; then
             sudo add-apt-repository -y "$repo"
@@ -71,7 +71,7 @@ for app in "${apt_applications[@]}"; do
 done
 
 # Install Homebrew if not already installed
-if ! is_installed "brew"; then
+if ! command -v brew &> /dev/null; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
@@ -83,7 +83,7 @@ if [ -f "$HOME/Brewfile" ]; then
 fi
 
 # Install Flatpak if not already installed
-if ! is_installed "flatpak"; then
+if ! command -v flatpak &> /dev/null; then
     echo "Installing Flatpak..."
     sudo apt install -y flatpak
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
