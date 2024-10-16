@@ -23,6 +23,7 @@ apt_applications=(
     ("git" "")
     ("build-essential" "")
     ("procps" "")
+    ("yadm" "")
     ("gnome-shell-extensions" "")
     ("gnome-tweaks" "")
     ("gnome-shell-extension-manager" "")
