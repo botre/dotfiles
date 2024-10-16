@@ -4,15 +4,10 @@ set -e
 
 echo "Installing GNOME extensions..."
 
-pipx install gnome-extensions-cli --system-site-packages
-
-extensions=(
-    "dash-to-dock@micxgx.gmail.com"
-)
-
-for extension in "${extensions[@]}"; do
-    gext install "$extension"
-done
+wget -O dash-to-dock.zip "https://extensions.gnome.org/extension-data/dash-to-dockmicxgx.gmail.com.99.shell-extension.zip"
+gnome-extensions install dash-to-dock.zip
+rm dash-to-dock.zip
+gnome-extensions enable dash-to-dock@micxgx.gmail.com
 
 echo "Configuring GNOME extensions..."
 
