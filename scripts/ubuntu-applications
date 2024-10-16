@@ -18,9 +18,14 @@ junk_applications=(
 )
 
 apt_applications=(
-    ("gnome-shell-extension-manager" "")
+    ("curl" "")
+    ("file" "")
+    ("git" "")
+    ("build-essential" "")
+    ("procps" "")
     ("gnome-shell-extensions" "")
     ("gnome-tweaks" "")
+    ("gnome-shell-extension-manager" "")
     ("ulauncher" "ppa:agornostal/ulauncher")
 )
 
@@ -36,10 +41,6 @@ flatpak_applications=(
 is_installed() {
     dpkg -s "$1" &> /dev/null
 }
-
-# Install core tools
-echo "Installing core tools..."
-sudo apt install build-essential procps curl file git -y
 
 # Remove junk applications
 for package in "${junk_applications[@]}"; do
