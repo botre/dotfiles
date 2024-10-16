@@ -4,8 +4,8 @@ set -e
 
 echo "Installing GNOME extensions..."
 
-wget -O dash-to-dock.zip "https://extensions.gnome.org/extension-data/dash-to-dockmicxgx.gmail.com.v99.shell-extension.zip"
-gnome-extensions install dash-to-dock.zip
+wget -q -O dash-to-dock.zip "https://extensions.gnome.org/extension-data/dash-to-dockmicxgx.gmail.com.v99.shell-extension.zip"
+gnome-extensions install --force dash-to-dock.zip
 rm dash-to-dock.zip
 gnome-extensions enable dash-to-dock@micxgx.gmail.com
 
