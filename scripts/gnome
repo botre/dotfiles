@@ -4,14 +4,13 @@ set -e
 
 echo "Installing GNOME extensions..."
 
-declare -A extensions
 extensions=(
     "dash-to-dock@micxgx.gmail.com"
 )
 
-for extension in "${!extensions[@]}"; do
-    gnome-extensions install "${extensions[$extension]}"
-    gnome-extensions enable "${extensions[$extension]}"
+for extension in "${extensions[@]}"; do
+    gnome-extensions install "$extension"
+    gnome-extensions enable "$extension"
 done
 
 echo "Configuring GNOME extensions..."
