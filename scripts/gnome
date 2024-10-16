@@ -2,6 +2,24 @@
 
 set -e
 
+GNOME_SHELL_VERSION=$(gnome-shell --version | cut -d' ' -f3 | cut -d'.' -f1,2)
+
+echo "Installing GNOME extensions..."
+
+extensions=(
+    ("dash-to-dock" "dash-to-dock@micxgx.gmail.com" "https://extensions.gnome.org/extension-data/dash-to-dockmicxgx.gmail.com.v${GNOME_SHELL_VERSION}.shell-extension.zip")
+)
+
+for extension in "${extensions[@]}"; do
+    name="${extension[0]}"
+    package="${extension[1]}"
+    repo="${extension[2]}"
+    wget -O "/tmp/${name}.zip" "$repo"
+    gnome-extensions install -f "/tmp/${name}.zip"
+    gnome-extensions enable "$package"
+    rm "/tmp/${name}.zip"
+done
+
 echo "Configuring GNOME settings..."
 
 # Set time zone automatically based on location
@@ -38,4 +56,4 @@ gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled false
 # Disable alert sounds
 gsettings set org.gnome.desktop.sound event-sounds false
 
-echo "GNOME settings configured. Logout or restart may be required for full effect."
+echo "Done"
