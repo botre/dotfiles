@@ -12,7 +12,7 @@ for _, item in ipairs({
     { key = 'm', description = 'Music', application = "com.spotify.client" },
     { key = 'n', description = 'Notes', application = "md.obsidian" },
     { key = 'p', description = 'Password manager', application = "com.1password.1password" },
-    { key = 't', description = 'Terminal', application = "org.alacritty" },
+    { key = 't', description = 'Terminal', application = "net.kovidgoyal.kitty" },
     { key = 'v', description = 'Tasks', application = "com.TickTick.task.mac" },
 }) do
     print('Binding ' .. item.description .. ' to Hyper+' .. item.key)
