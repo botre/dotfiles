@@ -2,21 +2,6 @@
 
 set -e
 
-echo "Installing GNOME extensions..."
-
-wget -q -O dash-to-dock.zip "https://extensions.gnome.org/extension-data/dash-to-dockmicxgx.gmail.com.v99.shell-extension.zip"
-gnome-extensions install --force dash-to-dock.zip
-rm dash-to-dock.zip
-gnome-extensions enable dash-to-dock@micxgx.gmail.com
-
-echo "Configuring GNOME extensions..."
-
-# Dash to Dock
-gsettings set org.gnome.shell.extensions.dash-to-dock dock-position BOTTOM
-gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
-gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
-gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode FIXED
-
 echo "Configuring GNOME settings..."
 
 # Set time zone automatically based on location
