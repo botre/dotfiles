@@ -70,7 +70,7 @@ for app in "${apt_applications[@]}"; do
 done
 
 # Install Homebrew if not already installed
-if ! is_installed "linuxbrew-wrapper" && ! command -v brew >/dev/null 2>&1; then
+if ! is_installed "brew"; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
