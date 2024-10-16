@@ -8,7 +8,7 @@ remove() {
     echo "Uninstalling specified packages..."
     for package in "${packages[@]}"; do
         echo "Removing $package..."
-        sudo dnf remove -y "$package"
+        sudo apt remove -y "$package"
     done
     echo "Uninstallation complete."
 }
@@ -21,48 +21,12 @@ install() {
     echo "Installing packages using $package_manager..."
     for package in "${packages[@]}"; do
         echo "Installing $package..."
-        if [ "$package_manager" == "dnf" ]; then
-            sudo dnf install -y "$package"
+        if [ "$package_manager" == "apt" ]; then
+            sudo apt install -y "$package"
         elif [ "$package_manager" == "flatpak" ]; then
             flatpak install -y flathub "$package"
         fi
     done
-}
-
-install_nerd_font() {
-    local FONT_NAME="$1"
-    local FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/${FONT_NAME}.zip"
-    local FONT_DIR="$HOME/.local/share/fonts/${FONT_NAME}"
-    local TEMP_DIR=$(mktemp -d)
-
-    cleanup() {
-        rm -rf "$TEMP_DIR"
-    }
-
-    trap cleanup EXIT
-
-    mkdir -p "$FONT_DIR"
-
-    echo "Downloading ${FONT_NAME} Nerd Font..."
-    if ! curl -L "$FONT_URL" -o "${TEMP_DIR}/${FONT_NAME}.zip"; then
-        echo "Failed to download the font."
-        return 1
-    fi
-
-    echo "Extracting the font..."
-    if ! unzip -q "${TEMP_DIR}/${FONT_NAME}.zip" -d "$TEMP_DIR"; then
-        echo "Failed to extract the font."
-        return 1
-    fi
-
-    echo "Installing the font..."
-    cp "${TEMP_DIR}"/*.ttf "$FONT_DIR"
-
-    echo "Updating font cache..."
-    fc-cache -fv
-
-    echo "${FONT_NAME} Nerd Font has been successfully installed!"
-    echo "You may need to restart your applications or log out and back in to use the new font."
 }
 
 packages_to_remove=(
@@ -74,7 +38,6 @@ packages_to_remove=(
     "gnome-text-editor"
     "gnome-tour"
     "gnome-weather"
-    "media-writer"
     "rhythmbox"
     "simple-scan"
     "yelp"
@@ -91,11 +54,7 @@ flatpak_applications=(
 remove "${packages_to_remove[@]}"
 
 echo "Updating the system..."
-sudo dnf update -y
-
-echo "Installing development tools..."
-sudo yum groupinstall 'Development Tools'
-sudo yum install gcc-c++
+sudo apt update && sudo apt upgrade -y
 
 if ! command -v brew >/dev/null 2>&1; then
     echo "Installing Homebrew..."
@@ -109,16 +68,14 @@ fi
 
 if ! command -v flatpak &> /dev/null; then
     echo "Installing Flatpak..."
-    sudo dnf install -y flatpak
+    sudo apt install -y flatpak
     echo "Adding Flathub repository..."
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 fi
 
 install "flatpak" "${flatpak_applications[@]}"
 
-install_nerd_font "Hack"
-
 echo "Cleaning up unused dependencies..."
-sudo dnf autoremove -y
+sudo apt autoremove -y
 
 echo "Done"

@@ -2,11 +2,12 @@
 
 The order of execution matters:
 
-- scripts/fedora-settings (Fedora only)
-- scripts/fedora-applications (Fedora only)
-- scripts/gnome-settings (Fedora only)
+- scripts/ubuntu-settings (Ubuntu only)
+- scripts/ubuntu-applications (Ubuntu only)
+- scripts/gnome-settings (Linux only)
 - scripts/mac-settings (macOS only)
 - scripts/map-applications (macOS only)
+- scripts/fonts
 - scripts/zsh
 - scripts/asdf-plugins
 - scripts/npm-packages
@@ -14,7 +15,7 @@ The order of execution matters:
 
 ## Applications
 
-| Name               | macOS                      | Fedora                      |
+| Name               | macOS                      | Linux                       |
 |--------------------|----------------------------|-----------------------------|
 | 1password          | ✅                          | ✅                           |
 | ableton-live-suite | ✅                          | ❌                           |
