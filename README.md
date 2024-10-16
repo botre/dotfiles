@@ -9,9 +9,9 @@ The order of execution matters:
 - scripts/map-applications (macOS only)
 - scripts/fonts
 - scripts/zsh
-- scripts/asdf-plugins
-- scripts/npm-packages
-- scripts/intellij-cli
+- scripts/asdf
+- scripts/npm
+- scripts/intellij
 
 ## Applications
 
