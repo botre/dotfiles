@@ -19,14 +19,15 @@ junk_applications=(
 
 declare -A apt_applications
 apt_applications=(
+    ["zsh"]=""
     ["curl"]=""
     ["file"]=""
     ["git"]=""
-    ["build-essential"]=""
     ["procps"]=""
+    ["build-essential"]=""
     ["yadm"]=""
-    ["gnome-shell-extensions"]=""
     ["gnome-tweaks"]=""
+    ["gnome-shell-extensions"]=""
     ["gnome-shell-extension-manager"]=""
     ["ulauncher"]="ppa:agornostal/ulauncher"
 )
