@@ -8,6 +8,7 @@ junk_applications=(
     "gnome-clocks"
     "gnome-contacts"
     "gnome-maps"
+    "gnome-shell-extension-ubuntu-dock"
     "gnome-text-editor"
     "gnome-tour"
     "gnome-weather"

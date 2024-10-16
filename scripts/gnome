@@ -20,6 +20,14 @@ for extension in "${extensions[@]}"; do
     rm "/tmp/${name}.zip"
 done
 
+echo "Configuring GNOME extensions..."
+
+# Dash to Dock
+gsettings set org.gnome.shell.extensions.dash-to-dock dock-position BOTTOM
+gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
+gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
+gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode FIXED
+
 echo "Configuring GNOME settings..."
 
 # Set time zone automatically based on location
