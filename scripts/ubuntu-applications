@@ -18,9 +18,14 @@ junk_applications=(
 )
 
 apt_applications=(
+    ("build-essential" "")
+    ("curl" "")
+    ("file" "")
+    ("git" "")
     ("gnome-shell-extension-manager" "")
     ("gnome-shell-extensions" "")
     ("gnome-tweaks" "")
+    ("procps")
     ("ulauncher" "ppa:agornostal/ulauncher")
 )
 
