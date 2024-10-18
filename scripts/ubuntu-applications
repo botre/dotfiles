@@ -19,23 +19,27 @@ junk_applications=(
 
 declare -A apt_applications
 apt_applications=(
-    ["zsh"]=""
-    ["curl"]=""
     ["file"]=""
-    ["git"]=""
     ["procps"]=""
+    ["curl"]=""
     ["build-essential"]=""
+    ["git"]=""
+    ["zsh"]=""
     ["yadm"]=""
-    ["gnome-tweaks"]=""
+    ["kitty"]=""
     ["gnome-shell-extensions"]=""
+    ["gnome-tweaks"]=""
     ["gnome-shell-extension-manager"]=""
     ["ulauncher"]="ppa:agornostal/ulauncher"
 )
 
 flatpak_applications=(
+    "com.google.Chrome"
     "com.jetbrains.IntelliJ-IDEA-Ultimate"
     "com.slack.Slack"
     "com.spotify.Client"
+    "com.transmissionbt.Transmission"
+    "md.obsidian.Obsidian"
     "org.mozilla.firefox"
     "org.videolan.VLC"
 )
