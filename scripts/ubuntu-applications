@@ -24,12 +24,14 @@ apt_applications=(
     ["curl"]=""
     ["build-essential"]=""
     ["git"]=""
+    ["snapd"]=""
     ["zsh"]=""
     ["yadm"]=""
     ["kitty"]=""
+    ["gnome-online-accounts"]=""
     ["gnome-shell-extensions"]=""
-    ["gnome-tweaks"]=""
     ["gnome-shell-extension-manager"]=""
+    ["gnome-tweaks"]=""
     ["ulauncher"]="ppa:agornostal/ulauncher"
 )
 
@@ -42,6 +44,11 @@ flatpak_applications=(
     "md.obsidian.Obsidian"
     "org.mozilla.firefox"
     "org.videolan.VLC"
+)
+
+snap_applications=(
+    "1password"
+    "google-cloud-cli --classic"
 )
 
 # Function to check if a package is installed
@@ -75,18 +82,6 @@ for name in "${!apt_applications[@]}"; do
     fi
 done
 
-# Install Homebrew if not already installed
-if ! command -v brew &> /dev/null; then
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-else
-    echo "Homebrew is already installed. Skipping..."
-fi
-
-if [ -f "$HOME/Brewfile" ]; then
-    brew bundle
-fi
-
 # Install Flatpak if not already installed
 if ! command -v flatpak &> /dev/null; then
     echo "Installing Flatpak..."
@@ -105,6 +100,30 @@ for app in "${flatpak_applications[@]}"; do
         echo "$app is already installed. Skipping..."
     fi
 done
+
+# Install Snap applications
+for app in "${snap_applications[@]}"; do
+    name=$(echo "$app" | cut -d' ' -f1)
+    if ! snap list | grep -q "$name"; then
+        echo "Installing $app..."
+        sudo snap install "$app"
+    else
+        echo "$app is already installed. Skipping..."
+    fi
+done
+
+# Install Homebrew if not already installed
+if ! command -v brew &> /dev/null; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+else
+    echo "Homebrew is already installed. Skipping..."
+fi
+
+# Install Brew applications
+if [ -f "$HOME/Brewfile" ]; then
+    brew bundle
+fi
 
 sudo apt autoremove -y
 
