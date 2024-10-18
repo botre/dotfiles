@@ -48,7 +48,7 @@ flatpak_applications=(
 
 snap_applications=(
     "1password"
-    "google-cloud-cli --classic"
+    "google-cloud-cli"
 )
 
 # Function to check if a package is installed
@@ -106,7 +106,7 @@ for app in "${snap_applications[@]}"; do
     name=$(echo "$app" | cut -d' ' -f1)
     if ! snap list | grep -q "$name"; then
         echo "Installing $app..."
-        sudo snap install "$app"
+        sudo snap install "$app" --classic
     else
         echo "$app is already installed. Skipping..."
     fi
