@@ -25,6 +25,7 @@ apt_applications=(
     ["build-essential"]=""
     ["git"]=""
     ["snapd"]=""
+    ["libfuse2"]=""
     ["zsh"]=""
     ["yadm"]=""
     ["kitty"]=""
