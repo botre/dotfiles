@@ -145,6 +145,27 @@ if [ -f "$HOME/Brewfile" ]; then
     brew bundle
 fi
 
+create_desktop_file() {
+    local name="$1"
+    local exec="$2"
+    local icon="$3"
+    local desktop_file="/usr/share/applications/${name}.desktop"
+
+    sudo tee "$desktop_file" > /dev/null <<EOT
+[Desktop Entry]
+Name=$name
+Exec=$exec
+Icon=$icon
+Type=Application
+Categories=Utility;
+EOT
+}
+
+# Create desktop files
+echo "Creating desktop files..."
+create_desktop_file "Beeper" "beeper --no-sandbox" "./icons/beeper.png"
+create_desktop_file "Ulauncher" "env GDK_BACKEND=x11 ulauncher --hide-window" "ulauncher"
+
 sudo apt autoremove -y
 
 echo "Done"
