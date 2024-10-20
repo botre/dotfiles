@@ -165,6 +165,11 @@ EOT
 echo "Creating desktop files..."
 create_desktop_file "beeper" "Beeper" "beeper --no-sandbox" "$HOME/icons/beeper.png"
 
+# Install Docker
+echo "Installing Docker..."
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
 sudo apt autoremove -y
 
 echo "Done"
