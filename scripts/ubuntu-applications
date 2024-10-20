@@ -33,7 +33,6 @@ apt_applications=(
     ["gnome-shell-extensions"]=""
     ["gnome-shell-extension-manager"]=""
     ["gnome-tweaks"]=""
-    ["ulauncher"]="ppa:agornostal/ulauncher"
 )
 
 flatpak_applications=(
@@ -163,8 +162,7 @@ EOT
 
 # Create desktop files
 echo "Creating desktop files..."
-create_desktop_file "Beeper" "beeper --no-sandbox" "./icons/beeper.png"
-create_desktop_file "Ulauncher" "env GDK_BACKEND=x11 ulauncher --hide-window" "ulauncher"
+create_desktop_file "Beeper" "beeper --no-sandbox" "$HOME/icons/beeper.png"
 
 sudo apt autoremove -y
 
