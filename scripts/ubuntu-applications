@@ -49,6 +49,12 @@ flatpak_applications=(
 snap_applications=(
     "1password"
     "google-cloud-cli"
+    "ticktick"
+)
+
+declare -A app_image_applications
+app_image_applications=(
+    ["beeper"]="https://download.beeper.com/linux/appImage/x64"
 )
 
 # Function to check if a package is installed
@@ -109,6 +115,19 @@ for app in "${snap_applications[@]}"; do
         sudo snap install "$app" --classic
     else
         echo "$app is already installed. Skipping..."
+    fi
+done
+
+# Install AppImage applications
+for name in "${!app_image_applications[@]}"; do
+    url=${app_image_applications[$name]}
+    if ! command -v "$name" &> /dev/null; then
+        echo "Installing $name..."
+        wget -O "/tmp/$name" "$url"
+        chmod +x "/tmp/$name"
+        sudo mv "/tmp/$name" "/usr/local/bin/$name"
+    else
+        echo "$name is already installed. Skipping..."
     fi
 done
 
