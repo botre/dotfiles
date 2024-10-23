@@ -9,4 +9,9 @@ echo "$src" | sudo tee /usr/local/bin/idea
 
 sudo chmod +x /usr/local/bin/idea
 
+if [[ "$OSTYPE" == "linux"* ]]; then
+	echo "fs.inotify.max_user_watches = 1048576" > /etc/sysctl.d/idea.conf
+	sysctl -p /etc/sysctl.d/idea.conf
+fi
+
 echo "Done"
