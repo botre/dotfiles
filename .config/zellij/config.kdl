@@ -193,4 +193,4 @@ plugins {
     }
 }
 
-theme "catppucin-latte"
+theme "catppuccin-latte"
