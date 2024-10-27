@@ -194,3 +194,5 @@ plugins {
 }
 
 theme "catppuccin-latte"
+
+pane_frames: false
