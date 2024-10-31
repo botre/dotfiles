@@ -50,3 +50,6 @@ map gd <Action>(GotoDeclaration)
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
+
+" ctrl-v should switch to visual block mode when in normal mode, and paste when in other modes
+sethandler <C-v> n:vim i-x-v:ide
