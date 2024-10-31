@@ -48,7 +48,7 @@ map <leader><tab>d <Action>(CloseContent)
 map <silent>K <Action>(QuickJavaDoc)
 map gd <Action>(GotoDeclaration)
 
-" Shift arrow selection
+" Shifted arrow selection
 nmap <S-Left> <Action>(EditorLeftWithSelection)
 nmap <S-Right> <Action>(EditorRightWithSelection)
 nmap <S-Up> <Action>(EditorUpWithSelection)
