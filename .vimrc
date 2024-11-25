@@ -35,7 +35,7 @@ set incsearch
 set spelllang=en
 
 " Yank to system clipboard
-set clipboard=unnamed
+set clipboard=unnamedplus
 
 " Remove <Space> functionality
 noremap <Space> <NOP>
