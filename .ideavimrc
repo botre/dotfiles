@@ -49,22 +49,5 @@ map <silent>K <Action>(QuickJavaDoc)
 map <leader>e <Action>(ShowErrorDescription)
 map gd <Action>(GotoDeclaration)
 
-" Shifted arrow selection
-nmap <S-Left> <Action>(EditorLeftWithSelection)
-nmap <S-Right> <Action>(EditorRightWithSelection)
-nmap <S-Up> <Action>(EditorUpWithSelection)
-nmap <S-Down> <Action>(EditorDownWithSelection)
-imap <S-Left> <Action>(EditorLeftWithSelection)
-imap <S-Right> <Action>(EditorRightWithSelection)
-imap <S-Up> <Action>(EditorUpWithSelection)
-imap <S-Down> <Action>(EditorDownWithSelection)
-vmap <S-Left> <Action>(EditorLeftWithSelection)
-vmap <S-Right> <Action>(EditorRightWithSelection)
-vmap <S-Up> <Action>(EditorUpWithSelection)
-vmap <S-Down> <Action>(EditorDownWithSelection)
-
-" Conflict handlers
-sethandler <C-v> n:vim i-x-v:ide
-
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
