@@ -36,15 +36,15 @@ require('packer').startup(function(use)
 	use { 'kana/vim-textobj-entire' }
 	use { 'kana/vim-textobj-user' }
 	use({
-        'kdheepak/lazygit.nvim',
-    })
+		'kdheepak/lazygit.nvim',
+	})
 	use {
 		'lewis6991/gitsigns.nvim',
 		config = function()
 			require('gitsigns').setup()
 		end
 	}
-    use { 'letieu/btw.nvim' }
+	use { 'letieu/btw.nvim' }
 	use {
 		'nvim-lualine/lualine.nvim',
 		requires = { 'kyazdani42/nvim-web-devicons' }
@@ -90,7 +90,7 @@ end)
 
 -- Start message
 require('btw').setup({
-  text = "Neovim BTW",
+	text = "Neovim BTW",
 })
 
 -- Color scheme
@@ -184,10 +184,10 @@ cmp.setup({
 		['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
 
 		['<C-[>'] = cmp.mapping.select_prev_item(cmp_select),
-    	['<C-]>'] = cmp.mapping.select_next_item(cmp_select),
+		['<C-]>'] = cmp.mapping.select_next_item(cmp_select),
 
-    	['<C-k>'] = cmp.mapping.select_prev_item(cmp_select),
-        ['<C-j>'] = cmp.mapping.select_next_item(cmp_select),
+		['<C-k>'] = cmp.mapping.select_prev_item(cmp_select),
+		['<C-j>'] = cmp.mapping.select_next_item(cmp_select),
 
 		['<CR>'] = cmp.mapping.confirm({ select = true }),
 
@@ -231,6 +231,11 @@ lsp.on_attach(function(_, bufnr)
 
 	-- Show documentation
 	vim.keymap.set('n', 'K', vim.lsp.buf.hover, options)
+
+	-- Show diagnostics window for current line
+	vim.keymap.set('n', '<leader>e', function()
+		vim.diagnostic.open_float(0, { scope = "line" })
+	end)
 
 	-- Go to definition
 	vim.keymap.set('n', 'gd', vim.lsp.buf.definition, options)
