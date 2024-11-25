@@ -46,6 +46,7 @@ map <leader>rn <Action>(RenameElement)
 map <leader><tab>9 <Action>(GoToLastTab)
 map <leader><tab>d <Action>(CloseContent)
 map <silent>K <Action>(QuickJavaDoc)
+map <leader>e <Action>(ShowErrorDescription)
 map gd <Action>(GotoDeclaration)
 
 " Shifted arrow selection
