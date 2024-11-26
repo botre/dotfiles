@@ -134,13 +134,13 @@ require('gitsigns').setup()
 require('lualine').setup({
     options = {
         theme = 'catppuccin',
-        extensions = {
-            'fugitive',
-            'nvim-tree',
-            'oil'
-        },
         disabled_filetypes = { 'packer', 'NvimTree' },
     },
+    extensions = {
+        'fugitive',
+        'nvim-tree',
+        'oil'
+    }
 })
 
 -- Telescope
