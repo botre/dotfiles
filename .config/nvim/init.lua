@@ -167,14 +167,6 @@ vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
 vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<leader>fr', builtin.oldfiles, {})
 vim.keymap.set('n', '<leader>fu', builtin.lsp_references, {})
-vim.api.nvim_create_autocmd('TabNew', {
-    callback = function()
-        vim.defer_fn(function()
-            require('telescope.builtin').find_files()
-        end, 0)
-    end,
-    desc = 'Open Telescope file finder in new tabs'
-})
 
 -- Treesitter
 require('nvim-treesitter.configs').setup({
