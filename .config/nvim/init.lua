@@ -139,12 +139,18 @@ require('lualine').setup({
     }
 })
 
--- Buffer line
+-- Buffers
 require('bufferline').setup({
     options = {
         diagnostics = 'nvim_lsp',
     }
 })
+vim.keymap.set('n', '<leader>[t', ':bprevious<CR>')
+vim.keymap.set('n', '<leader>]t', ':bnext<CR>')
+vim.keymap.set('n', '<tab>[', ':bprevious<CR>')
+vim.keymap.set('n', '<tab>]', ':bnext<CR>')
+vim.keymap.set('n', '<tab>a', ':enew<CR>')
+vim.keymap.set('n', '<tab>d', ':bdelete<CR>')
 vim.keymap.set('n', '<tab>1', ':BufferLineGoToBuffer 1<CR>')
 vim.keymap.set('n', '<tab>2', ':BufferLineGoToBuffer 2<CR>')
 vim.keymap.set('n', '<tab>3', ':BufferLineGoToBuffer 3<CR>')

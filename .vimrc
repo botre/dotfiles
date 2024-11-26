@@ -79,14 +79,6 @@ map Y y$
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" Buffers
-noremap <leader>[b :bprevious<cr>
-noremap <leader>]b :bnext<cr>
-noremap <tab>[ :bprevious<cr>
-noremap <tab>] :bnext<cr>
-noremap <tab>a :enew<cr>
-noremap <tab>d :bdelete<cr>
-
 " Toggle search highlights
 nmap <silent> <leader><space> :set hlsearch!<cr>
 

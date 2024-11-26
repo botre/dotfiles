@@ -28,7 +28,13 @@ map <C-t> :NERDTreeToggle<CR>
 map <leader>tt :NERDTreeToggle<CR>
 map <leader>tf :NERDTreeFind<CR>
 
-" Tab navigation
+" Tabs
+noremap <leader>[t :tabprevious<cr>
+noremap <leader>]t :tabnext<cr>
+noremap <tab>[ :tabprevious<cr>
+noremap <tab>] :tabnext<cr>
+noremap <tab>a :tabnew<cr>
+noremap <tab>d :tabclose<cr>
 noremap <tab>1 1gt
 noremap <tab>2 2gt
 noremap <tab>3 3gt
