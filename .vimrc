@@ -31,9 +31,6 @@ set hlsearch
 " While typing a search command, show where the pattern, as it was typed so far, matches
 set incsearch
 
-" Always show open tabs
-set showtabline=2
-
 " Spelling
 set spelllang=en
 
@@ -75,12 +72,6 @@ vnoremap <leader>d "_d
 vnoremap <leader>s "_s
 vnoremap <leader>x "_x
 
-" Add a new line below the current line, stay in command mode
-nmap <leader>o o<Esc>
-
-" Add a new line above the current line, stay in command mode
-nmap <leader>O O<Esc>
-
 " Make Y to work from the cursor to the end of line
 map Y y$
 
@@ -109,8 +100,6 @@ noremap <tab>d :tabclose<cr>
 nmap <silent> <leader><space> :set hlsearch!<cr>
 
 " Improved window splitting
-noremap <C-w>- <C-w>s
-noremap <C-w>\ <C-w>v
 noremap <leader>w- <C-w>s
 noremap <leader>w\ <C-w>v
 
