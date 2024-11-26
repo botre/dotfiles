@@ -31,6 +31,7 @@ require('packer').startup(function(use)
     use { 'wbthomason/packer.nvim' }
 
     use { 'adelarsq/vim-matchit' }
+    use { 'akinsho/bufferline.nvim', requires = 'nvim-tree/nvim-web-devicons' }
     use { 'catppuccin/nvim', as = 'catppuccin' }
     use { 'jiangmiao/auto-pairs' }
     use { 'kana/vim-textobj-entire' }
@@ -135,11 +136,13 @@ require('lualine').setup({
     options = {
         theme = 'catppuccin',
         disabled_filetypes = { 'packer', 'NvimTree' },
-    },
-    extensions = {
-        'fugitive',
-        'nvim-tree',
-        'oil'
+    }
+})
+
+-- Buffer line
+require('bufferline').setup({
+    options = {
+        diagnostics = 'nvim_lsp',
     }
 })
 
