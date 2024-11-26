@@ -108,7 +108,7 @@ noremap <tab>6 6gt
 noremap <tab>7 7gt
 noremap <tab>8 8gt
 noremap <tab>9 :tablast<cr>
-noremap <tab>o :tabnew<cr>
+noremap <tab>a :tabnew<cr>
 noremap <tab>d :tabclose<cr>
 
 " Toggle search highlights
