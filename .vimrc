@@ -97,8 +97,8 @@ nnoremap gl $
 " Tabs
 noremap <leader>[t gT
 noremap <leader>]t gt
-noremap <shift><tab>[ gT
-noremap <tab><tab>] gt
+noremap <tab>[ gT
+noremap <tab>] gt
 noremap <tab>1 1gt
 noremap <tab>2 2gt
 noremap <tab>3 3gt
