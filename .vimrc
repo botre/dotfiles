@@ -31,6 +31,9 @@ set hlsearch
 " While typing a search command, show where the pattern, as it was typed so far, matches
 set incsearch
 
+" Always show open tabs
+set showtabline=2
+
 " Spelling
 set spelllang=en
 
@@ -94,18 +97,19 @@ nnoremap gl $
 " Tabs
 noremap <leader>[t gT
 noremap <leader>]t gt
-noremap <leader><tab>[ gT
-noremap <leader><tab>] gt
-noremap <leader><tab>1 1gt
-noremap <leader><tab>2 2gt
-noremap <leader><tab>3 3gt
-noremap <leader><tab>4 4gt
-noremap <leader><tab>5 5gt
-noremap <leader><tab>6 6gt
-noremap <leader><tab>7 7gt
-noremap <leader><tab>8 8gt
-noremap <leader><tab>9 :tablast<cr>
-noremap <leader><tab>d :tabclose<cr>
+noremap <shift><tab>[ gT
+noremap <tab><tab>] gt
+noremap <tab>1 1gt
+noremap <tab>2 2gt
+noremap <tab>3 3gt
+noremap <tab>4 4gt
+noremap <tab>5 5gt
+noremap <tab>6 6gt
+noremap <tab>7 7gt
+noremap <tab>8 8gt
+noremap <tab>9 :tablast<cr>
+noremap <tab>o :tabnew<cr>
+noremap <tab>d :tabclose<cr>
 
 " Toggle search highlights
 nmap <silent> <leader><space> :set hlsearch!<cr>
