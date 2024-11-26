@@ -28,6 +28,17 @@ map <C-t> :NERDTreeToggle<CR>
 map <leader>tt :NERDTreeToggle<CR>
 map <leader>tf :NERDTreeFind<CR>
 
+" Tab navigation
+noremap <tab>1 1gt
+noremap <tab>2 2gt
+noremap <tab>3 3gt
+noremap <tab>4 4gt
+noremap <tab>5 5gt
+noremap <tab>6 6gt
+noremap <tab>7 7gt
+noremap <tab>8 8gt
+noremap <tab>9 9gt
+
 " IDE mappings
 map <leader>== <Action>(ReformatCode)
 map <leader>[c <Action>(VcsShowPrevChangeMarker)

@@ -84,15 +84,6 @@ noremap <leader>[b :bprevious<cr>
 noremap <leader>]b :bnext<cr>
 noremap <tab>[ :bprevious<cr>
 noremap <tab>] :bnext<cr>
-noremap <tab>1 :buffer 1<cr>
-noremap <tab>2 :buffer 2<cr>
-noremap <tab>3 :buffer 3<cr>
-noremap <tab>4 :buffer 4<cr>
-noremap <tab>5 :buffer 5<cr>
-noremap <tab>6 :buffer 6<cr>
-noremap <tab>7 :buffer 7<cr>
-noremap <tab>8 :buffer 8<cr>
-noremap <tab>9 :buffer 9<cr>
 noremap <tab>a :enew<cr>
 noremap <tab>d :bdelete<cr>
 
