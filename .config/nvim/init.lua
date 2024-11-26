@@ -56,6 +56,11 @@ require('packer').startup(function(use)
         'nvim-tree/nvim-tree.lua',
     }
     use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
+    use {
+        'stevearc/oil.nvim', config = function()
+            require('oil').setup()
+        end
+    }
     use { 'tpope/vim-commentary' }
     use { 'tpope/vim-eunuch' }
     use { 'tpope/vim-fugitive' }
@@ -129,6 +134,11 @@ require('gitsigns').setup()
 require('lualine').setup({
     options = {
         theme = 'catppuccin',
+        extensions = {
+            'fugitive',
+            'nvim-tree',
+            'oil'
+        },
         disabled_filetypes = { 'packer', 'NvimTree' },
     },
 })
