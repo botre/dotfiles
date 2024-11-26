@@ -79,22 +79,22 @@ map Y y$
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" Tabs
-noremap <leader>[t gT
-noremap <leader>]t gt
-noremap <tab>[ gT
-noremap <tab>] gt
-noremap <tab>1 1gt
-noremap <tab>2 2gt
-noremap <tab>3 3gt
-noremap <tab>4 4gt
-noremap <tab>5 5gt
-noremap <tab>6 6gt
-noremap <tab>7 7gt
-noremap <tab>8 8gt
-noremap <tab>9 :tablast<cr>
-noremap <tab>a :tabnew<cr>
-noremap <tab>d :tabclose<cr>
+" Buffers
+noremap <leader>[b :bprevious<cr>
+noremap <leader>]b :bnext<cr>
+noremap <tab>[ :bprevious<cr>
+noremap <tab>] :bnext<cr>
+noremap <tab>1 :buffer 1<cr>
+noremap <tab>2 :buffer 2<cr>
+noremap <tab>3 :buffer 3<cr>
+noremap <tab>4 :buffer 4<cr>
+noremap <tab>5 :buffer 5<cr>
+noremap <tab>6 :buffer 6<cr>
+noremap <tab>7 :buffer 7<cr>
+noremap <tab>8 :buffer 8<cr>
+noremap <tab>9 :buffer 9<cr>
+noremap <tab>a :enew<cr>
+noremap <tab>d :bdelete<cr>
 
 " Toggle search highlights
 nmap <silent> <leader><space> :set hlsearch!<cr>
