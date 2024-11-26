@@ -141,7 +141,9 @@ vim.keymap.set('n', '<leader>fr', builtin.oldfiles, {})
 vim.keymap.set('n', '<leader>fu', builtin.lsp_references, {})
 vim.api.nvim_create_autocmd('TabNew', {
     callback = function()
-        builtin.find_files()
+        vim.defer_fn(function()
+            require('telescope.builtin').find_files()
+        end, 0)
     end,
     desc = 'Open Telescope file finder in new tabs'
 })
