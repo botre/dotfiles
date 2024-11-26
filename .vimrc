@@ -88,15 +88,6 @@ map Y y$
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" Go to the beginning of the file
-normal gk gg
-" Go to the end of the file
-normal gj G
-" Go to the beginning of the line
-nnoremap gh 0
-" Go to the end of the line
-nnoremap gl $
-
 " Tabs
 noremap <leader>[t gT
 noremap <leader>]t gt
