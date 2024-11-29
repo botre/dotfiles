@@ -74,7 +74,6 @@ require('packer').startup(function(use)
             { 'neovim/nvim-lspconfig' },
             { 'williamboman/mason-lspconfig.nvim' },
             { 'williamboman/mason.nvim' },
-            { 'WhoIsSethDaniel/mason-tool-installer.nvim' },
 
             -- Autocompletion
             { 'hrsh7th/cmp-buffer' },
@@ -85,6 +84,11 @@ require('packer').startup(function(use)
         }
     }
 
+    use {
+        'jose-elias-alvarez/null-ls.nvim',
+        'jay-babu/mason-null-ls.nvim',
+    }
+
     if installed_packer then
         require('packer').sync()
     end
@@ -92,7 +96,7 @@ end)
 
 -- Start message
 require('btw').setup({
-    text = "Neovim BTW",
+    text = 'Neovim BTW',
 })
 
 -- Color scheme
@@ -201,12 +205,20 @@ require('mason-lspconfig').setup({
     },
 })
 
-require('mason-tool-installer').setup {
+require('mason-null-ls').setup {
     ensure_installed = {
         'black',
         'prettier'
     }
 }
+
+local null_ls = require('null-ls')
+null_ls.setup({
+    sources = {
+        null_ls.builtins.formatting.black,
+        null_ls.builtins.formatting.prettier,
+    }
+})
 
 local cmp = require('cmp')
 local cmp_select = { behavior = cmp.SelectBehavior.Select }
@@ -269,7 +281,7 @@ lsp.on_attach(function(_, bufnr)
 
     -- Show diagnostics window for current line
     vim.keymap.set('n', '<leader>e', function()
-        vim.diagnostic.open_float(0, { scope = "line" })
+        vim.diagnostic.open_float(0, { scope = 'line' })
     end)
 
     -- Go to definition
