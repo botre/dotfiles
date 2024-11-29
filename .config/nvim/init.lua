@@ -74,6 +74,7 @@ require('packer').startup(function(use)
             { 'neovim/nvim-lspconfig' },
             { 'williamboman/mason-lspconfig.nvim' },
             { 'williamboman/mason.nvim' },
+            { 'WhoIsSethDaniel/mason-tool-installer.nvim' },
 
             -- Autocompletion
             { 'hrsh7th/cmp-buffer' },
@@ -180,7 +181,6 @@ local lsp = require('lsp-zero')
 require('mason').setup({})
 require('mason-lspconfig').setup({
     ensure_installed = {
-        'black',
         'dockerls',
         'emmet_ls',
         'eslint',
@@ -188,7 +188,6 @@ require('mason-lspconfig').setup({
         'html',
         'jsonls',
         'lua_ls',
-        'prettier',
         'pyright',
         'rust_analyzer',
         'taplo',
@@ -201,6 +200,13 @@ require('mason-lspconfig').setup({
         lsp.default_setup,
     },
 })
+
+require('mason-tool-installer').setup {
+    ensure_installed = {
+        'black',
+        'prettier'
+    }
+}
 
 local cmp = require('cmp')
 local cmp_select = { behavior = cmp.SelectBehavior.Select }
