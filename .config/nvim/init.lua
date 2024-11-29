@@ -192,6 +192,7 @@ require('mason-lspconfig').setup({
         'html',
         'jsonls',
         'lua_ls',
+        'pyright',
         'rust_analyzer',
         'taplo',
         'ts_ls',
