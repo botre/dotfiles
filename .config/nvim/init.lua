@@ -180,6 +180,7 @@ local lsp = require('lsp-zero')
 require('mason').setup({})
 require('mason-lspconfig').setup({
     ensure_installed = {
+        'black',
         'dockerls',
         'emmet_ls',
         'eslint',
@@ -187,6 +188,7 @@ require('mason-lspconfig').setup({
         'html',
         'jsonls',
         'lua_ls',
+        'prettier',
         'pyright',
         'rust_analyzer',
         'taplo',
