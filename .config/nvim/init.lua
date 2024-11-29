@@ -81,11 +81,6 @@ require('packer').startup(function(use)
             { 'hrsh7th/cmp-nvim-lua' },
             { 'hrsh7th/cmp-path' },
             { 'hrsh7th/nvim-cmp' },
-            { 'saadparwaiz1/cmp_luasnip' },
-
-            -- Snippets
-            { 'L3MON4D3/LuaSnip' },
-            { 'rafamadriz/friendly-snippets' },
         }
     }
 
@@ -221,7 +216,12 @@ cmp.setup({
         ['<CR>'] = cmp.mapping.confirm({ select = true }),
 
         ['<C-Space>'] = cmp.mapping.complete(),
-    })
+    }),
+    sources = {
+        { name = 'buffer' },
+        { name = 'nvim_lsp' },
+        { name = 'path' },
+    },
 })
 
 lsp.on_attach(function(_, bufnr)
@@ -275,6 +275,7 @@ lsp.setup()
 -- Inline diagnostic messages
 vim.diagnostic.config({
     virtual_text = true,
+    update_in_insert = true,
 })
 
 -- File tree
