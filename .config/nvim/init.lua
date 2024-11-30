@@ -89,6 +89,25 @@ require('packer').startup(function(use)
         'jay-babu/mason-null-ls.nvim',
     }
 
+    use {
+        'zbirenbaum/copilot.lua',
+        cmd = 'Copilot',
+        event = 'InsertEnter',
+        config = function()
+            require('copilot').setup({
+                suggestion = { enabled = false },
+                panel = { enabled = false },
+            })
+        end,
+    }
+    use {
+        'zbirenbaum/copilot-cmp',
+        after = { 'copilot.lua' },
+        config = function()
+            require('copilot_cmp').setup()
+        end
+    }
+
     if installed_packer then
         require('packer').sync()
     end
@@ -242,7 +261,9 @@ cmp.setup({
         ['<C-Space>'] = cmp.mapping.complete(),
     }),
     sources = {
-        { name = 'nvim_lsp' },
+        { name = 'copilot', group_index = 2 },
+        { name = 'nvim_lsp', group_index = 2 },
+        { name = 'path', group_index = 2 },
     },
 })
 
