@@ -256,8 +256,6 @@ cmp.setup({
         ['<C-j>'] = cmp.mapping.select_next_item(cmp_select),
 
         ['<CR>'] = cmp.mapping.confirm({ select = true }),
-
-        ['<C-Space>'] = cmp.mapping.complete(),
     }),
     sources = {
         { name = 'copilot', group_index = 2 },
