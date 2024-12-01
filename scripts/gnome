@@ -41,4 +41,11 @@ gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled false
 # Disable alert sounds
 gsettings set org.gnome.desktop.sound event-sounds false
 
+# Automatic new window focus
+gsettings set org.gnome.desktop.wm.preferences focus-new-windows 'strict'
+gsettings set org.gnome.desktop.wm.preferences auto-raise true
+
+# Disable lock screen notifications
+gsettings set org.gnome.desktop.notifications show-in-lock-screen false
+
 echo "Done"
