@@ -58,8 +58,19 @@ require('packer').startup(function(use)
     }
     use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
     use {
-        'stevearc/oil.nvim', config = function()
-            require('oil').setup()
+        'stevearc/oil.nvim',
+        requires = {
+            'nvim-tree/nvim-web-devicons',
+        },
+        config = function()
+            require('oil').setup({
+                columns = { 'icon' },
+                view_options = {
+                    show_hidden = true,
+                }
+            })
+            vim.keymap.set('n', '-', '<CMD>Oil<CR>', {})
+            vim.keymap.set('n', '<leader>-', require('oil').toggle_float, {})
         end
     }
     use { 'tpope/vim-commentary' }
