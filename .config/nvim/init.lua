@@ -344,7 +344,6 @@ map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 require('nvim-tree').setup()
 require('nvim-web-devicons').setup()
 
-
 -- Oil
 vim.keymap.set('n', '-', '<CMD>Oil<CR>')
 vim.keymap.set('n', '<leader>-', require('oil').toggle_float)
