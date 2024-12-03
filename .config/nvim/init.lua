@@ -341,7 +341,15 @@ map('x', '<leader>tt', '<CMD>NvimTreeToggle<CR>')
 map('n', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>')
 
-require('nvim-tree').setup()
+require('nvim-tree').setup({
+    filters = {
+        git_ignored = false,
+        dotfiles = false,
+    },
+    git = {
+        enable = true,
+    },
+})
 require('nvim-web-devicons').setup()
 
 -- Oil
