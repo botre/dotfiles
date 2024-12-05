@@ -142,6 +142,7 @@ if [ -f "$HOME/Brewfile" ]; then
 fi
 
 create_desktop_file() {
+    echo "Creating desktop file for $2..."
     local file_name="$1"
     local display_name="$2"
     local exec="$3"
@@ -156,6 +157,7 @@ Icon=$icon
 Type=Application
 Categories=Utility;
 EOT
+    echo "Desktop file created at $desktop_file"
 }
 
 # Create desktop files
