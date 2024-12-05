@@ -28,7 +28,6 @@ apt_applications=(
     ["git"]=""
     ["snapd"]=""
     ["libfuse2"]=""
-    ["bash"]=""
     ["zsh"]=""
     ["yadm"]=""
     ["kitty"]=""
@@ -134,14 +133,6 @@ for name in "${!app_image_applications[@]}"; do
         echo "$name is already installed. Skipping..."
     fi
 done
-
-# Install Homebrew if not already installed
-if ! command -v brew &> /dev/null; then
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-else
-    echo "Homebrew is already installed. Skipping..."
-fi
 
 # Install Brew applications
 if [ -f "$HOME/Brewfile" ]; then
