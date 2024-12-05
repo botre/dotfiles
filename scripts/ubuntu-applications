@@ -161,31 +161,29 @@ EOT
 echo "Creating desktop files..."
 create_desktop_file "beeper" "Beeper" "beeper --no-sandbox" "/home/bjorn/icons/beeper.png"
 
-# 1Password
-if ! command -v 1password >/dev/null 2>&1; then
-  echo "Installing 1Password..."
-  curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
-  echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' | sudo tee /etc/apt/sources.list.d/1password.list
-  sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/
-  curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol
-  sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
-  curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
-  sudo apt update && sudo apt install 1password
-fi
+# Install external repository applications
+install_app() {
+    local name="$1"
+    local key_url="$2"
+    local repo_entry="$3"
+    local package_name="${4:-$name}"
 
-# Firefox
-if ! command -v firefox >/dev/null 2>&1; then
-  sudo install -d -m 0755 /etc/apt/keyrings
-  wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
-  gpg -n -q --import --import-options import-show /etc/apt/keyrings/packages.mozilla.org.asc | awk '/pub/{getline; gsub(/^ +| +$/,""); if($0 == "35BAA0B33E9EB396F59CA838C0BA5CE6DC6315A3") print "\nThe key fingerprint matches ("$0").\n"; else print "\nVerification failed: the fingerprint ("$0") does not match the expected one.\n"}'
-  echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee -a /etc/apt/sources.list.d/mozilla.list > /dev/null
-  echo '
-Package: *
-Pin: origin packages.mozilla.org
-Pin-Priority: 1000
-' | sudo tee /etc/apt/preferences.d/mozilla
-  sudo apt-get update && sudo apt-get install firefox
-fi
+    if ! command -v "$name" >/dev/null 2>&1; then
+        echo "Installing $name..."
+        sudo mkdir -p /etc/apt/keyrings
+        wget -qO- "$key_url" | sudo gpg --dearmor -o "/etc/apt/keyrings/${name}.gpg"
+        echo "$repo_entry" | sudo tee "/etc/apt/sources.list.d/${name}.list" > /dev/null
+        sudo apt update && sudo apt install -y "$package_name"
+    fi
+}
+
+install_app "1password" \
+    "https://downloads.1password.com/linux/keys/1password.asc" \
+    "deb [arch=amd64 signed-by=/etc/apt/keyrings/1password.gpg] https://downloads.1password.com/linux/debian/amd64 stable main"
+
+install_app "firefox" \
+    "https://packages.mozilla.org/apt/repo-signing-key.gpg" \
+    "deb [signed-by=/etc/apt/keyrings/firefox.gpg] https://packages.mozilla.org/apt mozilla main"
 
 sudo apt autoremove -y
 
