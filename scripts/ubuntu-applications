@@ -28,6 +28,7 @@ apt_applications=(
     ["git"]=""
     ["snapd"]=""
     ["libfuse2"]=""
+    ["bash"]=""
     ["zsh"]=""
     ["yadm"]=""
     ["kitty"]=""
