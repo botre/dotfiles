@@ -2,6 +2,8 @@
 
 set -e
 
+echo "Home directory: $HOME"
+
 junk_applications=(
     "gnome-boxes"
     "gnome-calendar"
@@ -133,8 +135,12 @@ for name in "${!app_image_applications[@]}"; do
 done
 
 # Install Homebrew if not already installed
-# TODO
-
+if ! command -v brew &> /dev/null; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+else
+    echo "Homebrew is already installed. Skipping..."
+fi
 
 # Install Brew applications
 if [ -f "$HOME/Brewfile" ]; then
