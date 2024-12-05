@@ -1,9 +1,11 @@
 [
   "better-word-count",
   "cmdr",
+  "emoji-shortcodes",
   "format-with-prettier",
   "languagetool",
   "obsidian-excalidraw-plugin",
+  "obsidian-languagetool-plugin",
   "recent-files-obsidian",
   "reveal-active-file-button",
   "settings-search",
