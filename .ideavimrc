@@ -35,15 +35,6 @@ noremap <tab>[ :tabprevious<cr>
 noremap <tab>] :tabnext<cr>
 noremap <tab>a :tabnew<cr>
 noremap <tab>d :tabclose<cr>
-noremap <tab>1 1gt
-noremap <tab>2 2gt
-noremap <tab>3 3gt
-noremap <tab>4 4gt
-noremap <tab>5 5gt
-noremap <tab>6 6gt
-noremap <tab>7 7gt
-noremap <tab>8 8gt
-noremap <tab>9 9gt
 
 " IDE mappings
 map <leader>== <Action>(ReformatCode)
