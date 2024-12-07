@@ -38,24 +38,31 @@ noremap <tab>d :tabclose<cr>
 
 " IDE mappings
 map <leader>== <Action>(ReformatCode)
+
 map <leader>[c <Action>(VcsShowPrevChangeMarker)
 map <leader>]c <Action>(VcsShowNextChangeMarker)
+
 map <leader>[e <Action>(GotoPreviousError)
 map <leader>]e <Action>(GotoNextError)
+
 map <leader>[f <Action>(MethodUp)
 map <leader>]f <Action>(MethodDown)
+
+map <leader><space> <Action>(RecentFiles)
 map <leader>ff <Action>(GotoFile)
 map <leader>fr <Action>(RecentFiles)
 map <leader>fu <Action>(FindUsages)
+
+map gd <Action>(GotoDeclaration)
 map <leader>gd <Action>(GotoDeclaration)
+
 map <leader>gg <Action>(CheckinProject)
+
 map <leader>rf <Action>(RenameFile)
 map <leader>rn <Action>(RenameElement)
-map <leader><tab>9 <Action>(GoToLastTab)
-map <leader><tab>d <Action>(CloseContent)
+
 map <silent>K <Action>(QuickJavaDoc)
 map <leader>e <Action>(ShowErrorDescription)
-map gd <Action>(GotoDeclaration)
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode
