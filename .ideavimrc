@@ -64,7 +64,7 @@ map <leader>rn <Action>(RenameElement)
 map <silent>K <Action>(QuickJavaDoc)
 map <leader>e <Action>(ShowErrorDescription)
 
-map <leader>ca <Action>(ShowIntentionActions)
+map <leader>ga <Action>(ShowIntentionActions)
 
 " IDE commands
 command! Zen action ToggleDistractionFreeMode

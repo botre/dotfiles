@@ -312,7 +312,7 @@ lsp.on_attach(function(_, bufnr)
     vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, options)
 
     -- show code actions
-    vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, options)
+    vim.keymap.set('n', '<leader>ga', vim.lsp.buf.code_action, options)
 end)
 
 lsp.setup()
