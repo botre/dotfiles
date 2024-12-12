@@ -44,6 +44,12 @@ alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
 alias cat="bat"
 
+if [[ "$(uname)" == "Darwin" ]]; then
+    alias clipboard='pbcopy'
+else
+    alias clipboard='xclip -sel clip'
+fi
+
 alias d='docker'
 alias dfresh='docker kill $(docker ps -q); docker system prune --volumes --force'
 alias dcupd='docker compose up -d'
