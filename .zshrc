@@ -45,9 +45,9 @@ alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 alias cat="bat"
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    alias clipboard='pbcopy'
+    alias copy='pbcopy'
 else
-    alias clipboard='xclip -sel clip'
+    alias copy='xclip -sel clip'
 fi
 
 alias d='docker'
