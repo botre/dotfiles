@@ -6,9 +6,6 @@ path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
 export PATH
 
-export GOPATH=$(go env GOPATH)
-export PATH=$PATH:$(go env GOPATH)/bin
-
 export ZSH="$HOME/.oh-my-zsh"
 
 export LANG=en_US.UTF-8
@@ -79,3 +76,6 @@ alias vim="nvim"
 eval "$(zoxide init zsh --cmd cd)"
 eval "$(thefuck --alias)"
 eval "$(starship init zsh)"
+
+export GOPATH=$(go env GOPATH)
+export PATH=$PATH:$(go env GOPATH)/bin
