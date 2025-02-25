@@ -2,8 +2,11 @@ if [[ -d /home/linuxbrew/.linuxbrew ]]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
+export GOPATH=$(go env GOPATH)
+
 path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
+path+=("$GOPATH/bin")
 export PATH
 
 export ZSH="$HOME/.oh-my-zsh"
