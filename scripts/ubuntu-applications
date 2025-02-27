@@ -32,6 +32,7 @@ apt_applications=(
     ["yadm"]=""
     ["kitty"]=""
     ["xclip"]=""
+    ["golang-go"]="ppa:longsleep/golang-backports"
     ["gnome-online-accounts"]=""
     ["gnome-shell-extensions"]=""
     ["gnome-shell-extension-manager"]=""
