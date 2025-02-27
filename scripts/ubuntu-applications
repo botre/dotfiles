@@ -50,7 +50,6 @@ flatpak_applications=(
 
 snap_applications=(
     "arduino"
-    "go",
     "google-cloud-cli"
     "ticktick"
 )
