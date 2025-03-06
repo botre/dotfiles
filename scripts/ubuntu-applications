@@ -50,6 +50,7 @@ flatpak_applications=(
 
 snap_applications=(
     "arduino"
+    "google-cloud-cli"
     "ticktick"
 )
 
@@ -183,12 +184,6 @@ install_app "1password" \
 install_app "firefox" \
     "https://packages.mozilla.org/apt/repo-signing-key.gpg" \
     "deb [signed-by=/etc/apt/keyrings/firefox.gpg] https://packages.mozilla.org/apt mozilla main"
-
-# Install Google Cloud CLI
-install_app "google-cloud-cli" \
-    "https://packages.cloud.google.com/apt/doc/apt-key.gpg" \
-    "deb [signed-by=/etc/apt/keyrings/google-cloud-cli.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
-    "google-cloud-cli"
 
 sudo apt autoremove -y
 
