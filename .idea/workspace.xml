@@ -5,15 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c4dae315-359b-4cb8-9dd3-c8fe3ee32b4e" name="Changes" comment="Revert &quot;Beeper desktop file&quot;&#10;&#10;This reverts commit f9d7ab8d">
-      <change afterPath="$PROJECT_DIR$/docs/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.config/bat/config" beforeDir="false" afterPath="$PROJECT_DIR$/.config/bat/config" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.config/bat/themes/Catppuccin Latte.tmTheme" beforeDir="false" afterPath="$PROJECT_DIR$/.config/bat/themes/catppuccin-latte.tmTheme" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.config/bat/themes/Catppuccin Macchiato.tmTheme" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.hammerspoon/app-management.lua" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.hammerspoon/hyper.lua" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.hammerspoon/init.lua" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Brewfile.casks" beforeDir="false" afterPath="$PROJECT_DIR$/Brewfile.casks" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.config/ghostty/config" beforeDir="false" afterPath="$PROJECT_DIR$/.config/ghostty/config" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
