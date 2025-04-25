@@ -35,8 +35,7 @@ On Mac, I used `AltTab`, and on Ubuntu this functionality is built-in.
 
 A single key to search and launch applications is essential.
 
-On Ubuntu I use the built-in
-`Super` key search, though I would switch in a second if Raycast (which I used on Mac) was ported.
+On Ubuntu I use the built-in Super key search, though I would switch in a second if Raycast (which I used on Mac) was ported.
 
 ## Browser
 
