@@ -4,27 +4,25 @@ set -e
 
 # Lua
 mise plugin add lua https://github.com/Stratus3D/asdf-lua.git
-mise install lua latest
-mise global lua latest
+mise install lua@5.4
+mise use lua@5.4 --global
 
 # Node
-mise plugin add nodejs
-mise install nodejs latest
-mise global nodejs latest
+mise use node@22 --global
 
 # pnpm
 mise plugin add pnpm https://github.com/jonathanmorley/asdf-pnpm.git
-mise install pnpm latest
-mise global pnpm latest
+mise install pnpm@10
+mise use pnpm@10 --global
 
 # Terraform
 mise plugin add terraform https://github.com/asdf-community/asdf-hashicorp.git
-mise install terraform latest
-mise global terraform latest
+mise install terraform@1.11
+mise use terraform@1.11 --global
 
 # Yarn
 mise plugin add yarn
-mise install yarn latest
-mise global yarn latest
+mise install yarn@1.22
+mise use yarn@1.22 --global
 
 echo "Done"

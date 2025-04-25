@@ -30,7 +30,6 @@ apt_applications=(
     ["libfuse2"]=""
     ["zsh"]=""
     ["yadm"]=""
-    ["kitty"]=""
     ["xclip"]=""
     ["gnome-online-accounts"]=""
     ["gnome-shell-extensions"]=""
