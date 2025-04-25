@@ -43,8 +43,10 @@ On Ubuntu I use the built-in
 
 I use Firefox as my main browser, occasionally switching to Chrome for development and testing.
 
-## Containerization
+## Containers
 
-Docker is still my go-to.
+Docker is still my go-to tool for containerization.
+
+I also use `lazydocker` for an enhanced CLI experience.
 
 On Mac, I really liked OrbStack.
