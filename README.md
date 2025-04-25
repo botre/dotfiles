@@ -10,5 +10,3 @@ The order of execution matters:
 - scripts/fonts
 - scripts/zsh
 - scripts/mise
-- scripts/npm
-- scripts/intellij

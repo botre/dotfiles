@@ -23,3 +23,17 @@ My approach is installing LTS versions globally with per-project overrides.
 ## Beeper
 
 I use Beeper to aggregate all my chat apps, I highly recommend it.
+
+## Alt + Tab
+
+I really like Windows' Alt+Tab feature for switching between applications.
+
+On Mac, I used `AltTab`, and on Ubuntu this functionality is built-in.
+
+## Application launcher
+
+A single key to search and launch applications is essential.
+
+On Ubuntu I use the built-in
+`Super` key search, though I would switch in a second if Raycast (which I used on Mac) was ported.
+
