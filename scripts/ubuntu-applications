@@ -25,7 +25,6 @@ apt_applications=(
     ["procps"]=""
     ["curl"]=""
     ["build-essential"]=""
-    ["software-properties-common"]=""
     ["git"]=""
     ["snapd"]=""
     ["libfuse2"]=""
@@ -157,6 +156,10 @@ Categories=Utility;
 EOT
     echo "Desktop file created at $desktop_file"
 }
+
+# Create desktop files
+echo "Creating desktop files..."
+create_desktop_file "beeper" "Beeper" "beeper --no-sandbox" "/home/bjorn/icons/beeper.png"
 
 # Install external repository applications
 install_app() {
