@@ -1,10 +1,11 @@
+adjust-cursor-thickness = 50%
 font-family = Hack Nerd Font
 font-family-bold = Hack Nerd Font Bold
-font-family-italic = Hack Nerd Font Italic
 font-family-bold-italic = Hack Nerd Font Bold Italic
-
+font-family-italic = Hack Nerd Font Italic
 font-size = 12
-
-theme = catppuccin-latte.conf
-
 term = xterm-256color
+theme = catppuccin-latte.conf
+title = ""
+window-padding-x = 4
+window-theme = system
