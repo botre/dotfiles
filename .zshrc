@@ -27,8 +27,6 @@ plugins=(
   node
   npm
   terraform
-  vi-mode
-  fzf # must be after vi-mode
   yarn
 )
 
