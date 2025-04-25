@@ -159,7 +159,7 @@ EOT
 
 # Create desktop files
 echo "Creating desktop files..."
-#create_desktop_file "beeper" "Beeper" "beeper --no-sandbox" "/home/bjorn/icons/beeper.png"
+create_desktop_file "beeper" "Beeper" "beeper --no-sandbox" "/home/bjorn/icons/beeper.png"
 
 # Install external repository applications
 install_app() {
