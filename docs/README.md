@@ -1,12 +1,8 @@
 ## Theme
 
-I am all in on Catppuccin Latte, which is a light theme for all the apps I use.
+I am all in on Catppuccin Latte, a light theme for all my apps that's beautiful and easy on the eyes.
 
-It's a beautiful theme that's easy on the eyes.
-
-One advantage of using a light theme is that it translates well to print.
-
-Another advantage is that many images have white backgrounds, making them easier to view in a light theme.
+Light themes translate well to print and work better with white-background images.
 
 ## Font
 
@@ -14,20 +10,16 @@ I use Hack, a typeface designed for source code, specifically a Nerd Font varian
 
 ## Terminal
 
-For my terminal I am currently using Ghostty, a fast, feature-rich, and cross-platform terminal emulator that uses platform-native UI and GPU acceleration.
-
-In the past I have used Alacritty, Kitty, and iTerm2.
+My terminal of choice is Ghostty - fast, feature-rich, cross-platform with native UI and GPU acceleration.
 
 ## Programming language runtimes
 
-I use `mise` to manage installations of programming language runtimes and other tools for local development.
+For programming language runtimes, I use mise to manage installations.
 
-Two notable exceptions are Go (which manages this itself) and Python (for which I currently mostly use `uv`).
+Exceptions are Go (default toolchain works great) and Python (mostly using uv).
 
-My current default is to install the LTS of the tool/runtime globally, and override on a per-project basis.
-
-In the past I have used `asdf` for this.
+My approach is installing LTS versions globally with per-project overrides.
 
 ## Beeper
 
-I use Beeper which aggregates all my chat apps, I highly recommend it.
+I use Beeper to aggregate all my chat apps, I highly recommend it.
