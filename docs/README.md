@@ -20,9 +20,11 @@ Exceptions are Go (default toolchain works great) and Python (mostly using uv).
 
 My approach is installing LTS versions globally with per-project overrides.
 
-## Beeper
+## Communication
 
-I use Beeper to aggregate all my chat apps, I highly recommend it.
+I use Beeper as a unified chat apps, I highly recommend it.
+
+I also use the native Slack app, because it is my main work communication tool.
 
 ## Alt + Tab
 
