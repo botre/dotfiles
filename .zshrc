@@ -63,11 +63,6 @@ alias lsa="ls -a"
 alias lzd="lazydocker"
 alias lzg="lazygit"
 
-alias p='python3'
-alias py='python3'
-alias python='python3'
-alias pip='pip3'
-
 alias v="nvim"
 alias vi="nvim"
 alias vim="nvim"
