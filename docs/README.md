@@ -37,3 +37,12 @@ A single key to search and launch applications is essential.
 On Ubuntu I use the built-in
 `Super` key search, though I would switch in a second if Raycast (which I used on Mac) was ported.
 
+## Browser
+
+I use Firefox as my main browser, occasionally switching to Chrome for development and testing.
+
+## Containerization
+
+Docker is still my go-to.
+
+On Mac, I really liked OrbStack.
