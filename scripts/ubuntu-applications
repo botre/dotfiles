@@ -74,7 +74,7 @@ for package in "${junk_applications[@]}"; do
     fi
 done
 
-sudo apt update && sudo apt upgrade -y
+sudo apt update && sudo apt upgrade -y --allow-downgrades
 
 # Install APT applications
 for name in "${!apt_applications[@]}"; do
