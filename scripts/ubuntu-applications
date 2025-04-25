@@ -33,7 +33,6 @@ apt_applications=(
     ["yadm"]=""
     ["kitty"]=""
     ["xclip"]=""
-    ["appimagelauncher"]="ppa:appimagelauncher-team/stable"
     ["gnome-online-accounts"]=""
     ["gnome-shell-extensions"]=""
     ["gnome-shell-extension-manager"]=""
