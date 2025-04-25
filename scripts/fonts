@@ -4,7 +4,7 @@ set -e
 
 install_nerd_font() {
     local FONT_NAME="$1"
-    local FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/${FONT_NAME}.zip"
+    local FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/${FONT_NAME}.zip"
     local TEMP_DIR=$(mktemp -d)
 
     # Determine the operating system and set the appropriate font directory
