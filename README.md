@@ -9,6 +9,6 @@ The order of execution matters:
 - scripts/gnome (Ubuntu only)
 - scripts/fonts
 - scripts/zsh
-- scripts/asdf
+- scripts/mise
 - scripts/npm
 - scripts/intellij

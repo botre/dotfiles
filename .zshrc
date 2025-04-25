@@ -17,16 +17,17 @@ export EDITOR="$VISUAL"
 VI_MODE_SET_CURSOR=true
 
 plugins=(
-  asdf
   aws
   docker
-  fzf
   gcloud
   gh
   git
+  mise
   node
   npm
   terraform
+  vi-mode
+  fzf # must be after vi-mode
   yarn
 )
 

@@ -186,6 +186,10 @@ install_app "firefox" \
     "https://packages.mozilla.org/apt/repo-signing-key.gpg" \
     "deb [signed-by=/etc/apt/keyrings/firefox.gpg] https://packages.mozilla.org/apt mozilla main"
 
+install_app "mise" \
+    "https://mise.jdx.dev/gpg-key.pub" \
+    "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=amd64] https://mise.jdx.dev/deb stable main"
+
 sudo apt autoremove -y
 
 echo "Done"
