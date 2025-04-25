@@ -22,14 +22,13 @@ My approach is installing LTS versions globally with per-project overrides.
 
 ## Communication
 
-I use Beeper as a unified chat apps, I highly recommend it.
+I use Beeper as a unified chat app. I highly recommend it.
 
 I also use the native Slack app, because it is my main work communication tool.
 
 ## Alt + Tab
 
 I really like Windows' Alt+Tab feature for switching between applications.
-
 On Mac, I used `AltTab`, and on Ubuntu this functionality is built-in.
 
 ## Application launcher
@@ -50,3 +49,7 @@ Docker is still my go-to tool for containerization.
 I also use `lazydocker` for an enhanced CLI experience.
 
 On Mac, I really liked OrbStack.
+
+## Keybindings
+
+I use VIM keybindings wherever possible - they are efficient and portable across applications.
