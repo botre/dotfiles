@@ -80,10 +80,6 @@ I use Vim keybindings wherever possible - they are efficient and portable across
 
 Obsidian is my main note-taking app.
 
-Global config in `~/.config/obsidian`.
-
-Vault config backed up in `~/.obsidian`.
-
 ## Spell checking
 
 I use LanguageTool for spell checking - it supports multiple languages, and is available as browser extension and Obsidian plugin.
