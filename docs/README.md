@@ -80,7 +80,9 @@ I use VIM keybindings wherever possible - they are efficient and portable across
 
 Obsidian is my main note-taking app.
 
-There is a dedicated README in the `.obsidian` directory of this repository.
+Global configuration is managed in `~/.config/obsidian`.
+
+Vault configuration is backed up in `~/.obsidian`.
 
 ## Spell checking
 

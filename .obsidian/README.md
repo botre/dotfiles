@@ -1,6 +1,8 @@
-# Obsidian
+# Obsidian vault configuration
 
-Default dotfiles for Obsidian vaults.
+Vault configuration files.
+
+Note that the dotfiles for Obsidian itself are store in `/.config/obsidian`.
 
 ## Backup vault configuration
 
