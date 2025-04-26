@@ -43,7 +43,6 @@ flatpak_applications=(
     "com.slack.Slack"
     "com.spotify.Client"
     "com.transmissionbt.Transmission"
-    "md.obsidian.Obsidian"
     "org.videolan.VLC"
 )
 
@@ -57,6 +56,7 @@ snap_applications=(
 declare -A app_image_applications
 app_image_applications=(
     ["beeper"]="https://api.beeper.com/desktop/download/linux/x64/stable/com.automattic.beeper.desktop"
+    ["obsidian"]="$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | grep -o 'https://github.com/obsidianmd/obsidian-releases/releases/download/.*/obsidian_.*_amd64.deb')"
 )
 
 # Function to check if a package is installed
@@ -159,7 +159,8 @@ EOT
 
 # Create desktop files
 echo "Creating desktop files..."
-create_desktop_file "beeper" "Beeper" "beeper --no-sandbox" "/home/bjorn/icons/beeper.png"
+create_desktop_file "beeper" "Beeper" "beeper --no-sandbox" "~/icons/beeper.png"
+create_desktop_file "obsidian" "Obsidian" "obsidian" "~/icons/obsidian.png"
 
 # Install external repository applications
 install_app() {

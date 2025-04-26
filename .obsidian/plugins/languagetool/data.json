@@ -9,7 +9,5 @@
     "ca": "ca-ES"
   },
   "syncDictionary": true,
-  "pickyMode": false,
-  "username": "",
-  "apikey": ""
+  "pickyMode": false
 }

@@ -1,13 +1,14 @@
 [
   "better-word-count",
   "cmdr",
-  "emoji-shortcodes",
-  "format-with-prettier",
   "languagetool",
   "obsidian-excalidraw-plugin",
-  "obsidian-languagetool-plugin",
   "recent-files-obsidian",
   "reveal-active-file-button",
   "settings-search",
-  "smart-connections"
+  "smart-connections",
+  "obsidian-languagetool-plugin",
+  "format-with-prettier",
+  "emoji-shortcodes",
+  "obsidian-kanban"
 ]

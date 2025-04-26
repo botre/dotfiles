@@ -75,3 +75,15 @@ On Mac, I really liked OrbStack.
 ## Keybindings
 
 I use VIM keybindings wherever possible - they are efficient and portable across applications.
+
+## Obsidian
+
+Obsidian is my main note-taking app.
+
+There is a dedicated README in the `.obsidian` directory of this repository.
+
+## Spell checking
+
+I use LanguageTool for spell checking.
+
+It supports multiple languages and is available as a browser extension and a plugin for Obsidian.
