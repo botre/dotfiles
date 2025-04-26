@@ -39,7 +39,6 @@ apt_applications=(
 
 flatpak_applications=(
     "com.google.Chrome"
-    "com.jetbrains.IntelliJ-IDEA-Ultimate"
     "com.slack.Slack"
     "com.spotify.Client"
     "com.transmissionbt.Transmission"
@@ -189,6 +188,27 @@ install_app "firefox" \
 install_app "mise" \
     "https://mise.jdx.dev/gpg-key.pub" \
     "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=amd64] https://mise.jdx.dev/deb stable main"
+
+install_jetbrains_toolbox() {
+    echo "Installing JetBrains Toolbox..."
+    if [ -d ~/.local/share/JetBrains/Toolbox ]; then
+        echo "JetBrains Toolbox is already installed!"
+        return 0
+    fi
+    
+    wget --show-progress -qO ./toolbox.tar.gz "https://data.services.jetbrains.com/products/download?platform=linux&code=TBA"
+    
+    TOOLBOX_TEMP_DIR=$(mktemp -d)
+    tar -C "$TOOLBOX_TEMP_DIR" -xf toolbox.tar.gz
+    rm ./toolbox.tar.gz
+    
+    "$TOOLBOX_TEMP_DIR"/*/jetbrains-toolbox
+    rm -r "$TOOLBOX_TEMP_DIR"
+    
+    echo "JetBrains Toolbox was successfully installed!"
+}
+
+install_jetbrains_toolbox
 
 sudo apt autoremove -y
 
