@@ -56,7 +56,7 @@ snap_applications=(
 declare -A app_image_applications
 app_image_applications=(
     ["beeper"]="https://api.beeper.com/desktop/download/linux/x64/stable/com.automattic.beeper.desktop"
-    ["obsidian"]="$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | grep -o 'https://github.com/obsidianmd/obsidian-releases/releases/download/.*/obsidian_.*_amd64.deb')"
+    ["obsidian"]="$(curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest | grep -o 'https://github.com/obsidianmd/obsidian-releases/releases/download/.*/Obsidian-.*\.AppImage' | grep -v 'arm64')"
 )
 
 # Function to check if a package is installed
