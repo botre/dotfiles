@@ -1,6 +1,6 @@
 ## Theme
 
-I am all in on Catppuccin Latte, a light theme for all my apps that's beautiful and easy on the eyes.
+I am all in on Catppuccin Latte, a light theme for all my apps.
 
 I find that having a consistent theme and syntax highlighting across my main applications helps reduce cognitive load.
 
@@ -10,7 +10,7 @@ Light themes translate well to print and work better with white-background image
 
 I use Hack, a typeface designed for source code, specifically a Nerd Font variant that includes icons for terminal applications.
 
-I love using monospaced fonts for both coding and writing/notetaking.
+I use monospaced fonts for both coding and note-taking.
 
 ## Terminal
 
@@ -26,7 +26,7 @@ I have never used Fish, but I have heard good things about it.
 
 I am using Oh My Zsh for plugins and themes, it is low-overhead and there are a lot of plugins available.
 
-VIM keybindings to navigate the command line are a must; in my current setup it is enabled via the `vi-mode` plugin.
+Vim keybindings to navigate the command line are a must; in my current setup it is enabled via the `vi-mode` plugin.
 
 The prompt is minimal with a few key pieces of information, powered by `starship`.
 
@@ -48,7 +48,7 @@ I also use the native Slack app, because it is my main work communication tool.
 
 ## Alt + Tab
 
-I really like Windows' Alt+Tab feature for switching between applications.
+I really like Alt + Tab for switching between applications.
 
 On Mac, I used `AltTab`, and on Ubuntu this functionality is built-in.
 
@@ -56,7 +56,7 @@ On Mac, I used `AltTab`, and on Ubuntu this functionality is built-in.
 
 A single key to search and launch applications is essential.
 
-On Ubuntu I use the built-in Super key search, though I would switch in a second if Raycast (which I used on Mac) was ported.
+I use GNOME's Super key search but would switch to Raycast instantly if it were ported from Mac.
 
 ## Browser
 
@@ -74,18 +74,24 @@ On Mac, I really liked OrbStack.
 
 ## Keybindings
 
-I use VIM keybindings wherever possible - they are efficient and portable across applications.
+I use Vim keybindings wherever possible - they are efficient and portable across applications.
 
 ## Obsidian
 
 Obsidian is my main note-taking app.
 
-Global configuration is managed in `~/.config/obsidian`.
+Global config in `~/.config/obsidian`.
 
-Vault configuration is backed up in `~/.obsidian`.
+Vault config backed up in `~/.obsidian`.
 
 ## Spell checking
 
-I use LanguageTool for spell checking.
+I use LanguageTool for spell checking - it supports multiple languages, and is available as browser extension and Obsidian plugin.
 
-It supports multiple languages and is available as a browser extension and a plugin for Obsidian.
+## Code editor
+
+I primarily use JetBrains IDEs (managed through their Toolbox application), while occasionally using Neovim for quick edits.
+
+Vim motions and modal editing are essential.
+
+I minimize JetBrains-specific keybindings, I prefer Vim or custom bindings ideally with Neovim equivalents maintained.
