@@ -18,13 +18,18 @@ VI_MODE_SET_CURSOR=true
 
 plugins=(
   aws
+  brew
   docker
   gcloud
   gh
   git
+  git-lfs
+  golang
   mise
   node
   npm
+  react-native
+  ssh
   terraform
   vi-mode
   fzf # must be after vi-mode
