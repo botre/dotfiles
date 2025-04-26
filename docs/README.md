@@ -28,6 +28,8 @@ I am using Oh My Zsh for plugins and themes, it is low-overhead and there are a 
 
 VIM keybindings to navigate the command line are a must; in my current setup it is enabled via the `vi-mode` plugin.
 
+The prompt is minimal with a few key pieces of information, powered by `starship`.
+
 ## Programming language runtimes
 
 For programming language runtimes, I use mise to manage installations.
