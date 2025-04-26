@@ -151,6 +151,7 @@ create_desktop_file() {
 Name=$display_name
 Exec=$exec
 Icon=$icon
+Terminal=false
 Type=Application
 Categories=Utility;
 EOT
