@@ -101,3 +101,22 @@ It has a desktop app, browser extension, and CLI tool (which I have yet to try).
 ## Media player
 
 Spotify and VLC are my go-to media players.
+
+## Git aliases
+
+| Alias    | Command                     | Description                                             |
+|----------|-----------------------------|---------------------------------------------------------|
+| `a`      | `add`                       | Add file contents to the index                          |
+| `alias`  | `config --get-regexp alias` | List all configured aliases                             |
+| `amend`  | `commit --amend`            | Amend the previous commit                               |
+| `c`      | `commit`                    | Commit                                                  |
+| `cm`     | `commit -m`                 | Commit with message                                     |
+| `co`     | `checkout`                  | Checkout a branch                                       |
+| `cob`    | `checkout -b`               | Create and checkout a new branch                        |
+| `cp`     | `cherry-pick`               | Cherry-pick changes from other commits                  |
+| `last`   | `log -1 HEAD`               | Show the latest commit                                  |
+| `p`      | `push`                      | Push changes                                            |
+| `pl`     | `pull`                      | Pull changes                                            |
+| `recent` | Custom command              | Lists branches sorted by commit date with formatting    |
+| `rh`     | `reset --hard`              | Reset current HEAD to specified state (discard changes) |
+| `s`      | `status`                    | Show working tree status                                |

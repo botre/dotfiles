@@ -1,15 +1,18 @@
 [alias]
     a = add
+    alias = config --get-regexp alias
+    amend = commit --amend
     c = commit
     cm = commit -m
     co = checkout
     cob = checkout -b
     cp = cherry-pick
+    last = log -1 HEAD
     p = push
     pl = pull
+    recent = "!git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'"
     rh = reset --hard
     s = status
-    recent = "!git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'"
 [core]
     editor = nvim
     pager = bat
