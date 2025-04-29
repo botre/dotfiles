@@ -86,8 +86,18 @@ I use LanguageTool for spell checking - it supports multiple languages, and is a
 
 ## Code editor
 
-I primarily use JetBrains IDEs (managed through their Toolbox application), while occasionally using Neovim for quick edits.
+I primarily use JetBrains IDEs (IntelliJ, Android Studio, DataGrip) ,managed through their Toolbox application, while occasionally using Neovim for quick edits.
 
 Vim motions and modal editing are essential.
 
 I minimize JetBrains-specific keybindings, I prefer Vim or custom bindings ideally with Neovim equivalents maintained.
+
+## Password manager
+
+I use 1Password as my password manager.
+
+It has a desktop app, browser extension, and CLI tool (which I have yet to try).
+
+## Media player
+
+Spotify and VLC are my go-to media players.
