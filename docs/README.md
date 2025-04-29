@@ -70,6 +70,10 @@ Docker is still my go-to tool for containerization.
 
 I also use `lazydocker` for an enhanced CLI experience.
 
+I alias `d` to `docker`.
+I alias `dc` to `docker compose`.
+I alias `lzd` to `lazydocker`.
+
 On Mac, I really liked OrbStack.
 
 ## Keybindings
@@ -101,6 +105,17 @@ It has a desktop app, browser extension, and CLI tool (which I have yet to try).
 ## Media player
 
 Spotify and VLC are my go-to media players.
+
+## Git
+
+I use Git for version control.
+
+I also use `lazygit` for an enhanced CLI experience.
+
+I alias `g` to `git`.
+I alias `lzg` to `lazygit`.
+
+I have a couple of Git aliases that I find useful.
 
 ## Git aliases
 

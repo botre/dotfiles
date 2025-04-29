@@ -56,6 +56,7 @@ fi
 
 alias d='docker'
 alias dfresh='docker kill $(docker ps -q); docker system prune --volumes --force'
+alias dc='docker compose'
 alias dcupd='docker compose up -d'
 
 alias g='git'
