@@ -7,5 +7,4 @@ font-size = 12
 resize-overlay = never
 term = xterm-256color
 theme = catppuccin-latte.conf
-title = 👻
 window-theme = system
