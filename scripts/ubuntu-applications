@@ -38,6 +38,7 @@ apt_applications=(
 )
 
 flatpak_applications=(
+    "com.bitwig.BitwigStudio"
     "com.google.Chrome"
     "com.slack.Slack"
     "com.spotify.Client"
