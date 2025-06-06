@@ -46,6 +46,9 @@ let mapleader = " "
 " Map <Esc> to <C-c>
 inoremap <Esc> <C-c>
 
+" Map jj to escape from insert mode
+inoremap jj <Esc>
+
 " Disable arrow keys
 noremap <Up> <Nop>
 noremap <Down> <Nop>
