@@ -74,7 +74,7 @@ alias vi="nvim"
 alias vim="nvim"
 
 # Wrapper that provides the ability to change the current working directory when exiting Yazi
-function yazi() {
+function yaz() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
 	yazi "$@" --cwd-file="$tmp"
 	IFS= read -r -d '' cwd < "$tmp"
