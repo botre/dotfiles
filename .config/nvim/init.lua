@@ -233,13 +233,13 @@ require('mason-null-ls').setup {
     }
 }
 
-local non_ls = require('none-ls')
-non_ls.setup({
+local null_ls = require('null_ls')
+null_ls.setup({
     sources = {
-        non_ls.builtins.formatting.black,
-        non_ls.builtins.formatting.prettier,
-        non_ls.builtins.diagnostics.mypy,
-        non_ls.builtins.diagnostics.ruff,
+        null_ls.builtins.formatting.black,
+        null_ls.builtins.formatting.prettier,
+        null_ls.builtins.diagnostics.mypy,
+        null_ls.builtins.diagnostics.ruff,
     }
 })
 
