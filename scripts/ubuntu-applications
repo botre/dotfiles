@@ -50,6 +50,7 @@ flatpak_applications=(
 snap_applications=(
     "arduino"
     "ghostty"
+    "yazi"
     "google-cloud-cli"
     "ticktick"
 )
