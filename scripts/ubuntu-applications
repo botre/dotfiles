@@ -29,6 +29,7 @@ apt_applications=(
     ["snapd"]=""
     ["libfuse2"]=""
     ["zsh"]=""
+    ["nnn"]=""
     ["yadm"]=""
     ["xclip"]=""
     ["gnome-online-accounts"]=""
