@@ -94,7 +94,7 @@ require('packer').startup(function(use)
     }
 
     use {
-        'jose-elias-alvarez/null-ls.nvim',
+        'nvimtools/none-ls.nvim',
         'jay-babu/mason-null-ls.nvim',
     }
 
@@ -233,13 +233,13 @@ require('mason-null-ls').setup {
     }
 }
 
-local null_ls = require('null-ls')
-null_ls.setup({
+local non_ls = require('none-ls')
+non_ls.setup({
     sources = {
-        null_ls.builtins.formatting.black,
-        null_ls.builtins.formatting.prettier,
-        null_ls.builtins.diagnostics.mypy,
-        null_ls.builtins.diagnostics.ruff,
+        non_ls.builtins.formatting.black,
+        non_ls.builtins.formatting.prettier,
+        non_ls.builtins.diagnostics.mypy,
+        non_ls.builtins.diagnostics.ruff,
     }
 })
 
