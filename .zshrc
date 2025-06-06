@@ -38,10 +38,6 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-# nnn theme (Catppuccin Latte)
-BLK="08" CHR="08" DIR="0D" EXE="0B" REG="05" HARDLINK="0B" SYMLINK="0B" MISSING="05" ORPHAN="08" FIFO="0B" SOCK="08" OTHER="0B"
-export NNN_FCOLORS="$BLK$CHR$DIR$EXE$REG$HARDLINK$SYMLINK$MISSING$ORPHAN$FIFO$SOCK$OTHER"
-
 # FZF theme (Catppuccin Latte)
 export FZF_DEFAULT_OPTS=" \
 --color=bg+:#ccd0da,bg:#eff1f5,spinner:#dc8a78,hl:#d20f39 \
