@@ -204,6 +204,9 @@ local lsp = require('lsp-zero')
 require('mason').setup({})
 require('mason-lspconfig').setup({
     ensure_installed = {
+        'arduino_language_server',
+        'astro',
+        'clangd',
         'dockerls',
         'emmet_ls',
         'eslint',
@@ -211,8 +214,10 @@ require('mason-lspconfig').setup({
         'html',
         'jsonls',
         'lua_ls',
+        'protolos',
         'pyright',
         'rust_analyzer',
+        'tailwindcss',
         'taplo',
         'ts_ls',
         'vimls',
@@ -227,8 +232,9 @@ require('mason-lspconfig').setup({
 require('mason-null-ls').setup {
     ensure_installed = {
         'black',
+        'clang-format',
         'mypy',
-        'prettier',
+        'prettierd',
         'ruff',
     }
 }
