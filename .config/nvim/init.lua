@@ -214,7 +214,7 @@ require('mason-lspconfig').setup({
         'html',
         'jsonls',
         'lua_ls',
-        'protolos',
+        'protols',
         'pyright',
         'rust_analyzer',
         'tailwindcss',
