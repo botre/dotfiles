@@ -1,4 +1,4 @@
-local install_packer_if_not_exists = function()
+local install_plugin_manager = function()
     local fn = vim.fn
     local install_path = fn.stdpath('data') .. '/site/pack/packer/start/packer.nvim'
     if fn.empty(fn.glob(install_path)) > 0 then
@@ -9,4 +9,4 @@ local install_packer_if_not_exists = function()
     return false
 end
 
-return install_packer_if_not_exists()
+return install_plugin_manager()

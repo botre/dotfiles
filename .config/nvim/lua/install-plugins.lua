@@ -19,7 +19,14 @@ return function(packer_instance)
                 require('gitsigns').setup()
             end
         }
-        use { 'letieu/btw.nvim' }
+        use {
+            'letieu/btw.nvim',
+            config = function()
+                require('btw').setup({
+                    text = 'Neovim BTW',
+                })
+            end
+        }
         use {
             'nvim-lualine/lualine.nvim',
             requires = { 'kyazdani42/nvim-web-devicons' }

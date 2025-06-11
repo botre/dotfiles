@@ -1,8 +1,3 @@
--- Start message
-require('btw').setup({
-    text = 'Neovim BTW',
-})
-
 -- LazyGit
 vim.keymap.set('n', '<leader>gg', ':LazyGit<CR>', {})
 
