@@ -7,7 +7,9 @@ return function(packer_instance)
         use { 'adelarsq/vim-matchit' }
         use {
             'akinsho/bufferline.nvim',
-            requires = 'nvim-tree/nvim-web-devicons',
+            requires = {
+                'nvim-tree/nvim-web-devicons',
+            },
             config = function()
                 require('bufferline').setup({
                     options = {
@@ -45,6 +47,7 @@ return function(packer_instance)
         use { 'kana/vim-textobj-user' }
         use({
             'kdheepak/lazygit.nvim',
+            requires = { 'nvim-lua/plenary.nvim' },
             config = function()
                 vim.keymap.set('n', '<leader>gg', ':LazyGit<CR>', {})
             end
@@ -65,7 +68,7 @@ return function(packer_instance)
         }
         use {
             'nvim-lualine/lualine.nvim',
-            requires = { 'kyazdani42/nvim-web-devicons' },
+            requires = { 'nvim-tree/nvim-web-devicons' },
             config = function()
                 require('lualine').setup({
                     options = {
@@ -78,6 +81,7 @@ return function(packer_instance)
         use { 'nvim-lua/plenary.nvim' }
         use {
             'nvim-telescope/telescope.nvim',
+            requires = { 'nvim-lua/plenary.nvim' },
             config = function()
                 local builtin = require('telescope.builtin')
                 vim.keymap.set('n', '<leader><space>', builtin.oldfiles, {})
@@ -87,9 +91,17 @@ return function(packer_instance)
                 vim.keymap.set('n', '<leader>fu', builtin.lsp_references, {})
             end
         }
-        use { 'nvim-tree/nvim-web-devicons' }
+        use {
+            'nvim-tree/nvim-web-devicons',
+            config = function()
+                require('nvim-web-devicons').setup()
+            end
+        }
         use {
             'nvim-tree/nvim-tree.lua',
+            requires = {
+                'nvim-tree/nvim-web-devicons',
+            },
             config = function()
                 local function map(m, k, v)
                     vim.keymap.set(m, k, v, { silent = true })
@@ -113,7 +125,6 @@ return function(packer_instance)
                         enable = true,
                     },
                 })
-                require('nvim-web-devicons').setup()
             end
         }
         use {
