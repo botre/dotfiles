@@ -5,6 +5,25 @@ return function(packer_instance)
         use { 'wbthomason/packer.nvim' }
 
         use { 'adelarsq/vim-matchit' }
+
+        use {
+            'catppuccin/nvim',
+            as = 'catppuccin',
+            config = function()
+                require('catppuccin').setup({
+                    flavour = 'latte',
+                    integrations = {
+                        mason = true,
+                        native_lsp = {
+                            enabled = true
+                        },
+                        nvimtree = true,
+                        telescope = true,
+                    }
+                })
+                vim.cmd.colorscheme('catppuccin-latte')
+            end
+        }
         use {
             'akinsho/bufferline.nvim',
             requires = {
@@ -22,24 +41,6 @@ return function(packer_instance)
                 vim.keymap.set('n', '<tab>]', ':bnext<CR>')
                 vim.keymap.set('n', '<tab>a', ':enew<CR>')
                 vim.keymap.set('n', '<tab>d', ':bdelete<CR>')
-            end
-        }
-        use {
-            'catppuccin/nvim',
-            as = 'catppuccin',
-            config = function()
-                require('catppuccin').setup({
-                    flavour = 'latte',
-                    integrations = {
-                        mason = true,
-                        native_lsp = {
-                            enabled = true
-                        },
-                        nvimtree = true,
-                        telescope = true,
-                    }
-                })
-                vim.cmd.colorscheme('catppuccin-latte')
             end
         }
         use { 'jiangmiao/auto-pairs' }
