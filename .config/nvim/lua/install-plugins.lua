@@ -27,6 +27,7 @@ return function(packer_instance)
         use {
             'akinsho/bufferline.nvim',
             requires = {
+                'catppuccin/nvim',
                 'nvim-tree/nvim-web-devicons',
             },
             config = function()
