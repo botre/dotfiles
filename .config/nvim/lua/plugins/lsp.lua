@@ -78,6 +78,7 @@ return {
 
                 -- Core LSP Functions
                 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+                vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, opts)
                 vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
                 vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
                 vim.keymap.set('n', '<leader>ga', vim.lsp.buf.code_action, opts)
@@ -100,15 +101,12 @@ return {
                     vim.lsp.buf.format({ async = true })
                 end, opts)
 
-                -- Additional mappings
-                vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, opts)
-
-                -- TODO: VCS Navigation
+                -- VCS Navigation
                 vim.keymap.set('n', '<leader>[c', function()
-                    -- TODO: jump to previous VCS change marker
+                    vim.cmd('Gitsigns prev_hunk')
                 end, opts)
                 vim.keymap.set('n', '<leader>]c', function()
-                    -- TODO: jump to next VCS change marker
+                    vim.cmd('Gitsigns next_hunk')
                 end, opts)
 
                 -- TODO: Function Navigation
