@@ -2,6 +2,7 @@ require('source-vimrc')
 require('disable-netrw')
 require('configure-diagnostics')
 require('highlight-selection-on-yank')
-require('install-plugins')(require('install-plugin-manager'))
+require('install-plugin-manager')
+require('install-plugins')
 require('setup-keymaps')
 
