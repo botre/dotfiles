@@ -100,22 +100,6 @@ return {
                 vim.keymap.set('n', '<leader>==', function()
                     vim.lsp.buf.format({ async = true })
                 end, opts)
-
-                -- VCS Navigation
-                vim.keymap.set('n', '<leader>[c', function()
-                    vim.cmd('Gitsigns prev_hunk')
-                end, opts)
-                vim.keymap.set('n', '<leader>]c', function()
-                    vim.cmd('Gitsigns next_hunk')
-                end, opts)
-
-                -- TODO: Function Navigation
-                vim.keymap.set('n', '<leader>[f', function()
-                    -- TODO: jump to previous function
-                end, opts)
-                vim.keymap.set('n', '<leader>]f', function()
-                    -- TODO: jump to next function
-                end, opts)
             end)
 
             lsp.setup()

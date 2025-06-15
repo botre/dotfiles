@@ -37,4 +37,20 @@ return {
             })
         end,
     },
+    {
+        "nvim-treesitter/nvim-treesitter-textobjects",
+        dependencies = {
+            "nvim-treesitter/nvim-treesitter"
+        },
+        config = function()
+            mover = require('nvim-treesitter.textobjects.move')
+            -- Function Navigation
+            vim.keymap.set('n', '<leader>[f', function()
+                mover.goto_previous_start('@function.outer')
+            end, opts)
+            vim.keymap.set('n', '<leader>]f', function()
+                mover.goto_next_start('@function.outer')
+            end, opts)
+        end
+    }
 }
