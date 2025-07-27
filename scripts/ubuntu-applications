@@ -43,7 +43,6 @@ flatpak_applications=(
     "com.slack.Slack"
     "com.spotify.Client"
     "com.transmissionbt.Transmission"
-    "dev.zed.Zed"
     "md.obsidian.Obsidian"
     "org.videolan.VLC"
 )
