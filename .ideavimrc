@@ -56,6 +56,8 @@ map <leader>fu <Action>(FindUsages)
 map gd <Action>(GotoDeclaration)
 map <leader>gd <Action>(GotoDeclaration)
 
+map <leader>gi <Action>(GotoImplementation)
+
 map <leader>gg <Action>(CheckinProject)
 
 map <leader>rf <Action>(RenameFile)

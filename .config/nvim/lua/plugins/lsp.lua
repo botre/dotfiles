@@ -77,11 +77,12 @@ return {
                 local opts = { buffer = bufnr, remap = false }
 
                 -- Core LSP Functions
-                vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-                vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, opts)
-                vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-                vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
                 vim.keymap.set('n', '<leader>ga', vim.lsp.buf.code_action, opts)
+                vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, opts)
+                vim.keymap.set('n', '<leader>gi', vim.lsp.buf.implementation, opts)
+                vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
+                vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+                vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
 
                 -- Diagnostics
                 vim.keymap.set('n', '<leader>e', function()
