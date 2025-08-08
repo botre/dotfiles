@@ -63,6 +63,8 @@ map <leader>gg <Action>(CheckinProject)
 map <leader>rf <Action>(RenameFile)
 map <leader>rn <Action>(RenameElement)
 
+map <leader>cp <Action>(CopyPathFromRepositoryRootProvider)
+
 map <silent>K <Action>(QuickJavaDoc)
 map <leader>e <Action>(ShowErrorDescription)
 
