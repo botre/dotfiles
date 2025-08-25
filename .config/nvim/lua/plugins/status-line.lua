@@ -5,8 +5,10 @@ return {
         config = function()
             require('lualine').setup({
                 options = {
-                    theme = 'catppuccin',
-                    disabled_filetypes = { 'NvimTree' },
+                    theme = 'auto',
+                    disabled_filetypes = {
+                        'NvimTree',
+                    },
                 },
             })
         end,
