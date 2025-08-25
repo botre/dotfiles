@@ -3,5 +3,5 @@ require('lazy').setup({
         { import = 'plugins' },
     },
     install = { colorscheme = { 'catppuccin' } },
-    checker = { enabled = true },
+    checker = { enabled = true, notify = false },
 })
