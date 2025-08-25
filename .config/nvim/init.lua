@@ -5,4 +5,3 @@ require('highlight-selection-on-yank')
 require('install-plugin-manager')
 require('install-plugins')
 require('setup-keymaps')
-
