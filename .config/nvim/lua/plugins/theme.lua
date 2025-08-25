@@ -7,10 +7,9 @@ return {
             require('catppuccin').setup({
                 flavour = 'latte',
                 integrations = {
+                    bufferline = true,
                     mason = true,
-                    native_lsp = {
-                        enabled = true,
-                    },
+                    native_lsp = { enabled = true },
                     nvimtree = true,
                     telescope = true,
                 },
