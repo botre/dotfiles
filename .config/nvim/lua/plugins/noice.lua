@@ -13,6 +13,12 @@ return {
                 long_message_to_split = true,
                 lsp_doc_border = false,
             },
+            routes = {
+                {
+                    view = "notify",
+                    filter = { event = "msg_showmode" },
+                },
+            },
         })
     end,
 }
