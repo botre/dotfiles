@@ -38,6 +38,7 @@ apt_applications=(
 )
 
 flatpak_applications=(
+    "ar.com.tuxguitar.TuxGuitar"
     "com.bitwig.BitwigStudio"
     "com.google.Chrome"
     "com.slack.Slack"
@@ -53,7 +54,6 @@ snap_applications=(
     "yazi"
     "google-cloud-cli"
     "ticktick"
-    "tuxguitar-vs"
 )
 
 declare -A app_image_applications
