@@ -38,7 +38,7 @@ apt_applications=(
 )
 
 flatpak_applications=(
-    "ar.com.tuxguitar.TuxGuitar"
+    ""
     "com.bitwig.BitwigStudio"
     "com.google.Chrome"
     "com.slack.Slack"
