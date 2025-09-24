@@ -53,6 +53,7 @@ snap_applications=(
     "yazi"
     "google-cloud-cli"
     "ticktick"
+    "tuxguitar-vs"
 )
 
 declare -A app_image_applications
