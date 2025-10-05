@@ -38,9 +38,9 @@ return {
         end,
     },
     {
-        "nvim-treesitter/nvim-treesitter-textobjects",
+        'nvim-treesitter/nvim-treesitter-textobjects',
         dependencies = {
-            "nvim-treesitter/nvim-treesitter"
+            'nvim-treesitter/nvim-treesitter'
         },
         config = function()
             mover = require('nvim-treesitter.textobjects.move')

@@ -143,6 +143,9 @@ return {
     -- GitHub Copilot
     {
         'zbirenbaum/copilot.lua',
+        dependencies = {
+            'copilotlsp-nvim/copilot-lsp'
+        },
         cmd = 'Copilot',
         config = function()
             require('copilot').setup({
