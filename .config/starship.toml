@@ -6,8 +6,14 @@ palette = "catppuccin_latte"
 
 # Modules
 
+[directory]
+style = "bold lavender"
+
 [gcloud]
 disabled = true
+
+[git_branch]
+style = "bold mauve"
 
 # Palettes
 
