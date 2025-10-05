@@ -13,7 +13,7 @@ style = "bold lavender"
 disabled = true
 
 [git_branch]
-style = "bold mauve"
+style = "bold pink"
 
 # Palettes
 
