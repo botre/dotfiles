@@ -8,7 +8,6 @@ return {
         end
     },
     { 'adelarsq/vim-matchit' },
-    { 'jiangmiao/auto-pairs' },
     {
         'kana/vim-textobj-entire',
         dependencies = {
@@ -19,4 +18,9 @@ return {
     { 'tpope/vim-eunuch' },
     { 'tpope/vim-surround' },
     { 'unblevable/quick-scope' },
+    {
+        'windwp/nvim-autopairs',
+        event = 'InsertEnter',
+        config = true,
+    }
 }
