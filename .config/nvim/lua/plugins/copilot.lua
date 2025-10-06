@@ -4,8 +4,8 @@ return {
         cmd = 'Copilot',
         config = function()
             require('copilot').setup({
-                suggestion = { enabled = false },
                 panel = { enabled = false },
+                suggestion = { enabled = false },
             })
         end,
     },
