@@ -48,6 +48,20 @@ return {
             lsp.on_attach(function(_, bufnr)
                 local opts = { buffer = bufnr, remap = false }
 
+                -- Enable automatic hover documentation after 1000ms
+                vim.api.nvim_create_autocmd('CursorHold', {
+                    buffer = bufnr,
+                    callback = function()
+                        local hover_opts = {
+                            focusable = false,
+                            close_events = { 'BufLeave', 'CursorMoved', 'InsertEnter', 'FocusLost' },
+                            border = 'rounded',
+                            source = 'always',
+                        }
+                        vim.lsp.buf.hover(hover_opts)
+                    end,
+                })
+
                 -- Core LSP Functions
                 vim.keymap.set('n', '<leader>ga', vim.lsp.buf.code_action, opts)
                 vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, opts)
