@@ -32,8 +32,26 @@ return {
             sources = {
                 default = { 'lsp', 'path', 'snippets', 'buffer' },
             },
-            fuzzy = { implementation = "prefer_rust_with_warning" }
+            fuzzy = { implementation = 'prefer_rust_with_warning' }
         },
-        opts_extend = { "sources.default" }
+        opts_extend = { 'sources.default' },
+        config = function(_, opts)
+            require('blink.cmp').setup(opts)
+
+            -- Hide copilot suggestions when blink.cmp menu is open
+            vim.api.nvim_create_autocmd('User', {
+                pattern = 'BlinkCmpMenuOpen',
+                callback = function()
+                    vim.b.copilot_suggestion_hidden = true
+                end,
+            })
+
+            vim.api.nvim_create_autocmd('User', {
+                pattern = 'BlinkCmpMenuClose',
+                callback = function()
+                    vim.b.copilot_suggestion_hidden = false
+                end,
+            })
+        end,
     },
 }
