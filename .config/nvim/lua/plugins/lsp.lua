@@ -7,13 +7,6 @@ return {
             'neovim/nvim-lspconfig',
             'williamboman/mason.nvim',
             'williamboman/mason-lspconfig.nvim',
-
-            -- Autocompletion
-            'hrsh7th/nvim-cmp',
-            'hrsh7th/cmp-nvim-lsp',
-            'hrsh7th/cmp-buffer',
-            'hrsh7th/cmp-path',
-            'hrsh7th/cmp-nvim-lua',
         },
         config = function()
             local lsp = require('lsp-zero')
@@ -42,60 +35,18 @@ return {
                     'yamlls',
                 },
                 handlers = {
-                    lsp.default_setup,
+                    function(server_name)
+                        local capabilities = require('blink.cmp').get_lsp_capabilities()
+                        require('lspconfig')[server_name].setup({
+                            capabilities = capabilities,
+                        })
+                    end,
                 },
             })
-
-            -- Completion Setup
-            local cmp = require('cmp')
-            local cmp_select = { behavior = cmp.SelectBehavior.Select }
-
-            cmp.setup({
-                sources = {
-                    { name = 'nvim_lsp', group_index = 100 },
-                    { name = 'copilot',  group_index = 50 },
-                    { name = 'path',     group_index = 25 },
-                    { name = 'buffer',   group_index = 25 },
-                    { name = 'nvim_lua', group_index = 25 },
-                },
-                mapping = cmp.mapping.preset.insert({
-                    -- Navigation mappings
-                    ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
-                    ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
-                    ['<C-k>'] = cmp.mapping.select_prev_item(cmp_select),
-                    ['<C-j>'] = cmp.mapping.select_next_item(cmp_select),
-                    ['<C-[>'] = cmp.mapping.select_prev_item(cmp_select),
-                    ['<C-]>'] = cmp.mapping.select_next_item(cmp_select),
-
-                    -- Confirm selection
-                    ['<CR>'] = cmp.mapping.confirm({ select = true }),
-                }),
-            })
-
-            -- Autopairs integration
-            local cmp_autopairs = require('nvim-autopairs.completion.cmp')
-            cmp.event:on(
-                'confirm_done',
-                cmp_autopairs.on_confirm_done()
-            )
 
             -- LSP Keymaps
             lsp.on_attach(function(_, bufnr)
                 local opts = { buffer = bufnr, remap = false }
-
-                -- Enable automatic hover documentation after 1000ms
-                vim.api.nvim_create_autocmd('CursorHold', {
-                    buffer = bufnr,
-                    callback = function()
-                        local hover_opts = {
-                            focusable = false,
-                            close_events = { 'BufLeave', 'CursorMoved', 'InsertEnter', 'FocusLost' },
-                            border = 'rounded',
-                            source = 'always',
-                        }
-                        vim.lsp.buf.hover(hover_opts)
-                    end,
-                })
 
                 -- Core LSP Functions
                 vim.keymap.set('n', '<leader>ga', vim.lsp.buf.code_action, opts)
