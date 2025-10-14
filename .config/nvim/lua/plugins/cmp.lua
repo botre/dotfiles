@@ -13,7 +13,7 @@ return {
             },
             completion = {
                 list = {
-                    selection = 'manual'
+                    selection = { auto_insert = false }
                 },
                 documentation = { auto_show = true }
             },
