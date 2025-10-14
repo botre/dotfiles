@@ -12,6 +12,9 @@ return {
                 nerd_font_variant = 'mono'
             },
             completion = {
+                list = {
+                    selection = 'manual'
+                },
                 documentation = { auto_show = true }
             },
             sources = {
