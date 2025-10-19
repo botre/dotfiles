@@ -2,14 +2,17 @@ return {
     {
         name = 'file-history',
         dir = vim.fn.stdpath('config'),
-        dependencies = { 'nvim-telescope/telescope.nvim' },
         config = function()
             local M = {}
 
             -- Configuration
             M.config = {
-                history_dir = '.local-history',
+                history_dir = vim.fn.expand('~/.nvim_local_ ==history'),
                 max_changes = 100,
+                keybinds = {
+                    pick = '<CR>',
+                    close = 'q',
+                },
             }
 
             -- Setup function to allow configuration
@@ -19,16 +22,16 @@ return {
 
             -- Get the history directory for a file
             local function get_history_dir(filepath)
-                -- Get the project root (or use current working directory)
-                local project_root = vim.fn.getcwd()
-                local history_base = vim.fn.expand(project_root .. '/' .. M.config.history_dir)
+                -- Get the absolute path and extract directory
+                local abs_path = vim.fn.fnamemodify(filepath, ':p')
+                local file_dir = vim.fn.fnamemodify(abs_path, ':h')
 
-                -- Get the relative path of the file
-                local relative_path = vim.fn.fnamemodify(filepath, ':.')
-                local file_dir = vim.fn.fnamemodify(relative_path, ':h')
+                -- Remove leading slash to create relative path structure
+                -- e.g., /home/user/file.txt -> home/user
+                local path_without_slash = file_dir:gsub('^/', '')
 
-                -- Create the history directory path
-                local history_dir = history_base .. '/' .. file_dir
+                -- Create centralized history directory based on full file path
+                local history_dir = M.config.history_dir .. '/' .. path_without_slash
                 return history_dir
             end
 
@@ -90,10 +93,12 @@ return {
                 local filepath = vim.fn.expand('%:p')
 
                 -- Don't save history for certain file types or paths
+                -- Escape special pattern characters in history_dir for matching
+                local history_dir_pattern = M.config.history_dir:gsub('([^%w])', '%%%1')
                 if filepath == '' or
                     vim.bo.buftype ~= '' or
                     vim.fn.filereadable(filepath) == 0 or
-                    filepath:match(M.config.history_dir) then
+                    filepath:match(history_dir_pattern) then
                     return
                 end
 
@@ -150,11 +155,15 @@ return {
                 local diff = now - time
 
                 -- Show relative time for recent changes
-                if diff < 60 then
+                if diff < 10 then
                     return 'Just now'
+                elseif diff < 60 then
+                    local secs = math.floor(diff)
+                    return secs .. ' second' .. (secs > 1 and 's' or '') .. ' ago'
                 elseif diff < 3600 then
                     local mins = math.floor(diff / 60)
-                    return mins .. ' minute' .. (mins > 1 and 's' or '') .. ' ago'
+                    local secs = math.floor(diff % 60)
+                    return mins .. ' min ' .. secs .. ' sec ago'
                 elseif diff < 86400 then
                     local hours = math.floor(diff / 3600)
                     return hours .. ' hour' .. (hours > 1 and 's' or '') .. ' ago'
@@ -167,7 +176,7 @@ return {
                 end
             end
 
-            -- Browse file history with Telescope
+            -- Browse file history in a side panel
             function M.browse_history()
                 local filepath = vim.fn.expand('%:p')
                 local filename = vim.fn.fnamemodify(filepath, ':t')
@@ -184,70 +193,157 @@ return {
                     return
                 end
 
-                -- Use Telescope to browse history files
-                local pickers = require('telescope.pickers')
-                local finders = require('telescope.finders')
-                local conf = require('telescope.config').values
-                local actions = require('telescope.actions')
-                local action_state = require('telescope.actions.state')
-                local previewers = require('telescope.previewers')
+                -- Store the original window
+                local orig_win = vim.api.nvim_get_current_win()
 
-                pickers.new({}, {
-                    prompt_title = 'File History: ' .. filename,
-                    finder = finders.new_table({
-                        results = history_files,
-                        entry_maker = function(entry)
-                            -- Extract timestamp from filename
-                            local timestamp = entry:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
-                            local display = timestamp and format_time_display(timestamp) or entry
+                -- Create a new buffer for the history list
+                local buf = vim.api.nvim_create_buf(false, true)
+                vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+                vim.api.nvim_buf_set_option(buf, 'filetype', 'filehistory')
 
-                            return {
-                                value = entry,
-                                display = display,
-                                ordinal = entry,
-                                path = entry,
-                            }
-                        end,
-                    }),
-                    sorter = conf.generic_sorter({}),
-                    previewer = previewers.new_buffer_previewer({
-                        define_preview = function(self, entry)
-                            local lines = vim.fn.readfile(entry.path)
-                            vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+                -- Build the display lines with dynamic keybindings
+                local kb = M.config.keybinds
+                local lines = {
+                    'File History: ' .. filename,
+                    '',
+                    'Keybindings:',
+                    string.format('  %-6s - Pick this version', kb.pick),
+                    string.format('  %-6s - Close panels', kb.close),
+                    '',
+                    '───────────────────────────────────────',
+                    ''
+                }
+                for i, file in ipairs(history_files) do
+                    local timestamp = file:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
+                    local display = timestamp and format_time_display(timestamp) or file
+                    table.insert(lines, string.format('%d. %s', i, display))
+                end
 
-                            -- Set filetype for syntax highlighting
-                            local ft = vim.filetype.match({ filename = filepath })
-                            if ft then
-                                vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
-                            end
-                        end,
-                    }),
-                    attach_mappings = function(prompt_bufnr, map)
-                        actions.select_default:replace(function()
-                            actions.close(prompt_bufnr)
-                            local selection = action_state.get_selected_entry()
-                            M.diff_with_history(filepath, selection.path)
-                        end)
+                vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+                vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
-                        -- Add a mapping to restore the historical version
-                        map('n', '<C-r>', function()
-                            actions.close(prompt_bufnr)
-                            local selection = action_state.get_selected_entry()
-                            M.restore_from_history(filepath, selection.path)
-                        end)
+                -- Open in a vertical split on the left
+                vim.cmd('vertical topleft split')
+                local selector_win = vim.api.nvim_get_current_win()
+                vim.api.nvim_win_set_buf(selector_win, buf)
+                vim.api.nvim_win_set_width(selector_win, 40)
 
-                        return true
-                    end,
-                }):find()
+                -- Create diff preview buffer
+                local diff_buf = vim.api.nvim_create_buf(false, true)
+                vim.api.nvim_buf_set_option(diff_buf, 'bufhidden', 'wipe')
+                vim.api.nvim_buf_set_option(diff_buf, 'filetype', 'diff')
+
+                -- Open diff buffer in a split next to selector
+                vim.cmd('wincmd l')
+                vim.cmd('vertical topleft split')
+                local diff_win = vim.api.nvim_get_current_win()
+                vim.api.nvim_win_set_buf(diff_win, diff_buf)
+
+                -- Go back to selector window
+                vim.api.nvim_set_current_win(selector_win)
+
+                -- Set up keybindings for the history buffer
+                local function get_selected_index()
+                    local line = vim.api.nvim_win_get_cursor(selector_win)[1]
+                    -- Skip header lines (8 lines: title, empty, keybindings x3, empty, separator, empty)
+                    if line <= 8 then return nil end
+                    local idx = line - 8
+                    return idx <= #history_files and idx or nil
+                end
+
+                -- Function to show diff in preview panel
+                local function show_diff()
+                    local idx = get_selected_index()
+                    if not idx then return end
+
+                    local current_history = history_files[idx]
+                    local previous_history = history_files[idx + 1]
+
+                    -- Generate diff
+                    local diff_output
+                    if not previous_history then
+                        -- Compare with current file
+                        local cmd = string.format('diff -u %s %s',
+                            vim.fn.shellescape(current_history),
+                            vim.fn.shellescape(filepath))
+                        diff_output = vim.fn.systemlist(cmd)
+                    else
+                        -- Compare with previous history entry
+                        local cmd = string.format('diff -u %s %s',
+                            vim.fn.shellescape(previous_history),
+                            vim.fn.shellescape(current_history))
+                        diff_output = vim.fn.systemlist(cmd)
+                    end
+
+                    -- Update diff buffer
+                    vim.api.nvim_buf_set_option(diff_buf, 'modifiable', true)
+                    vim.api.nvim_buf_set_lines(diff_buf, 0, -1, false, diff_output)
+                    vim.api.nvim_buf_set_option(diff_buf, 'modifiable', false)
+                end
+
+                -- Automatically update diff on cursor move
+                vim.api.nvim_create_autocmd('CursorMoved', {
+                    buffer = buf,
+                    callback = show_diff,
+                })
+
+                -- Pick (restore) from history
+                vim.keymap.set('n', kb.pick, function()
+                    local idx = get_selected_index()
+                    if idx then
+                        local lines = vim.fn.readfile(history_files[idx])
+                        vim.api.nvim_set_current_win(orig_win)
+                        local current_buf = vim.api.nvim_win_get_buf(orig_win)
+                        vim.api.nvim_buf_set_lines(current_buf, 0, -1, false, lines)
+                        vim.notify('Content replaced with selected version', vim.log.levels.INFO)
+                    end
+                end, { buffer = buf, nowait = true })
+
+                -- Close the panels
+                vim.keymap.set('n', kb.close, function()
+                    if vim.api.nvim_win_is_valid(diff_win) then
+                        vim.api.nvim_win_close(diff_win, true)
+                    end
+                    vim.cmd('close')
+                end, { buffer = buf, nowait = true })
+
+                -- Show initial diff
+                vim.schedule(show_diff)
             end
 
-            -- Compare current file with a history version
-            function M.diff_with_history(current_file, history_file)
-                -- Open the history file in a vertical split with diff mode
-                vim.cmd('vsplit ' .. vim.fn.fnameescape(history_file))
-                vim.cmd('diffthis')
-                vim.cmd('wincmd p')
-                vim.cmd('diffthis')
+            -- Compare a history entry with the previous (older) entry
+            function M.diff_with_previous(history_files, current_history, filepath)
+                -- Find the index of the current history file
+                local current_idx = nil
+                for i, file in ipairs(history_files) do
+                    if file == current_history then
+                        current_idx = i
+                        break
+                    end
+                end
+
+                if not current_idx then
+                    vim.notify('Could not find history entry', vim.log.levels.ERROR)
+                    return
+                end
+
+                -- Get the previous (older) history file
+                local previous_history = history_files[current_idx + 1]
+
+                if not previous_history then
+                    -- This is the oldest entry, compare with current file
+                    vim.cmd('edit ' .. vim.fn.fnameescape(filepath))
+                    vim.cmd('diffthis')
+                    vim.cmd('vsplit ' .. vim.fn.fnameescape(current_history))
+                    vim.cmd('diffthis')
+                    vim.notify('Comparing with current file (no older history)', vim.log.levels.INFO)
+                else
+                    -- Compare with previous history entry
+                    vim.cmd('edit ' .. vim.fn.fnameescape(previous_history))
+                    vim.cmd('diffthis')
+                    vim.cmd('vsplit ' .. vim.fn.fnameescape(current_history))
+                    vim.cmd('diffthis')
+                end
             end
 
             -- Restore a file from history
