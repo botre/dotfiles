@@ -301,6 +301,10 @@ return {
                 local function_hl = vim.api.nvim_get_hl(0, { name = 'Function' })
                 vim.api.nvim_set_hl(0, 'CursorLine', { fg = function_hl.fg, bold = true })
 
+                -- Hide the cursor by making it match the cursorline (no blinking cursor)
+                vim.api.nvim_set_hl(0, 'Cursor', { fg = function_hl.fg, bg = function_hl.fg, blend = 100 })
+                vim.opt_local.guicursor = 'a:hor1-Cursor/lCursor'
+
                 -- Set cursor to "Current" line (line 7: filename, empty, separator, keybinds, separator, empty, Current)
                 vim.api.nvim_win_set_cursor(selector_win, { 7, 0 })
 
