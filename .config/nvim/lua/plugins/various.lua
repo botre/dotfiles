@@ -1,4 +1,19 @@
 return {
+
+    { 'adelarsq/vim-matchit' },
+    {
+        'jiaoshijie/undotree',
+        opts = {},
+        keys = {
+            { '<leader>fh', "<cmd>lua require('undotree').toggle()<cr>", desc = "Toggle file history" },
+        },
+    },
+    {
+        'kana/vim-textobj-entire',
+        dependencies = {
+            'kana/vim-textobj-user'
+        }
+    },
     {
         'letieu/btw.nvim',
         config = function()
@@ -6,13 +21,6 @@ return {
                 text = 'Neovim BTW',
             })
         end
-    },
-    { 'adelarsq/vim-matchit' },
-    {
-        'kana/vim-textobj-entire',
-        dependencies = {
-            'kana/vim-textobj-user'
-        }
     },
     { 'tpope/vim-commentary' },
     { 'tpope/vim-eunuch' },
@@ -22,5 +30,6 @@ return {
         'windwp/nvim-autopairs',
         event = 'InsertEnter',
         config = true,
-    }
+    },
+
 }
