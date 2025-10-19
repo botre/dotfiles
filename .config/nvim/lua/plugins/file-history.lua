@@ -17,7 +17,8 @@ return {
                     pick = '<CR>',
                     close = 'q',
                     close_alt = '<Esc>',
-                    toggle_mode = 'm',
+                    next_mode = 'm',
+                    prev_mode = 'M',
                     next = 'j',
                     prev = 'k',
                     first = 'gg',
@@ -216,26 +217,82 @@ return {
                 local icon, icon_hl = devicons.get_icon(filename, vim.fn.fnamemodify(filename, ':e'), { default = true })
                 local file_icon = icon or ''
 
-                -- Create a new buffer for the history list
+                -- Calculate popup dimensions
+                local ui = vim.api.nvim_list_uis()[1]
+                local width = math.floor(ui.width * M.config.ui.width_percent)
+                local height = math.floor(ui.height * M.config.ui.height_percent)
+                local list_width = M.config.ui.list_width
+                local diff_width = width - list_width - 3 -- 3 for borders
+
+                -- Header takes 4 lines (filename, empty, separator, keybinds)
+                local header_height = 4
+                local selector_height = height - header_height
+
+                local base_row = math.floor((ui.height - height) / 2)
+                local base_col = math.floor((ui.width - width) / 2)
+
+                -- Create header buffer
+                local header_buf = vim.api.nvim_create_buf(false, true)
+                vim.bo[header_buf].bufhidden = 'wipe'
+                vim.bo[header_buf].filetype = 'filehistory'
+
+                -- Build header lines
+                local header_lines = {
+                    file_icon .. ' ' .. filename,
+                    '',
+                    '───────────────────────────────────',
+                    M.config.keybinds.next_mode .. '/' .. M.config.keybinds.prev_mode .. ': mode | ' ..
+                    M.config.keybinds.pick .. ': restore | ' ..
+                    M.config.keybinds.close .. ': close'
+                }
+
+                vim.api.nvim_buf_set_lines(header_buf, 0, -1, false, header_lines)
+                vim.bo[header_buf].modifiable = false
+
+                -- Add highlighting to keybindings
+                local ns_id = vim.api.nvim_create_namespace('file_history_keybinds')
+                local keybinds_text = header_lines[4]
+
+                -- Highlight the keybind letters
+                local function highlight_key(key, start_pos)
+                    local key_start = keybinds_text:find(vim.pesc(key), start_pos, true)
+                    if key_start then
+                        vim.api.nvim_buf_add_highlight(header_buf, ns_id, 'Function', 3, key_start - 1,
+                            key_start - 1 + #key)
+                        return key_start + #key
+                    end
+                    return start_pos
+                end
+
+                local pos = 1
+                pos = highlight_key(M.config.keybinds.next_mode, pos)
+                pos = highlight_key(M.config.keybinds.prev_mode, pos)
+                pos = highlight_key(M.config.keybinds.pick, pos)
+                highlight_key(M.config.keybinds.close, pos)
+
+                -- Apply color to the file icon
+                if icon_hl then
+                    vim.api.nvim_buf_add_highlight(header_buf, ns_id, icon_hl, 0, 0, #file_icon)
+                end
+
+                -- Create floating window for header (no border)
+                local header_win = vim.api.nvim_open_win(header_buf, false, {
+                    relative = 'editor',
+                    width = list_width,
+                    height = header_height,
+                    row = base_row,
+                    col = base_col,
+                    style = 'minimal',
+                    border = 'none',
+                })
+
+                -- Create selector buffer for history list
                 local buf = vim.api.nvim_create_buf(false, true)
                 vim.bo[buf].bufhidden = 'wipe'
                 vim.bo[buf].filetype = 'filehistory'
 
-                -- Build the display lines
-                local lines = {
-                    file_icon .. ' ' .. filename,
-                    '',
-                    '───────────────────────────────────',
-                }
-                local keybinds_line = #lines + 1
-                table.insert(lines, M.config.keybinds.toggle_mode .. ': mode | ' ..
-                    M.config.keybinds.pick .. ': restore | ' ..
-                    M.config.keybinds.close .. ': close')
-                table.insert(lines, '───────────────────────────────────')
-                table.insert(lines, '')
-
-                -- Add virtual "Current" entry
-                table.insert(lines, 'Current')
+                -- Build the selector lines (just history items)
+                local lines = { 'Current' }
                 for _, file in ipairs(history_files) do
                     local timestamp = file:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
                     local display = timestamp and format_time_display(timestamp) or file
@@ -245,45 +302,13 @@ return {
                 vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
                 vim.bo[buf].modifiable = false
 
-                -- Add highlighting to keybindings
-                local ns_id = vim.api.nvim_create_namespace('file_history_keybinds')
-                local keybinds_text = lines[keybinds_line]
-
-                -- Highlight the keybind letters
-                local function highlight_key(key, start_pos)
-                    local key_start = keybinds_text:find(vim.pesc(key), start_pos, true)
-                    if key_start then
-                        vim.api.nvim_buf_add_highlight(buf, ns_id, 'Function', keybinds_line - 1, key_start - 1,
-                            key_start - 1 + #key)
-                        return key_start + #key
-                    end
-                    return start_pos
-                end
-
-                local pos = 1
-                pos = highlight_key(M.config.keybinds.toggle_mode, pos)
-                pos = highlight_key(M.config.keybinds.pick, pos)
-                highlight_key(M.config.keybinds.close, pos)
-
-                -- Apply color to the file icon
-                if icon_hl then
-                    vim.api.nvim_buf_add_highlight(buf, ns_id, icon_hl, 0, 0, #file_icon)
-                end
-
-                -- Calculate popup dimensions
-                local ui = vim.api.nvim_list_uis()[1]
-                local width = math.floor(ui.width * M.config.ui.width_percent)
-                local height = math.floor(ui.height * M.config.ui.height_percent)
-                local list_width = M.config.ui.list_width
-                local diff_width = width - list_width - 3 -- 3 for borders
-
                 -- Create floating window for history list
                 local selector_win = vim.api.nvim_open_win(buf, true, {
                     relative = 'editor',
                     width = list_width,
-                    height = height,
-                    row = math.floor((ui.height - height) / 2),
-                    col = math.floor((ui.width - width) / 2),
+                    height = selector_height,
+                    row = base_row + header_height,
+                    col = base_col,
                     style = 'minimal',
                     border = 'rounded',
                     title = ' 󰋚 History ',
@@ -317,8 +342,8 @@ return {
                 local function_hl = vim.api.nvim_get_hl(0, { name = 'Function' })
                 vim.api.nvim_set_hl(0, 'CursorLine', { fg = function_hl.fg, bold = true })
 
-                -- Set cursor to "Current" line (line 7: filename, empty, separator, keybinds, separator, empty, Current)
-                vim.api.nvim_win_set_cursor(selector_win, { 7, 0 })
+                -- Set cursor to "Current" line (line 1)
+                vim.api.nvim_win_set_cursor(selector_win, { 1, 0 })
 
                 -- Track current mode (view, diff_preceding, or diff_current)
                 local current_mode = 'diff_preceding'
@@ -326,10 +351,8 @@ return {
                 -- Set up keybindings for the history buffer
                 local function get_selected_index()
                     local line = vim.api.nvim_win_get_cursor(selector_win)[1]
-                    -- Skip header lines (6 lines: title, empty, separator, keybinds, separator, empty)
-                    if line <= 6 then return nil end
-                    -- Line 7 is "Current" (index 0), line 8+ are history files (index 1+)
-                    local idx = line - 7
+                    -- Line 1 is "Current" (index 0), line 2+ are history files (index 1+)
+                    local idx = line - 1
                     -- idx 0 = Current, idx 1+ = history_files[idx]
                     return idx <= #history_files and idx or nil
                 end
@@ -551,13 +574,25 @@ return {
                     update_preview_title()
                 end
 
-                -- Function to cycle through the 3 modes
-                local function toggle_mode()
+                -- Function to go to next mode
+                local function next_mode()
                     if current_mode == 'view' then
                         current_mode = 'diff_preceding'
                     elseif current_mode == 'diff_preceding' then
                         current_mode = 'diff_current'
                     else -- diff_current
+                        current_mode = 'view'
+                    end
+                    update_preview()
+                end
+
+                -- Function to go to previous mode
+                local function prev_mode()
+                    if current_mode == 'view' then
+                        current_mode = 'diff_current'
+                    elseif current_mode == 'diff_current' then
+                        current_mode = 'diff_preceding'
+                    else -- diff_preceding
                         current_mode = 'view'
                     end
                     update_preview()
@@ -578,6 +613,9 @@ return {
                     group = augroup,
                     buffer = buf,
                     callback = function()
+                        if vim.api.nvim_win_is_valid(header_win) then
+                            pcall(vim.api.nvim_win_close, header_win, true)
+                        end
                         if vim.api.nvim_win_is_valid(diff_win) then
                             pcall(vim.api.nvim_win_close, diff_win, true)
                         end
@@ -600,6 +638,9 @@ return {
                         vim.api.nvim_buf_set_lines(current_buf, 0, -1, false, file_content)
                         vim.notify('Content replaced with selected version', vim.log.levels.INFO)
                         -- Close the panels
+                        if vim.api.nvim_win_is_valid(header_win) then
+                            vim.api.nvim_win_close(header_win, true)
+                        end
                         if vim.api.nvim_win_is_valid(diff_win) then
                             vim.api.nvim_win_close(diff_win, true)
                         end
@@ -611,6 +652,9 @@ return {
 
                 -- Close the popup panels
                 vim.keymap.set('n', M.config.keybinds.close, function()
+                    if vim.api.nvim_win_is_valid(header_win) then
+                        pcall(vim.api.nvim_win_close, header_win, true)
+                    end
                     if vim.api.nvim_win_is_valid(diff_win) then
                         pcall(vim.api.nvim_win_close, diff_win, true)
                     end
@@ -621,6 +665,9 @@ return {
 
                 -- Also close on alternate close key
                 vim.keymap.set('n', M.config.keybinds.close_alt, function()
+                    if vim.api.nvim_win_is_valid(header_win) then
+                        pcall(vim.api.nvim_win_close, header_win, true)
+                    end
                     if vim.api.nvim_win_is_valid(diff_win) then
                         pcall(vim.api.nvim_win_close, diff_win, true)
                     end
@@ -629,16 +676,21 @@ return {
                     end
                 end, { buffer = buf, nowait = true })
 
-                -- Toggle between view and diff mode
-                vim.keymap.set('n', M.config.keybinds.toggle_mode, function()
-                    toggle_mode()
-                end, { buffer = buf, nowait = true, desc = 'Toggle view/diff mode' })
+                -- Switch to next mode
+                vim.keymap.set('n', M.config.keybinds.next_mode, function()
+                    next_mode()
+                end, { buffer = buf, nowait = true, desc = 'Next mode' })
+
+                -- Switch to previous mode
+                vim.keymap.set('n', M.config.keybinds.prev_mode, function()
+                    prev_mode()
+                end, { buffer = buf, nowait = true, desc = 'Previous mode' })
 
                 -- Cycle through history items
                 vim.keymap.set('n', M.config.keybinds.next, function()
                     local current_line = vim.api.nvim_win_get_cursor(selector_win)[1]
-                    local first_line = 7                 -- "Current" entry
-                    local last_line = 7 + #history_files -- Last history entry
+                    local first_line = 1                 -- "Current" entry
+                    local last_line = 1 + #history_files -- Last history entry
 
                     if current_line >= last_line then
                         -- Wrap to first line
@@ -651,8 +703,8 @@ return {
 
                 vim.keymap.set('n', M.config.keybinds.prev, function()
                     local current_line = vim.api.nvim_win_get_cursor(selector_win)[1]
-                    local first_line = 7                 -- "Current" entry
-                    local last_line = 7 + #history_files -- Last history entry
+                    local first_line = 1                 -- "Current" entry
+                    local last_line = 1 + #history_files -- Last history entry
 
                     if current_line <= first_line then
                         -- Wrap to last line
@@ -665,13 +717,13 @@ return {
 
                 -- Jump to first item
                 vim.keymap.set('n', M.config.keybinds.first, function()
-                    local first_line = 7 -- "Current" entry
+                    local first_line = 1 -- "Current" entry
                     vim.api.nvim_win_set_cursor(selector_win, { first_line, 0 })
                 end, { buffer = buf, nowait = true })
 
                 -- Jump to last item
                 vim.keymap.set('n', M.config.keybinds.last, function()
-                    local last_line = 7 + #history_files -- Last history entry
+                    local last_line = 1 + #history_files -- Last history entry
                     vim.api.nvim_win_set_cursor(selector_win, { last_line, 0 })
                 end, { buffer = buf, nowait = true })
 
