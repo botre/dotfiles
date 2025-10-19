@@ -24,11 +24,11 @@ return {
             wk.add({
                 { '<leader>f',   group = 'Find' },
                 { '<leader>g',   group = 'Go' },
-                { '<leader>r',   group = 'Rename/Refactor' },
+                { '<leader>=',   group = 'Format' },
                 { '<leader>t',   group = 'Tree' },
+                { '<leader>w',   group = 'Window' },
                 { '<leader>[',   group = 'Previous' },
                 { '<leader>]',   group = 'Next' },
-                { '<leader>w',   group = 'Window' },
 
                 -- Descriptions for .vimrc keymaps
                 { '<leader>C',   desc = 'Change to End (Black Hole)' },
@@ -40,9 +40,9 @@ return {
                 { '<leader>s',   desc = 'Substitute (Black Hole)' },
                 { '<leader>x',   desc = 'Delete Char (Black Hole)' },
                 { '<leader>h',   desc = 'Toggle Highlight Search' },
+                { '<leader>n',   desc = 'Toggle Relative Numbers' },
                 { '<leader>w-',  desc = 'Split Horizontal' },
                 { '<leader>w\\', desc = 'Split Vertical' },
-                { '<leader>n',   desc = 'Toggle Relative Numbers' },
             })
         end,
     },
