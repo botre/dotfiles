@@ -16,8 +16,17 @@ return {
                 keybinds = {
                     pick = '<CR>',
                     close = 'q',
+                    close_alt = '<Esc>',
                     toggle_mode = 'm',
+                    next = 'j',
+                    prev = 'k',
                 },
+                ui = {
+                    width_percent = 0.8,
+                    height_percent = 0.8,
+                    list_width = 40,
+                },
+                main_keybind = '<leader>fh',
             }
 
             -- Setup function to allow configuration
@@ -261,9 +270,9 @@ return {
 
                 -- Calculate popup dimensions
                 local ui = vim.api.nvim_list_uis()[1]
-                local width = math.floor(ui.width * 0.8)
-                local height = math.floor(ui.height * 0.8)
-                local list_width = 40
+                local width = math.floor(ui.width * M.config.ui.width_percent)
+                local height = math.floor(ui.height * M.config.ui.height_percent)
+                local list_width = M.config.ui.list_width
                 local diff_width = width - list_width - 3 -- 3 for borders
 
                 -- Create floating window for history list
@@ -619,8 +628,8 @@ return {
                     end
                 end, { buffer = buf, nowait = true })
 
-                -- Also close on <Esc>
-                vim.keymap.set('n', '<Esc>', function()
+                -- Also close on alternate close key
+                vim.keymap.set('n', M.config.keybinds.close_alt, function()
                     if vim.api.nvim_win_is_valid(diff_win) then
                         pcall(vim.api.nvim_win_close, diff_win, true)
                     end
@@ -634,8 +643,8 @@ return {
                     toggle_mode()
                 end, { buffer = buf, nowait = true, desc = 'Toggle view/diff mode' })
 
-                -- Cycle through history items with j/k
-                vim.keymap.set('n', 'j', function()
+                -- Cycle through history items
+                vim.keymap.set('n', M.config.keybinds.next, function()
                     local current_line = vim.api.nvim_win_get_cursor(selector_win)[1]
                     local first_line = 7                 -- "Current" entry
                     local last_line = 7 + #history_files -- Last history entry
@@ -649,7 +658,7 @@ return {
                     end
                 end, { buffer = buf, nowait = true })
 
-                vim.keymap.set('n', 'k', function()
+                vim.keymap.set('n', M.config.keybinds.prev, function()
                     local current_line = vim.api.nvim_win_get_cursor(selector_win)[1]
                     local first_line = 7                 -- "Current" entry
                     local last_line = 7 + #history_files -- Last history entry
@@ -680,7 +689,7 @@ return {
                 })
 
                 -- Setup keybinding
-                vim.keymap.set('n', '<leader>fh', function()
+                vim.keymap.set('n', M.config.main_keybind, function()
                     M.browse_history()
                 end, { desc = 'Browse file history' })
             end
