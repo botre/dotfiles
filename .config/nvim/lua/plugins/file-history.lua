@@ -12,6 +12,7 @@ return {
                 keybinds = {
                     pick = '<CR>',
                     close = 'q',
+                    toggle_mode = 'm',
                 },
             }
 
@@ -176,7 +177,7 @@ return {
                 end
             end
 
-            -- Browse file history in a side panel
+            -- Browse file history in a popup panel
             function M.browse_history()
                 local filepath = vim.fn.expand('%:p')
                 local filename = vim.fn.fnamemodify(filepath, ':t')
@@ -198,8 +199,8 @@ return {
 
                 -- Create a new buffer for the history list
                 local buf = vim.api.nvim_create_buf(false, true)
-                vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
-                vim.api.nvim_buf_set_option(buf, 'filetype', 'filehistory')
+                vim.bo[buf].bufhidden = 'wipe'
+                vim.bo[buf].filetype = 'filehistory'
 
                 -- Build the display lines
                 local lines = {
@@ -214,28 +215,59 @@ return {
                     table.insert(lines, display)
                 end
 
-                vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-                vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+                -- Add footer with keybindings
+                table.insert(lines, '')
+                table.insert(lines, '───────────────────────────────────')
+                table.insert(lines, M.config.keybinds.toggle_mode .. ': mode | ' ..
+                             M.config.keybinds.pick .. ': restore | ' ..
+                             M.config.keybinds.close .. ': close')
 
-                -- Open in a vertical split on the left
-                vim.cmd('vertical topleft split')
-                local selector_win = vim.api.nvim_get_current_win()
-                vim.api.nvim_win_set_buf(selector_win, buf)
-                vim.api.nvim_win_set_width(selector_win, 40)
+                vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+                vim.bo[buf].modifiable = false
+
+                -- Calculate popup dimensions
+                local ui = vim.api.nvim_list_uis()[1]
+                local width = math.floor(ui.width * 0.8)
+                local height = math.floor(ui.height * 0.8)
+                local list_width = 40
+                local diff_width = width - list_width - 3  -- 3 for borders
+
+                -- Create floating window for history list
+                local selector_win = vim.api.nvim_open_win(buf, true, {
+                    relative = 'editor',
+                    width = list_width,
+                    height = height,
+                    row = math.floor((ui.height - height) / 2),
+                    col = math.floor((ui.width - width) / 2),
+                    style = 'minimal',
+                    border = 'rounded',
+                    title = ' History ',
+                    title_pos = 'center',
+                })
 
                 -- Create diff preview buffer
                 local diff_buf = vim.api.nvim_create_buf(false, true)
-                vim.api.nvim_buf_set_option(diff_buf, 'bufhidden', 'wipe')
-                vim.api.nvim_buf_set_option(diff_buf, 'filetype', 'diff')
+                vim.bo[diff_buf].bufhidden = 'wipe'
+                vim.bo[diff_buf].filetype = 'diff'
 
-                -- Open diff buffer in a split next to selector
-                vim.cmd('wincmd l')
-                vim.cmd('vertical topleft split')
-                local diff_win = vim.api.nvim_get_current_win()
-                vim.api.nvim_win_set_buf(diff_win, diff_buf)
+                -- Create floating window for diff preview
+                local diff_win = vim.api.nvim_open_win(diff_buf, false, {
+                    relative = 'editor',
+                    width = diff_width,
+                    height = height,
+                    row = math.floor((ui.height - height) / 2),
+                    col = math.floor((ui.width - width) / 2) + list_width + 1,
+                    style = 'minimal',
+                    border = 'rounded',
+                    title = ' View ',
+                    title_pos = 'center',
+                })
 
-                -- Go back to selector window
+                -- Focus selector window
                 vim.api.nvim_set_current_win(selector_win)
+
+                -- Track current mode (view or diff)
+                local current_mode = 'view'
 
                 -- Set up keybindings for the history buffer
                 local function get_selected_index()
@@ -248,62 +280,184 @@ return {
                     return idx <= #history_files and idx or nil
                 end
 
+                -- Function to update the preview window title
+                local function update_preview_title()
+                    if vim.api.nvim_win_is_valid(diff_win) then
+                        local title = current_mode == 'view' and ' View ' or ' Diff '
+                        vim.api.nvim_win_set_config(diff_win, {
+                            title = title,
+                            title_pos = 'center',
+                        })
+                    end
+                end
+
+                -- Function to show file content in view mode
+                local function show_view()
+                    local idx = get_selected_index()
+                    if not idx then return end
+
+                    -- Check if windows are still valid
+                    if not vim.api.nvim_win_is_valid(selector_win) or not vim.api.nvim_win_is_valid(diff_win) then
+                        return
+                    end
+
+                    local view_content
+                    local success, result = pcall(function()
+                        if idx == 0 then
+                            -- "Current" entry: show current buffer content
+                            if not vim.api.nvim_win_is_valid(orig_win) then
+                                return {'Error: Original window no longer valid'}
+                            end
+
+                            local current_buf = vim.api.nvim_win_get_buf(orig_win)
+                            return vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
+                        else
+                            -- Show history file content
+                            local history_file = history_files[idx]
+                            return vim.fn.readfile(history_file)
+                        end
+                    end)
+
+                    if success then
+                        view_content = result
+                    else
+                        view_content = {'Error loading file: ' .. tostring(result)}
+                    end
+
+                    -- Handle empty content
+                    if not view_content or #view_content == 0 then
+                        view_content = {'(empty file)'}
+                    end
+
+                    -- Update diff buffer with file content
+                    if vim.api.nvim_buf_is_valid(diff_buf) then
+                        vim.bo[diff_buf].modifiable = true
+                        -- Set filetype to match original file for syntax highlighting
+                        local ft = vim.bo[vim.api.nvim_win_get_buf(orig_win)].filetype
+                        vim.bo[diff_buf].filetype = ft
+                        vim.api.nvim_buf_set_lines(diff_buf, 0, -1, false, view_content)
+                        vim.bo[diff_buf].modifiable = false
+                    end
+                end
+
                 -- Function to show diff in preview panel
                 local function show_diff()
                     local idx = get_selected_index()
                     if not idx then return end
 
+                    -- Check if windows are still valid
+                    if not vim.api.nvim_win_is_valid(selector_win) or not vim.api.nvim_win_is_valid(diff_win) then
+                        return
+                    end
+
                     -- Generate diff
                     local diff_output
+                    local success, result = pcall(function()
+                        if idx == 0 then
+                            -- "Current" entry: compare current buffer with latest saved history
+                            if not vim.api.nvim_win_is_valid(orig_win) then
+                                return {'Error: Original window no longer valid'}
+                            end
 
-                    if idx == 0 then
-                        -- "Current" entry: compare current buffer with latest saved history
-                        local current_buf = vim.api.nvim_win_get_buf(orig_win)
-                        local current_lines = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
+                            local current_buf = vim.api.nvim_win_get_buf(orig_win)
+                            local current_content = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
 
-                        -- Write current buffer to a temporary file
-                        local tmp_file = os.tmpname()
-                        vim.fn.writefile(current_lines, tmp_file)
+                            -- Write current buffer to a temporary file
+                            local tmp_file = os.tmpname()
+                            vim.fn.writefile(current_content, tmp_file)
 
-                        -- Compare with the most recent history file
-                        local latest_history = history_files[1]
-                        local cmd = string.format('diff -u %s %s',
-                            vim.fn.shellescape(latest_history),
-                            vim.fn.shellescape(tmp_file))
-                        diff_output = vim.fn.systemlist(cmd)
-
-                        -- Clean up temp file
-                        vim.fn.delete(tmp_file)
-                    else
-                        -- Regular history entry
-                        local current_history = history_files[idx]
-                        local previous_history = history_files[idx + 1]
-
-                        if not previous_history then
-                            -- Compare with current file
+                            -- Compare with the most recent history file
+                            local latest_history = history_files[1]
                             local cmd = string.format('diff -u %s %s',
-                                vim.fn.shellescape(current_history),
-                                vim.fn.shellescape(filepath))
-                            diff_output = vim.fn.systemlist(cmd)
+                                vim.fn.shellescape(latest_history),
+                                vim.fn.shellescape(tmp_file))
+                            local output = vim.fn.systemlist(cmd)
+
+                            -- Clean up temp file
+                            vim.fn.delete(tmp_file)
+                            return output
                         else
-                            -- Compare with previous history entry
-                            local cmd = string.format('diff -u %s %s',
-                                vim.fn.shellescape(previous_history),
-                                vim.fn.shellescape(current_history))
-                            diff_output = vim.fn.systemlist(cmd)
+                            -- Regular history entry
+                            local current_history = history_files[idx]
+                            local previous_history = history_files[idx + 1]
+
+                            if not previous_history then
+                                -- Compare with current file
+                                local cmd = string.format('diff -u %s %s',
+                                    vim.fn.shellescape(current_history),
+                                    vim.fn.shellescape(filepath))
+                                return vim.fn.systemlist(cmd)
+                            else
+                                -- Compare with previous history entry
+                                local cmd = string.format('diff -u %s %s',
+                                    vim.fn.shellescape(previous_history),
+                                    vim.fn.shellescape(current_history))
+                                return vim.fn.systemlist(cmd)
+                            end
                         end
+                    end)
+
+                    if success then
+                        diff_output = result
+                    else
+                        diff_output = {'Error generating diff: ' .. tostring(result)}
+                    end
+
+                    -- Handle empty diff
+                    if not diff_output or #diff_output == 0 then
+                        diff_output = {'No changes'}
                     end
 
                     -- Update diff buffer
-                    vim.api.nvim_buf_set_option(diff_buf, 'modifiable', true)
-                    vim.api.nvim_buf_set_lines(diff_buf, 0, -1, false, diff_output)
-                    vim.api.nvim_buf_set_option(diff_buf, 'modifiable', false)
+                    if vim.api.nvim_buf_is_valid(diff_buf) then
+                        vim.bo[diff_buf].modifiable = true
+                        -- Set filetype to diff for syntax highlighting
+                        vim.bo[diff_buf].filetype = 'diff'
+                        vim.api.nvim_buf_set_lines(diff_buf, 0, -1, false, diff_output)
+                        vim.bo[diff_buf].modifiable = false
+                    end
                 end
 
-                -- Automatically update diff on cursor move
+                -- Function to update preview based on current mode
+                local function update_preview()
+                    if current_mode == 'view' then
+                        show_view()
+                    else
+                        show_diff()
+                    end
+                    update_preview_title()
+                end
+
+                -- Function to toggle between view and diff modes
+                local function toggle_mode()
+                    if current_mode == 'view' then
+                        current_mode = 'diff'
+                    else
+                        current_mode = 'view'
+                    end
+                    update_preview()
+                end
+
+                -- Create autocmd group for cleanup
+                local augroup = vim.api.nvim_create_augroup('FileHistoryPopup', { clear = true })
+
+                -- Automatically update preview on cursor move
                 vim.api.nvim_create_autocmd('CursorMoved', {
+                    group = augroup,
                     buffer = buf,
-                    callback = show_diff,
+                    callback = update_preview,
+                })
+
+                -- Cleanup when buffer is closed
+                vim.api.nvim_create_autocmd('BufWipeout', {
+                    group = augroup,
+                    buffer = buf,
+                    callback = function()
+                        if vim.api.nvim_win_is_valid(diff_win) then
+                            pcall(vim.api.nvim_win_close, diff_win, true)
+                        end
+                        vim.api.nvim_del_augroup_by_id(augroup)
+                    end,
                 })
 
                 -- Pick (restore) from history
@@ -330,16 +484,33 @@ return {
                     end
                 end, { buffer = buf, nowait = true })
 
-                -- Close the panels
+                -- Close the popup panels
                 vim.keymap.set('n', M.config.keybinds.close, function()
                     if vim.api.nvim_win_is_valid(diff_win) then
-                        vim.api.nvim_win_close(diff_win, true)
+                        pcall(vim.api.nvim_win_close, diff_win, true)
                     end
-                    vim.cmd('close')
+                    if vim.api.nvim_win_is_valid(selector_win) then
+                        pcall(vim.api.nvim_win_close, selector_win, true)
+                    end
                 end, { buffer = buf, nowait = true })
 
-                -- Show initial diff
-                vim.schedule(show_diff)
+                -- Also close on <Esc>
+                vim.keymap.set('n', '<Esc>', function()
+                    if vim.api.nvim_win_is_valid(diff_win) then
+                        pcall(vim.api.nvim_win_close, diff_win, true)
+                    end
+                    if vim.api.nvim_win_is_valid(selector_win) then
+                        pcall(vim.api.nvim_win_close, selector_win, true)
+                    end
+                end, { buffer = buf, nowait = true })
+
+                -- Toggle between view and diff mode
+                vim.keymap.set('n', M.config.keybinds.toggle_mode, function()
+                    toggle_mode()
+                end, { buffer = buf, nowait = true, desc = 'Toggle view/diff mode' })
+
+                -- Show initial view
+                vim.schedule(update_preview)
             end
 
             -- Compare a history entry with the previous (older) entry
