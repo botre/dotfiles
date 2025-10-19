@@ -10,6 +10,11 @@ return {
         },
     },
     {
+        'folke/which-key.nvim',
+        event = 'VeryLazy',
+        opts = {},
+    },
+    {
         'kana/vim-textobj-entire',
         dependencies = {
             'kana/vim-textobj-user'
