@@ -1,5 +1,4 @@
 return {
-
     { 'adelarsq/vim-matchit' },
     {
         'folke/todo-comments.nvim',
@@ -33,5 +32,4 @@ return {
         event = 'InsertEnter',
         config = true,
     },
-
 }
