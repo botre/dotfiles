@@ -202,7 +202,7 @@ return {
                 local orig_win = vim.api.nvim_get_current_win()
 
                 -- Get file icon for the current file
-                local icon, icon_hl = devicons.get_icon(filename, vim.fn.fnamemodify(filename, ':e'), { default = true })
+                local icon = devicons.get_icon(filename, vim.fn.fnamemodify(filename, ':e'), { default = true })
                 local file_icon = icon or ''
 
                 -- Create a new buffer for the history list
@@ -213,25 +213,46 @@ return {
                 -- Build the display lines
                 local lines = {
                     file_icon .. ' ' .. filename,
-                    ''
+                    '',
+                    '───────────────────────────────────',
                 }
-                -- Add virtual "Current" entry at the top
+                local keybinds_line = #lines + 1
+                table.insert(lines, M.config.keybinds.toggle_mode .. ': mode | ' ..
+                    M.config.keybinds.pick .. ': restore | ' ..
+                    M.config.keybinds.close .. ': close')
+                table.insert(lines, '───────────────────────────────────')
+                table.insert(lines, '')
+
+                -- Add virtual "Current" entry
                 table.insert(lines, 'Current')
-                for i, file in ipairs(history_files) do
+                for _, file in ipairs(history_files) do
                     local timestamp = file:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
                     local display = timestamp and format_time_display(timestamp) or file
                     table.insert(lines, display)
                 end
 
-                -- Add footer with keybindings
-                table.insert(lines, '')
-                table.insert(lines, '───────────────────────────────────')
-                table.insert(lines, M.config.keybinds.toggle_mode .. ': mode | ' ..
-                    M.config.keybinds.pick .. ': restore | ' ..
-                    M.config.keybinds.close .. ': close')
-
                 vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
                 vim.bo[buf].modifiable = false
+
+                -- Add highlighting to keybindings
+                local ns_id = vim.api.nvim_create_namespace('file_history_keybinds')
+                local keybinds_text = lines[keybinds_line]
+
+                -- Highlight the keybind letters
+                local function highlight_key(key, start_pos)
+                    local key_start = keybinds_text:find(vim.pesc(key), start_pos, true)
+                    if key_start then
+                        vim.api.nvim_buf_add_highlight(buf, ns_id, 'Function', keybinds_line - 1, key_start - 1,
+                            key_start - 1 + #key)
+                        return key_start + #key
+                    end
+                    return start_pos
+                end
+
+                local pos = 1
+                pos = highlight_key(M.config.keybinds.toggle_mode, pos)
+                pos = highlight_key(M.config.keybinds.pick, pos)
+                highlight_key(M.config.keybinds.close, pos)
 
                 -- Calculate popup dimensions
                 local ui = vim.api.nvim_list_uis()[1]
@@ -276,9 +297,11 @@ return {
 
                 -- Enable cursorline for better visibility
                 vim.wo[selector_win].cursorline = true
+                -- Use a more prominent cursorline
+                vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#2d3142', bold = true })
 
-                -- Set cursor to "Current" line (line 3)
-                vim.api.nvim_win_set_cursor(selector_win, { 3, 0 })
+                -- Set cursor to "Current" line (line 7: filename, empty, separator, keybinds, separator, empty, Current)
+                vim.api.nvim_win_set_cursor(selector_win, { 7, 0 })
 
                 -- Track current mode (view or diff)
                 local current_mode = 'diff'
@@ -286,10 +309,10 @@ return {
                 -- Set up keybindings for the history buffer
                 local function get_selected_index()
                     local line = vim.api.nvim_win_get_cursor(selector_win)[1]
-                    -- Skip header lines (2 lines: title, empty)
-                    if line <= 2 then return nil end
-                    -- Line 3 is "Current" (index 0), line 4+ are history files (index 1+)
-                    local idx = line - 3
+                    -- Skip header lines (6 lines: title, empty, separator, keybinds, separator, empty)
+                    if line <= 6 then return nil end
+                    -- Line 7 is "Current" (index 0), line 8+ are history files (index 1+)
+                    local idx = line - 7
                     -- idx 0 = Current, idx 1+ = history_files[idx]
                     return idx <= #history_files and idx or nil
                 end
@@ -483,10 +506,10 @@ return {
                             vim.notify('Already viewing current version', vim.log.levels.INFO)
                             return
                         end
-                        local lines = vim.fn.readfile(history_files[idx])
+                        local file_content = vim.fn.readfile(history_files[idx])
                         vim.api.nvim_set_current_win(orig_win)
                         local current_buf = vim.api.nvim_win_get_buf(orig_win)
-                        vim.api.nvim_buf_set_lines(current_buf, 0, -1, false, lines)
+                        vim.api.nvim_buf_set_lines(current_buf, 0, -1, false, file_content)
                         vim.notify('Content replaced with selected version', vim.log.levels.INFO)
                         -- Close the panels
                         if vim.api.nvim_win_is_valid(diff_win) then
@@ -525,58 +548,6 @@ return {
 
                 -- Show initial view
                 vim.schedule(update_preview)
-            end
-
-            -- Compare a history entry with the previous (older) entry
-            function M.diff_with_previous(history_files, current_history, filepath)
-                -- Find the index of the current history file
-                local current_idx = nil
-                for i, file in ipairs(history_files) do
-                    if file == current_history then
-                        current_idx = i
-                        break
-                    end
-                end
-
-                if not current_idx then
-                    vim.notify('Could not find history entry', vim.log.levels.ERROR)
-                    return
-                end
-
-                -- Get the previous (older) history file
-                local previous_history = history_files[current_idx + 1]
-
-                if not previous_history then
-                    -- This is the oldest entry, compare with current file
-                    vim.cmd('edit ' .. vim.fn.fnameescape(filepath))
-                    vim.cmd('diffthis')
-                    vim.cmd('vsplit ' .. vim.fn.fnameescape(current_history))
-                    vim.cmd('diffthis')
-                    vim.notify('Comparing with current file (no older history)', vim.log.levels.INFO)
-                else
-                    -- Compare with previous history entry
-                    vim.cmd('edit ' .. vim.fn.fnameescape(previous_history))
-                    vim.cmd('diffthis')
-                    vim.cmd('vsplit ' .. vim.fn.fnameescape(current_history))
-                    vim.cmd('diffthis')
-                end
-            end
-
-            -- Restore a file from history
-            function M.restore_from_history(current_file, history_file)
-                local choice = vim.fn.confirm(
-                    'Restore this version? Current file will be overwritten.',
-                    '&Yes\n&No',
-                    2
-                )
-
-                if choice == 1 then
-                    local lines = vim.fn.readfile(history_file)
-                    local current_buf = vim.fn.bufnr('%')
-                    vim.api.nvim_buf_set_lines(current_buf, 0, -1, false, lines)
-                    vim.cmd('write')
-                    vim.notify('File restored from history', vim.log.levels.INFO)
-                end
             end
 
             -- Setup autocmd to save history on file save
