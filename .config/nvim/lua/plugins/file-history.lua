@@ -217,42 +217,47 @@ return {
                 local icon, icon_hl = devicons.get_icon(filename, vim.fn.fnamemodify(filename, ':e'), { default = true })
                 local file_icon = icon or ''
 
-                -- Calculate popup dimensions
+                -- ============================================================
+                -- LAYOUT CALCULATION
+                -- ============================================================
                 local ui = vim.api.nvim_list_uis()[1]
-                local width = math.floor(ui.width * M.config.ui.width_percent)
-                local height = math.floor(ui.height * M.config.ui.height_percent)
-                local list_width = M.config.ui.list_width
-                local diff_width = width - list_width - 3 -- 3 for borders
 
-                -- Keybinds section at bottom takes 2 lines
-                local keybinds_height = 2
-                -- Content area (history + diff) takes remaining height
-                local content_height = height - keybinds_height
+                -- Calculate overall dimensions
+                local total_width = math.floor(ui.width * M.config.ui.width_percent)
+                local total_height = math.floor(ui.height * M.config.ui.height_percent)
+                local base_row = math.floor((ui.height - total_height) / 2)
+                local base_col = math.floor((ui.width - total_width) / 2)
 
-                local base_row = math.floor((ui.height - height) / 2)
-                local base_col = math.floor((ui.width - width) / 2)
+                -- Split layout: top section (history + diff) and bottom section (info bar)
+                local info_bar_height = 3
+                local top_section_height = total_height - info_bar_height - 2 -- -2 for gap
 
-                -- Create selector buffer for history list
-                local buf = vim.api.nvim_create_buf(false, true)
-                vim.bo[buf].bufhidden = 'wipe'
-                vim.bo[buf].filetype = 'filehistory'
+                -- History list takes fixed width, diff takes the rest
+                local history_width = M.config.ui.list_width
+                local diff_width = total_width - history_width - 4 -- -4 for borders and gap
 
-                -- Build the selector lines (just history items)
-                local lines = { 'Current' }
+                -- ============================================================
+                -- CREATE HISTORY LIST WINDOW
+                -- ============================================================
+                local history_buf = vim.api.nvim_create_buf(false, true)
+                vim.bo[history_buf].bufhidden = 'wipe'
+                vim.bo[history_buf].filetype = 'filehistory'
+
+                -- Build history lines
+                local history_lines = { 'Current' }
                 for _, file in ipairs(history_files) do
                     local timestamp = file:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
                     local display = timestamp and format_time_display(timestamp) or file
-                    table.insert(lines, display)
+                    table.insert(history_lines, display)
                 end
 
-                vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-                vim.bo[buf].modifiable = false
+                vim.api.nvim_buf_set_lines(history_buf, 0, -1, false, history_lines)
+                vim.bo[history_buf].modifiable = false
 
-                -- Create floating window for history list
-                local selector_win = vim.api.nvim_open_win(buf, true, {
+                local selector_win = vim.api.nvim_open_win(history_buf, true, {
                     relative = 'editor',
-                    width = list_width,
-                    height = content_height,
+                    width = history_width,
+                    height = top_section_height,
                     row = base_row,
                     col = base_col,
                     style = 'minimal',
@@ -261,74 +266,79 @@ return {
                     title_pos = 'center',
                 })
 
-                -- Create diff preview buffer
+                local buf = history_buf -- Keep this for compatibility
+
+                -- ============================================================
+                -- CREATE DIFF PREVIEW WINDOW
+                -- ============================================================
                 local diff_buf = vim.api.nvim_create_buf(false, true)
                 vim.bo[diff_buf].bufhidden = 'wipe'
                 vim.bo[diff_buf].filetype = 'diff'
 
-                -- Create floating window for diff preview
                 local diff_win = vim.api.nvim_open_win(diff_buf, false, {
                     relative = 'editor',
                     width = diff_width,
-                    height = content_height,
+                    height = top_section_height,
                     row = base_row,
-                    col = base_col + list_width + 1,
+                    col = base_col + history_width + 2, -- +2 for border
                     style = 'minimal',
                     border = 'rounded',
                     title = ' 󰊢 Diff ',
                     title_pos = 'center',
                 })
 
-                -- Create keybinds buffer for bottom section
-                local keybinds_buf = vim.api.nvim_create_buf(false, true)
-                vim.bo[keybinds_buf].bufhidden = 'wipe'
-                vim.bo[keybinds_buf].filetype = 'filehistory'
+                -- ============================================================
+                -- CREATE INFO BAR WINDOW (filename + keybinds)
+                -- ============================================================
+                local info_buf = vim.api.nvim_create_buf(false, true)
+                vim.bo[info_buf].bufhidden = 'wipe'
+                vim.bo[info_buf].filetype = 'filehistory'
 
-                -- Build keybinds lines with filename and keybinds
+                -- Build info bar content
                 local keybinds_text = M.config.keybinds.next_mode .. ': mode | ' ..
                     M.config.keybinds.pick .. ': restore | ' ..
                     M.config.keybinds.close .. ': close'
 
-                local keybinds_lines = {
-                    ' ' .. file_icon .. ' ' .. filename,
-                    ' ' .. keybinds_text
+                local info_lines = {
+                    '',
+                    ' ' .. file_icon .. ' ' .. filename .. '    ' .. keybinds_text,
+                    ''
                 }
 
-                vim.api.nvim_buf_set_lines(keybinds_buf, 0, -1, false, keybinds_lines)
-                vim.bo[keybinds_buf].modifiable = false
+                vim.api.nvim_buf_set_lines(info_buf, 0, -1, false, info_lines)
+                vim.bo[info_buf].modifiable = false
 
                 -- Add highlighting
-                local ns_id = vim.api.nvim_create_namespace('file_history_keybinds')
+                local ns_id = vim.api.nvim_create_namespace('file_history_info')
 
-                -- Highlight the file icon in line 1
+                -- Highlight file icon
                 if icon_hl then
-                    vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, icon_hl, 0, 1, 1 + #file_icon)
+                    vim.api.nvim_buf_add_highlight(info_buf, ns_id, icon_hl, 1, 1, 1 + #file_icon)
                 end
 
-                -- Highlight the keybind letters in line 2
-                local function highlight_key(key, start_pos)
-                    local key_start = keybinds_text:find(vim.pesc(key), start_pos, true)
+                -- Highlight keybind letters
+                local info_line = info_lines[2]
+                local function highlight_key(key)
+                    local search_start = #file_icon + #filename + 5 -- Start after filename
+                    local key_start = info_line:find(vim.pesc(key), search_start, true)
                     if key_start then
-                        vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, 'Function', 1, key_start, key_start + #key)
-                        return key_start + #key
+                        vim.api.nvim_buf_add_highlight(info_buf, ns_id, 'Function', 1, key_start - 1,
+                            key_start - 1 + #key)
                     end
-                    return start_pos
                 end
 
-                local pos = 0
-                pos = highlight_key(M.config.keybinds.next_mode, pos)
-                pos = highlight_key(M.config.keybinds.pick, pos)
-                highlight_key(M.config.keybinds.close, pos)
+                highlight_key(M.config.keybinds.next_mode)
+                highlight_key(M.config.keybinds.pick)
+                highlight_key(M.config.keybinds.close)
 
-                -- Create floating window for keybinds at bottom (full width)
-                local keybinds_win = vim.api.nvim_open_win(keybinds_buf, false, {
+                local keybinds_win = vim.api.nvim_open_win(info_buf, false, {
                     relative = 'editor',
-                    width = width,
-                    height = keybinds_height,
-                    row = base_row + content_height,
+                    width = total_width,
+                    height = info_bar_height,
+                    row = base_row + top_section_height + 2, -- +2 for border
                     col = base_col,
                     style = 'minimal',
-                    border = { '─', ' ', ' ', '│', '└', '─', '┘', '│' },
+                    border = 'rounded',
                 })
 
                 -- Focus selector window
