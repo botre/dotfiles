@@ -509,6 +509,9 @@ return {
                         diff_output = { 'No changes' }
                     end
 
+                    -- Filter out diff headers
+                    diff_output = filter_diff_headers(diff_output)
+
                     -- Update diff buffer
                     if vim.api.nvim_buf_is_valid(diff_buf) then
                         vim.bo[diff_buf].modifiable = true
@@ -571,6 +574,9 @@ return {
                     if not diff_output or #diff_output == 0 then
                         diff_output = { 'No changes' }
                     end
+
+                    -- Filter out diff headers
+                    diff_output = filter_diff_headers(diff_output)
 
                     -- Update diff buffer
                     if vim.api.nvim_buf_is_valid(diff_buf) then
