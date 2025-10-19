@@ -9,14 +9,14 @@ return {
                 vim.keymap.set(m, k, v, { silent = true, desc = desc })
             end
 
-            map('n', '<C-t>', '<CMD>NvimTreeToggle<CR>', 'Tree Toggle')
-            map('x', '<C-t>', '<CMD>NvimTreeToggle<CR>', 'Tree Toggle')
+            map('n', '<C-t>', '<CMD>NvimTreeToggle<CR>', 'Tree toggle')
+            map('x', '<C-t>', '<CMD>NvimTreeToggle<CR>', 'Tree toggle')
 
-            map('n', '<leader>tt', '<CMD>NvimTreeToggle<CR>', 'Tree Toggle')
-            map('x', '<leader>tt', '<CMD>NvimTreeToggle<CR>', 'Tree Toggle')
+            map('n', '<leader>tt', '<CMD>NvimTreeToggle<CR>', 'Tree toggle')
+            map('x', '<leader>tt', '<CMD>NvimTreeToggle<CR>', 'Tree toggle')
 
-            map('n', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>', 'Tree Find Opened File')
-            map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>', 'Tree Find Opened File')
+            map('n', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>', 'Reveal in tree')
+            map('x', '<leader>tf', '<CMD>NvimTreeFindFileToggle<CR>', 'Reveal in tree')
 
             require('nvim-tree').setup({
                 filters = {

@@ -14,10 +14,10 @@ return {
             -- VCS Navigation
             vim.keymap.set('n', '<leader>[c', function()
                 vim.cmd('Gitsigns prev_hunk')
-            end, { desc = 'Previous Change' })
+            end, { desc = 'Previous change' })
             vim.keymap.set('n', '<leader>]c', function()
                 vim.cmd('Gitsigns next_hunk')
-            end, { desc = 'Next Change' })
+            end, { desc = 'Next change' })
         end,
     },
 }

@@ -763,7 +763,7 @@ return {
                 -- Setup keybinding
                 vim.keymap.set('n', M.config.main_keybind, function()
                     M.browse_history()
-                end, { desc = 'File History' })
+                end, { desc = 'File history' })
             end
 
             -- Initialize the plugin

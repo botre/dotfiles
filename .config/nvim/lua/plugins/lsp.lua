@@ -46,34 +46,39 @@ return {
 
             -- LSP Keymaps
             lsp.on_attach(function(_, bufnr)
-                local opts = { buffer = bufnr, remap = false }
-
                 -- Core LSP Functions
-                vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, vim.tbl_extend('force', opts, { desc = 'Code Action' }))
-                vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, vim.tbl_extend('force', opts, { desc = 'Go to Definition' }))
-                vim.keymap.set('n', '<leader>gi', vim.lsp.buf.implementation, vim.tbl_extend('force', opts, { desc = 'Go to Implementation' }))
-                vim.keymap.set('n', '<leader>gt', vim.lsp.buf.type_definition, vim.tbl_extend('force', opts, { desc = 'Go to Type Definition' }))
-                vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, vim.tbl_extend('force', opts, { desc = 'Rename Symbol' }))
-                vim.keymap.set('n', 'K', vim.lsp.buf.hover, vim.tbl_extend('force', opts, { desc = 'Hover Documentation' }))
-                vim.keymap.set('n', 'gd', vim.lsp.buf.definition, vim.tbl_extend('force', opts, { desc = 'Go to Definition' }))
+                vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action,
+                    { buffer = bufnr, remap = false, desc = 'Code action' })
+                vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition,
+                    { buffer = bufnr, remap = false, desc = 'Go to definition' })
+                vim.keymap.set('n', '<leader>gi', vim.lsp.buf.implementation,
+                    { buffer = bufnr, remap = false, desc = 'Go to implementation' })
+                vim.keymap.set('n', '<leader>gt', vim.lsp.buf.type_definition,
+                    { buffer = bufnr, remap = false, desc = 'Go to type definition' })
+                vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename,
+                    { buffer = bufnr, remap = false, desc = 'Rename symbol' })
+                vim.keymap.set('n', 'K', vim.lsp.buf.hover,
+                    { buffer = bufnr, remap = false, desc = 'Hover documentation' })
+                vim.keymap.set('n', 'gd', vim.lsp.buf.definition,
+                    { buffer = bufnr, remap = false, desc = 'Go to definition' })
 
                 -- Diagnostics
                 vim.keymap.set('n', '<leader>e', function()
                     vim.diagnostic.open_float(0, { scope = 'line' })
-                end, vim.tbl_extend('force', opts, { desc = 'Show Error' }))
+                end, { buffer = bufnr, remap = false, desc = 'Show error' })
 
                 -- Error Navigation
                 vim.keymap.set('n', '<leader>[e', function()
                     vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR })
-                end, vim.tbl_extend('force', opts, { desc = 'Previous Error' }))
+                end, { buffer = bufnr, remap = false, desc = 'Previous error' })
                 vim.keymap.set('n', '<leader>]e', function()
                     vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR })
-                end, vim.tbl_extend('force', opts, { desc = 'Next Error' }))
+                end, { buffer = bufnr, remap = false, desc = 'Next error' })
 
                 -- Formatting
                 vim.keymap.set('n', '<leader>==', function()
                     vim.lsp.buf.format({ async = true })
-                end, vim.tbl_extend('force', opts, { desc = 'Format' }))
+                end, { buffer = bufnr, remap = false, desc = 'Format' })
             end)
 
             lsp.setup()

@@ -10,12 +10,12 @@ return {
                     diagnostics = 'nvim_lsp',
                 },
             })
-            vim.keymap.set('n', '<leader>[t', ':bprevious<CR>', { desc = 'Previous Tab' })
-            vim.keymap.set('n', '<leader>]t', ':bnext<CR>', { desc = 'Next Tab' })
-            vim.keymap.set('n', '<tab>[', ':bprevious<CR>', { desc = 'Previous Buffer' })
-            vim.keymap.set('n', '<tab>]', ':bnext<CR>', { desc = 'Next Buffer' })
-            vim.keymap.set('n', '<tab>a', ':enew<CR>', { desc = 'New Buffer' })
-            vim.keymap.set('n', '<tab>d', ':bdelete<CR>', { desc = 'Delete Buffer' })
+            vim.keymap.set('n', '<leader>[t', ':bprevious<CR>', { desc = 'Previous tab' })
+            vim.keymap.set('n', '<leader>]t', ':bnext<CR>', { desc = 'Next tab' })
+            vim.keymap.set('n', '<tab>[', ':bprevious<CR>', { desc = 'Previous buffer' })
+            vim.keymap.set('n', '<tab>]', ':bnext<CR>', { desc = 'Next buffer' })
+            vim.keymap.set('n', '<tab>a', ':enew<CR>', { desc = 'New buffer' })
+            vim.keymap.set('n', '<tab>d', ':bdelete<CR>', { desc = 'Delete buffer' })
         end,
     },
 }
