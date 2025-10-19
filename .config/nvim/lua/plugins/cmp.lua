@@ -1,3 +1,19 @@
+-- Sources by priority, higher number means higher priority
+local sources_by_priority = {
+    snippets = 4,
+    lsp = 3,
+    path = 2,
+    buffer = 1
+}
+
+local sources_list = {}
+for source, _ in pairs(sources_by_priority) do
+    table.insert(sources_list, source)
+end
+table.sort(sources_list, function(a, b)
+    return sources_by_priority[a] > sources_by_priority[b]
+end)
+
 return {
     {
         'saghen/blink.cmp',
@@ -30,9 +46,19 @@ return {
                 documentation = { auto_show = true }
             },
             sources = {
-                default = { 'lsp', 'path', 'snippets', 'buffer' },
+                default = sources_list,
             },
-            fuzzy = { implementation = 'prefer_rust_with_warning' }
+            fuzzy = {
+                implementation = 'prefer_rust_with_warning',
+                sorts = {
+                    function(a, b)
+                        return sources_by_priority[a.source_id] > sources_by_priority[b.source_id]
+                    end,
+                    -- Defaults
+                    'score',
+                    'sort_text'
+                }
+            }
         },
         opts_extend = { 'sources.default' },
         config = function(_, opts)
