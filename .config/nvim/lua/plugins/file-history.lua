@@ -17,7 +17,7 @@ return {
                 relative_time_threshold_days = 10, -- Show relative time for entries newer than this many days
                 keybinds = {
                     pick = '<CR>',
-                    close = 'q',
+                    close = '<C-c>',
                     close_alt = '<Esc>',
                     next_mode = 'm',
                     prev_mode = 'M',
