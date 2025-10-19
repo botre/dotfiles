@@ -19,10 +19,6 @@ return {
                     close_alt = '<Esc>',
                     next_mode = 'm',
                     prev_mode = 'M',
-                    next = 'j',
-                    prev = 'k',
-                    first = 'gg',
-                    last = 'G',
                 },
                 ui = {
                     width_percent = 0.8,
@@ -295,8 +291,8 @@ return {
                 vim.bo[info_buf].filetype = 'filehistory'
 
                 -- Build info bar content
-                local keybinds_text = M.config.keybinds.next_mode .. ': mode | ' ..
-                    M.config.keybinds.pick .. ': restore | ' ..
+                local keybinds_text = M.config.keybinds.pick .. ': restore | ' ..
+                    M.config.keybinds.next_mode .. ': mode | ' ..
                     M.config.keybinds.close .. ': close'
 
                 local info_lines = {
@@ -327,8 +323,8 @@ return {
                     end
                 end
 
-                highlight_key(M.config.keybinds.next_mode)
                 highlight_key(M.config.keybinds.pick)
+                highlight_key(M.config.keybinds.next_mode)
                 highlight_key(M.config.keybinds.close)
 
                 local keybinds_win = vim.api.nvim_open_win(info_buf, false, {
@@ -693,47 +689,6 @@ return {
                 vim.keymap.set('n', M.config.keybinds.prev_mode, function()
                     prev_mode()
                 end, { buffer = buf, nowait = true, desc = 'Previous mode' })
-
-                -- Cycle through history items
-                vim.keymap.set('n', M.config.keybinds.next, function()
-                    local current_line = vim.api.nvim_win_get_cursor(selector_win)[1]
-                    local first_line = 1                 -- "Current" entry
-                    local last_line = 1 + #history_files -- Last history entry
-
-                    if current_line >= last_line then
-                        -- Wrap to first line
-                        vim.api.nvim_win_set_cursor(selector_win, { first_line, 0 })
-                    else
-                        -- Move down
-                        vim.api.nvim_win_set_cursor(selector_win, { current_line + 1, 0 })
-                    end
-                end, { buffer = buf, nowait = true })
-
-                vim.keymap.set('n', M.config.keybinds.prev, function()
-                    local current_line = vim.api.nvim_win_get_cursor(selector_win)[1]
-                    local first_line = 1                 -- "Current" entry
-                    local last_line = 1 + #history_files -- Last history entry
-
-                    if current_line <= first_line then
-                        -- Wrap to last line
-                        vim.api.nvim_win_set_cursor(selector_win, { last_line, 0 })
-                    else
-                        -- Move up
-                        vim.api.nvim_win_set_cursor(selector_win, { current_line - 1, 0 })
-                    end
-                end, { buffer = buf, nowait = true })
-
-                -- Jump to first item
-                vim.keymap.set('n', M.config.keybinds.first, function()
-                    local first_line = 1 -- "Current" entry
-                    vim.api.nvim_win_set_cursor(selector_win, { first_line, 0 })
-                end, { buffer = buf, nowait = true })
-
-                -- Jump to last item
-                vim.keymap.set('n', M.config.keybinds.last, function()
-                    local last_line = 1 + #history_files -- Last history entry
-                    vim.api.nvim_win_set_cursor(selector_win, { last_line, 0 })
-                end, { buffer = buf, nowait = true })
 
                 -- Show initial view
                 vim.schedule(update_preview)
