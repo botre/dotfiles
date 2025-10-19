@@ -13,6 +13,8 @@ return {
             M.config = {
                 history_dir = vim.fn.expand('~/.nvim_local_history'),
                 max_changes = 100,
+                date_format = 'DD/MM',             -- 'DD/MM' or 'MM/DD'
+                relative_time_threshold_days = 10, -- Show relative time for entries newer than this many days
                 keybinds = {
                     pick = '<CR>',
                     close = 'q',
@@ -167,25 +169,39 @@ return {
                 local now = os.time()
                 local diff = now - time
 
-                -- Show relative time for recent changes
-                if diff < 10 then
-                    return 'Just now'
-                elseif diff < 60 then
-                    local secs = math.floor(diff)
-                    return secs .. ' second' .. (secs > 1 and 's' or '') .. ' ago'
-                elseif diff < 3600 then
-                    local mins = math.floor(diff / 60)
-                    local secs = math.floor(diff % 60)
-                    return mins .. ' min ' .. secs .. ' sec ago'
-                elseif diff < 86400 then
-                    local hours = math.floor(diff / 3600)
-                    return hours .. ' hour' .. (hours > 1 and 's' or '') .. ' ago'
-                elseif diff < 604800 then
-                    local days = math.floor(diff / 86400)
-                    return days .. ' day' .. (days > 1 and 's' or '') .. ' ago'
+                -- Format the absolute timestamp based on config
+                local date_time
+                if M.config.date_format == 'DD/MM' then
+                    date_time = string.format('%02d/%02d %02d:%02d:%02d',
+                        tonumber(day), tonumber(month), tonumber(hour), tonumber(min), tonumber(sec))
+                else -- MM/DD
+                    date_time = string.format('%02d/%02d %02d:%02d:%02d',
+                        tonumber(month), tonumber(day), tonumber(hour), tonumber(min), tonumber(sec))
+                end
+
+                -- Only show relative time if within the configured threshold
+                local threshold_seconds = M.config.relative_time_threshold_days * 86400 -- Convert days to seconds
+                if diff < threshold_seconds then
+                    local relative
+                    if diff < 10 then
+                        relative = 'just now'
+                    elseif diff < 60 then
+                        local secs = math.floor(diff)
+                        relative = secs .. ' second' .. (secs > 1 and 's' or '') .. ' ago'
+                    elseif diff < 3600 then
+                        local mins = math.floor(diff / 60)
+                        relative = mins .. ' minute' .. (mins > 1 and 's' or '') .. ' ago'
+                    elseif diff < 86400 then
+                        local hours = math.floor(diff / 3600)
+                        relative = hours .. ' hour' .. (hours > 1 and 's' or '') .. ' ago'
+                    else
+                        local days = math.floor(diff / 86400)
+                        relative = days .. ' day' .. (days > 1 and 's' or '') .. ' ago'
+                    end
+                    return date_time .. ' (' .. relative .. ')'
                 else
-                    -- For older entries, show a clean date format
-                    return os.date('%b %d, %Y at %H:%M', time)
+                    -- For entries older than threshold, just show the date/time
+                    return date_time
                 end
             end
 
@@ -379,6 +395,19 @@ return {
                     end
                 end
 
+                -- Helper function to filter out diff headers
+                local function filter_diff_headers(diff_output)
+                    local filtered_output = {}
+                    for _, line in ipairs(diff_output) do
+                        -- Only filter @@ lines that match diff chunk header format: @@ -X,Y +A,B @@
+                        local is_chunk_header = line:match('^@@ %-')
+                        if not (line:match('^%-%-%-') or line:match('^%+%+%+') or is_chunk_header) then
+                            table.insert(filtered_output, line)
+                        end
+                    end
+                    return filtered_output
+                end
+
                 -- Function to show file content in view mode
                 local function show_view()
                     local idx = get_selected_index()
@@ -493,14 +522,8 @@ return {
                         diff_output = { 'No changes' }
                     end
 
-                    -- Filter out file path headers (--- and +++ lines)
-                    local filtered_output = {}
-                    for _, line in ipairs(diff_output) do
-                        if not (line:match('^%-%-%-') or line:match('^%+%+%+')) then
-                            table.insert(filtered_output, line)
-                        end
-                    end
-                    diff_output = filtered_output
+                    -- Filter out diff headers
+                    diff_output = filter_diff_headers(diff_output)
 
                     -- Update diff buffer
                     if vim.api.nvim_buf_is_valid(diff_buf) then
@@ -565,14 +588,8 @@ return {
                         diff_output = { 'No changes' }
                     end
 
-                    -- Filter out file path headers (--- and +++ lines)
-                    local filtered_output = {}
-                    for _, line in ipairs(diff_output) do
-                        if not (line:match('^%-%-%-') or line:match('^%+%+%+')) then
-                            table.insert(filtered_output, line)
-                        end
-                    end
-                    diff_output = filtered_output
+                    -- Filter out diff headers
+                    diff_output = filter_diff_headers(diff_output)
 
                     -- Update diff buffer
                     if vim.api.nvim_buf_is_valid(diff_buf) then
