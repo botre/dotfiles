@@ -12,7 +12,20 @@ return {
     {
         'folke/which-key.nvim',
         event = 'VeryLazy',
-        opts = {},
+        config = function()
+            local wk = require('which-key')
+            wk.setup({})
+
+            -- Register key groups
+            wk.add({
+                { '<leader>f', group = 'Find' },
+                { '<leader>g', group = 'Go' },
+                { '<leader>r', group = 'Rename/Refactor' },
+                { '<leader>t', group = 'Tree' },
+                { '<leader>[', group = 'Previous' },
+                { '<leader>]', group = 'Next' },
+            })
+        end,
     },
     {
         'kana/vim-textobj-entire',

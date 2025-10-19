@@ -4,7 +4,7 @@ return {
         'kdheepak/lazygit.nvim',
         dependencies = { 'nvim-lua/plenary.nvim' },
         config = function()
-            vim.keymap.set('n', '<leader>gg', ':LazyGit<CR>', {})
+            vim.keymap.set('n', '<leader>gg', ':LazyGit<CR>', { desc = 'LazyGit' })
         end,
     },
     {
@@ -14,10 +14,10 @@ return {
             -- VCS Navigation
             vim.keymap.set('n', '<leader>[c', function()
                 vim.cmd('Gitsigns prev_hunk')
-            end, opts)
+            end, { desc = 'Previous Change' })
             vim.keymap.set('n', '<leader>]c', function()
                 vim.cmd('Gitsigns next_hunk')
-            end, opts)
+            end, { desc = 'Next Change' })
         end,
     },
 }
