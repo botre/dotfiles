@@ -5,7 +5,11 @@ return {
         'folke/todo-comments.nvim',
         dependencies = { 'nvim-lua/plenary.nvim' },
         opts = {
-            TODO = { color = 'warning' },
+            TODO = {
+                keywords = {
+                    WARN = { TODO = " ", color = 'warning' },
+                },
+            },
         },
     },
     {
