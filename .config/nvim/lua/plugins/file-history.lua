@@ -395,6 +395,19 @@ return {
                     end
                 end
 
+                -- Helper function to filter out diff headers
+                local function filter_diff_headers(diff_output)
+                    local filtered_output = {}
+                    for _, line in ipairs(diff_output) do
+                        -- Only filter @@ lines that match diff chunk header format: @@ -X,Y +A,B @@
+                        local is_chunk_header = line:match('^@@ %-')
+                        if not (line:match('^%-%-%-') or line:match('^%+%+%+') or is_chunk_header) then
+                            table.insert(filtered_output, line)
+                        end
+                    end
+                    return filtered_output
+                end
+
                 -- Function to show file content in view mode
                 local function show_view()
                     local idx = get_selected_index()
