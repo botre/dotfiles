@@ -2,6 +2,11 @@ return {
 
     { 'adelarsq/vim-matchit' },
     {
+        'folke/todo-comments.nvim',
+        dependencies = { 'nvim-lua/plenary.nvim' },
+        opts = {},
+    },
+    {
         'kana/vim-textobj-entire',
         dependencies = {
             'kana/vim-textobj-user'
