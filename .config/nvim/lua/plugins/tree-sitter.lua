@@ -47,10 +47,10 @@ return {
             -- Function Navigation
             vim.keymap.set('n', '<leader>[f', function()
                 mover.goto_previous_start('@function.outer')
-            end, opts)
+            end, { desc = 'Previous Function' })
             vim.keymap.set('n', '<leader>]f', function()
                 mover.goto_next_start('@function.outer')
-            end, opts)
+            end, { desc = 'Next Function' })
         end
     }
 }
