@@ -199,8 +199,8 @@ return {
                         local days = math.floor(diff / 86400)
                         relative = days .. ' day' .. (days > 1 and 's' or '') .. ' ago'
                     end
-                    local relative_start = #date_time + 2 -- +2 for ' ('
-                    return date_time .. ' (' .. relative .. ')', relative_start
+                    local relative_start = #date_time + 1 -- +1 for the space
+                    return date_time .. ' ' .. relative, relative_start
                 else
                     -- For entries older than threshold, just show the date/time
                     return date_time, nil
@@ -351,7 +351,7 @@ return {
                 local info_line = info_lines[2]
                 local function highlight_key(key)
                     local search_start = #file_icon + #filename + 5 -- Start after filename
-                    local key_start = info_line:find(vim.pesc(key), search_start, true)
+                    local key_start = info_line:find(key, search_start, true)
                     if key_start then
                         vim.api.nvim_buf_add_highlight(info_buf, ns_id, 'Function', 1, key_start - 1,
                             key_start - 1 + #key)
