@@ -2,8 +2,12 @@ return {
     {
         name = 'file-history',
         dir = vim.fn.stdpath('config'),
+        dependencies = {
+            'nvim-tree/nvim-web-devicons',
+        },
         config = function()
             local M = {}
+            local devicons = require('nvim-web-devicons')
 
             -- Configuration
             M.config = {
@@ -197,6 +201,10 @@ return {
                 -- Store the original window
                 local orig_win = vim.api.nvim_get_current_win()
 
+                -- Get file icon for the current file
+                local icon, icon_hl = devicons.get_icon(filename, vim.fn.fnamemodify(filename, ':e'), { default = true })
+                local file_icon = icon or ''
+
                 -- Create a new buffer for the history list
                 local buf = vim.api.nvim_create_buf(false, true)
                 vim.bo[buf].bufhidden = 'wipe'
@@ -204,7 +212,7 @@ return {
 
                 -- Build the display lines
                 local lines = {
-                    'File History: ' .. filename,
+                    file_icon .. ' ' .. filename,
                     ''
                 }
                 -- Add virtual "Current" entry at the top
@@ -219,8 +227,8 @@ return {
                 table.insert(lines, '')
                 table.insert(lines, '───────────────────────────────────')
                 table.insert(lines, M.config.keybinds.toggle_mode .. ': mode | ' ..
-                             M.config.keybinds.pick .. ': restore | ' ..
-                             M.config.keybinds.close .. ': close')
+                    M.config.keybinds.pick .. ': restore | ' ..
+                    M.config.keybinds.close .. ': close')
 
                 vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
                 vim.bo[buf].modifiable = false
@@ -230,7 +238,7 @@ return {
                 local width = math.floor(ui.width * 0.8)
                 local height = math.floor(ui.height * 0.8)
                 local list_width = 40
-                local diff_width = width - list_width - 3  -- 3 for borders
+                local diff_width = width - list_width - 3 -- 3 for borders
 
                 -- Create floating window for history list
                 local selector_win = vim.api.nvim_open_win(buf, true, {
@@ -241,7 +249,7 @@ return {
                     col = math.floor((ui.width - width) / 2),
                     style = 'minimal',
                     border = 'rounded',
-                    title = ' History ',
+                    title = ' 󰋚 History ',
                     title_pos = 'center',
                 })
 
@@ -259,15 +267,21 @@ return {
                     col = math.floor((ui.width - width) / 2) + list_width + 1,
                     style = 'minimal',
                     border = 'rounded',
-                    title = ' View ',
+                    title = ' 󰊢 Diff ',
                     title_pos = 'center',
                 })
 
                 -- Focus selector window
                 vim.api.nvim_set_current_win(selector_win)
 
+                -- Enable cursorline for better visibility
+                vim.wo[selector_win].cursorline = true
+
+                -- Set cursor to "Current" line (line 3)
+                vim.api.nvim_win_set_cursor(selector_win, { 3, 0 })
+
                 -- Track current mode (view or diff)
-                local current_mode = 'view'
+                local current_mode = 'diff'
 
                 -- Set up keybindings for the history buffer
                 local function get_selected_index()
@@ -283,7 +297,7 @@ return {
                 -- Function to update the preview window title
                 local function update_preview_title()
                     if vim.api.nvim_win_is_valid(diff_win) then
-                        local title = current_mode == 'view' and ' View ' or ' Diff '
+                        local title = current_mode == 'view' and ' 󰈔 View ' or ' 󰊢 Diff '
                         vim.api.nvim_win_set_config(diff_win, {
                             title = title,
                             title_pos = 'center',
@@ -306,7 +320,7 @@ return {
                         if idx == 0 then
                             -- "Current" entry: show current buffer content
                             if not vim.api.nvim_win_is_valid(orig_win) then
-                                return {'Error: Original window no longer valid'}
+                                return { 'Error: Original window no longer valid' }
                             end
 
                             local current_buf = vim.api.nvim_win_get_buf(orig_win)
@@ -321,12 +335,12 @@ return {
                     if success then
                         view_content = result
                     else
-                        view_content = {'Error loading file: ' .. tostring(result)}
+                        view_content = { 'Error loading file: ' .. tostring(result) }
                     end
 
                     -- Handle empty content
                     if not view_content or #view_content == 0 then
-                        view_content = {'(empty file)'}
+                        view_content = { '(empty file)' }
                     end
 
                     -- Update diff buffer with file content
@@ -356,7 +370,7 @@ return {
                         if idx == 0 then
                             -- "Current" entry: compare current buffer with latest saved history
                             if not vim.api.nvim_win_is_valid(orig_win) then
-                                return {'Error: Original window no longer valid'}
+                                return { 'Error: Original window no longer valid' }
                             end
 
                             local current_buf = vim.api.nvim_win_get_buf(orig_win)
@@ -400,12 +414,12 @@ return {
                     if success then
                         diff_output = result
                     else
-                        diff_output = {'Error generating diff: ' .. tostring(result)}
+                        diff_output = { 'Error generating diff: ' .. tostring(result) }
                     end
 
                     -- Handle empty diff
                     if not diff_output or #diff_output == 0 then
-                        diff_output = {'No changes'}
+                        diff_output = { 'No changes' }
                     end
 
                     -- Update diff buffer
