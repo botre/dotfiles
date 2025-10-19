@@ -493,6 +493,15 @@ return {
                         diff_output = { 'No changes' }
                     end
 
+                    -- Filter out file path headers (--- and +++ lines)
+                    local filtered_output = {}
+                    for _, line in ipairs(diff_output) do
+                        if not (line:match('^%-%-%-') or line:match('^%+%+%+')) then
+                            table.insert(filtered_output, line)
+                        end
+                    end
+                    diff_output = filtered_output
+
                     -- Update diff buffer
                     if vim.api.nvim_buf_is_valid(diff_buf) then
                         vim.bo[diff_buf].modifiable = true
@@ -555,6 +564,15 @@ return {
                     if not diff_output or #diff_output == 0 then
                         diff_output = { 'No changes' }
                     end
+
+                    -- Filter out file path headers (--- and +++ lines)
+                    local filtered_output = {}
+                    for _, line in ipairs(diff_output) do
+                        if not (line:match('^%-%-%-') or line:match('^%+%+%+')) then
+                            table.insert(filtered_output, line)
+                        end
+                    end
+                    diff_output = filtered_output
 
                     -- Update diff buffer
                     if vim.api.nvim_buf_is_valid(diff_buf) then
