@@ -2,13 +2,6 @@ return {
 
     { 'adelarsq/vim-matchit' },
     {
-        'jiaoshijie/undotree',
-        opts = {},
-        keys = {
-            { '<leader>fh', "<cmd>lua require('undotree').toggle()<cr>", desc = "Toggle file history" },
-        },
-    },
-    {
         'kana/vim-textobj-entire',
         dependencies = {
             'kana/vim-textobj-user'
