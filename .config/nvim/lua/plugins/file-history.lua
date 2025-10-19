@@ -224,67 +224,13 @@ return {
                 local list_width = M.config.ui.list_width
                 local diff_width = width - list_width - 3 -- 3 for borders
 
-                -- Header takes 4 lines (filename, empty, separator, keybinds)
-                local header_height = 4
-                local selector_height = height - header_height
+                -- Keybinds section at bottom takes 1 line
+                local keybinds_height = 1
+                -- Content area (history + diff) takes remaining height
+                local content_height = height - keybinds_height
 
                 local base_row = math.floor((ui.height - height) / 2)
                 local base_col = math.floor((ui.width - width) / 2)
-
-                -- Create header buffer
-                local header_buf = vim.api.nvim_create_buf(false, true)
-                vim.bo[header_buf].bufhidden = 'wipe'
-                vim.bo[header_buf].filetype = 'filehistory'
-
-                -- Build header lines
-                local header_lines = {
-                    file_icon .. ' ' .. filename,
-                    '',
-                    '───────────────────────────────────',
-                    M.config.keybinds.next_mode .. '/' .. M.config.keybinds.prev_mode .. ': mode | ' ..
-                    M.config.keybinds.pick .. ': restore | ' ..
-                    M.config.keybinds.close .. ': close'
-                }
-
-                vim.api.nvim_buf_set_lines(header_buf, 0, -1, false, header_lines)
-                vim.bo[header_buf].modifiable = false
-
-                -- Add highlighting to keybindings
-                local ns_id = vim.api.nvim_create_namespace('file_history_keybinds')
-                local keybinds_text = header_lines[4]
-
-                -- Highlight the keybind letters
-                local function highlight_key(key, start_pos)
-                    local key_start = keybinds_text:find(vim.pesc(key), start_pos, true)
-                    if key_start then
-                        vim.api.nvim_buf_add_highlight(header_buf, ns_id, 'Function', 3, key_start - 1,
-                            key_start - 1 + #key)
-                        return key_start + #key
-                    end
-                    return start_pos
-                end
-
-                local pos = 1
-                pos = highlight_key(M.config.keybinds.next_mode, pos)
-                pos = highlight_key(M.config.keybinds.prev_mode, pos)
-                pos = highlight_key(M.config.keybinds.pick, pos)
-                highlight_key(M.config.keybinds.close, pos)
-
-                -- Apply color to the file icon
-                if icon_hl then
-                    vim.api.nvim_buf_add_highlight(header_buf, ns_id, icon_hl, 0, 0, #file_icon)
-                end
-
-                -- Create floating window for header (no border)
-                local header_win = vim.api.nvim_open_win(header_buf, false, {
-                    relative = 'editor',
-                    width = list_width,
-                    height = header_height,
-                    row = base_row,
-                    col = base_col,
-                    style = 'minimal',
-                    border = 'none',
-                })
 
                 -- Create selector buffer for history list
                 local buf = vim.api.nvim_create_buf(false, true)
@@ -306,8 +252,8 @@ return {
                 local selector_win = vim.api.nvim_open_win(buf, true, {
                     relative = 'editor',
                     width = list_width,
-                    height = selector_height,
-                    row = base_row + header_height,
+                    height = content_height,
+                    row = base_row,
                     col = base_col,
                     style = 'minimal',
                     border = 'rounded',
@@ -324,13 +270,66 @@ return {
                 local diff_win = vim.api.nvim_open_win(diff_buf, false, {
                     relative = 'editor',
                     width = diff_width,
-                    height = height,
-                    row = math.floor((ui.height - height) / 2),
-                    col = math.floor((ui.width - width) / 2) + list_width + 1,
+                    height = content_height,
+                    row = base_row,
+                    col = base_col + list_width + 1,
                     style = 'minimal',
                     border = 'rounded',
                     title = ' 󰊢 Diff ',
                     title_pos = 'center',
+                })
+
+                -- Create keybinds buffer for bottom section
+                local keybinds_buf = vim.api.nvim_create_buf(false, true)
+                vim.bo[keybinds_buf].bufhidden = 'wipe'
+                vim.bo[keybinds_buf].filetype = 'filehistory'
+
+                -- Build keybinds line with filename and keybinds
+                local keybinds_text = file_icon .. ' ' .. filename .. '    ' ..
+                    M.config.keybinds.next_mode .. ': mode | ' ..
+                    M.config.keybinds.pick .. ': restore | ' ..
+                    M.config.keybinds.close .. ': close'
+
+                local keybinds_lines = { keybinds_text }
+
+                vim.api.nvim_buf_set_lines(keybinds_buf, 0, -1, false, keybinds_lines)
+                vim.bo[keybinds_buf].modifiable = false
+
+                -- Add highlighting
+                local ns_id = vim.api.nvim_create_namespace('file_history_keybinds')
+
+                -- Highlight the file icon
+                if icon_hl then
+                    vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, icon_hl, 0, 0, #file_icon)
+                end
+
+                -- Highlight the keybind letters
+                local function highlight_key(key, start_pos)
+                    local key_start = keybinds_text:find(vim.pesc(key), start_pos, true)
+                    if key_start then
+                        vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, 'Function', 0, key_start - 1,
+                            key_start - 1 + #key)
+                        return key_start + #key
+                    end
+                    return start_pos
+                end
+
+                -- Start highlighting after the filename
+                local filename_end = #file_icon + #filename + 4
+                local pos = filename_end
+                pos = highlight_key(M.config.keybinds.next_mode, pos)
+                pos = highlight_key(M.config.keybinds.pick, pos)
+                highlight_key(M.config.keybinds.close, pos)
+
+                -- Create floating window for keybinds at bottom (full width)
+                local keybinds_win = vim.api.nvim_open_win(keybinds_buf, false, {
+                    relative = 'editor',
+                    width = width,
+                    height = keybinds_height,
+                    row = base_row + content_height,
+                    col = base_col,
+                    style = 'minimal',
+                    border = 'rounded',
                 })
 
                 -- Focus selector window
@@ -613,8 +612,8 @@ return {
                     group = augroup,
                     buffer = buf,
                     callback = function()
-                        if vim.api.nvim_win_is_valid(header_win) then
-                            pcall(vim.api.nvim_win_close, header_win, true)
+                        if vim.api.nvim_win_is_valid(keybinds_win) then
+                            pcall(vim.api.nvim_win_close, keybinds_win, true)
                         end
                         if vim.api.nvim_win_is_valid(diff_win) then
                             pcall(vim.api.nvim_win_close, diff_win, true)
@@ -638,8 +637,8 @@ return {
                         vim.api.nvim_buf_set_lines(current_buf, 0, -1, false, file_content)
                         vim.notify('Content replaced with selected version', vim.log.levels.INFO)
                         -- Close the panels
-                        if vim.api.nvim_win_is_valid(header_win) then
-                            vim.api.nvim_win_close(header_win, true)
+                        if vim.api.nvim_win_is_valid(keybinds_win) then
+                            vim.api.nvim_win_close(keybinds_win, true)
                         end
                         if vim.api.nvim_win_is_valid(diff_win) then
                             vim.api.nvim_win_close(diff_win, true)
@@ -652,8 +651,8 @@ return {
 
                 -- Close the popup panels
                 vim.keymap.set('n', M.config.keybinds.close, function()
-                    if vim.api.nvim_win_is_valid(header_win) then
-                        pcall(vim.api.nvim_win_close, header_win, true)
+                    if vim.api.nvim_win_is_valid(keybinds_win) then
+                        pcall(vim.api.nvim_win_close, keybinds_win, true)
                     end
                     if vim.api.nvim_win_is_valid(diff_win) then
                         pcall(vim.api.nvim_win_close, diff_win, true)
@@ -665,8 +664,8 @@ return {
 
                 -- Also close on alternate close key
                 vim.keymap.set('n', M.config.keybinds.close_alt, function()
-                    if vim.api.nvim_win_is_valid(header_win) then
-                        pcall(vim.api.nvim_win_close, header_win, true)
+                    if vim.api.nvim_win_is_valid(keybinds_win) then
+                        pcall(vim.api.nvim_win_close, keybinds_win, true)
                     end
                     if vim.api.nvim_win_is_valid(diff_win) then
                         pcall(vim.api.nvim_win_close, diff_win, true)
