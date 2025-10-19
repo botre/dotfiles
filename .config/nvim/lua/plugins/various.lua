@@ -14,7 +14,11 @@ return {
         event = 'VeryLazy',
         config = function()
             local wk = require('which-key')
-            wk.setup({})
+            wk.setup({
+                icons = {
+                    mappings = false,
+                },
+            })
 
             -- Register key groups
             wk.add({
