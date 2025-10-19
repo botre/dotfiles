@@ -306,6 +306,10 @@ return {
                 local function_hl = vim.api.nvim_get_hl(0, { name = 'Function' })
                 vim.api.nvim_set_hl(0, 'CursorLine', { fg = function_hl.fg, bold = true })
 
+                -- Save original cursor highlight and guicursor to restore later
+                local orig_cursor_hl = vim.api.nvim_get_hl(0, { name = 'Cursor' })
+                local orig_guicursor = vim.o.guicursor
+
                 -- Hide the cursor by making it match the cursorline (no blinking cursor)
                 vim.api.nvim_set_hl(0, 'Cursor', { fg = function_hl.fg, bg = function_hl.fg, blend = 100 })
                 vim.opt_local.guicursor = 'a:hor1-Cursor/lCursor'
@@ -574,6 +578,9 @@ return {
                         if vim.api.nvim_win_is_valid(diff_win) then
                             pcall(vim.api.nvim_win_close, diff_win, true)
                         end
+                        -- Restore original cursor highlight and guicursor
+                        vim.api.nvim_set_hl(0, 'Cursor', orig_cursor_hl)
+                        vim.o.guicursor = orig_guicursor
                         vim.api.nvim_del_augroup_by_id(augroup)
                     end,
                 })
