@@ -149,12 +149,13 @@ return {
             end
 
             -- Format time in a human-readable way
+            -- Returns: display_text, relative_start_pos (or nil if no relative time)
             local function format_time_display(timestamp_str)
                 -- Parse the timestamp (format: YYYY-MM-DD_HH-MM-SS)
                 local year, month, day, hour, min, sec = timestamp_str:match(
                     '(%d%d%d%d)%-(%d%d)%-(%d%d)_(%d%d)%-(%d%d)%-(%d%d)')
                 if not year then
-                    return timestamp_str
+                    return timestamp_str, nil
                 end
 
                 local time = os.time({
@@ -198,10 +199,11 @@ return {
                         local days = math.floor(diff / 86400)
                         relative = days .. ' day' .. (days > 1 and 's' or '') .. ' ago'
                     end
-                    return date_time .. ' (' .. relative .. ')'
+                    local relative_start = #date_time + 2 -- +2 for ' ('
+                    return date_time .. ' (' .. relative .. ')', relative_start
                 else
                     -- For entries older than threshold, just show the date/time
-                    return date_time
+                    return date_time, nil
                 end
             end
 
@@ -255,16 +257,33 @@ return {
                 vim.bo[history_buf].bufhidden = 'wipe'
                 vim.bo[history_buf].filetype = 'filehistory'
 
-                -- Build history lines
+                -- Build history lines and track relative time positions for highlighting
                 local history_lines = { 'Current' }
-                for _, file in ipairs(history_files) do
+                local relative_time_positions = {} -- Table to store {line_num, start_col} for each relative time
+                for i, file in ipairs(history_files) do
                     local timestamp = file:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
-                    local display = timestamp and format_time_display(timestamp) or file
-                    table.insert(history_lines, display)
+                    if timestamp then
+                        local display, relative_start = format_time_display(timestamp)
+                        table.insert(history_lines, display)
+                        if relative_start then
+                            -- Store position for highlighting (line is i+1 because line 1 is "Current")
+                            table.insert(relative_time_positions, { line = i, start_col = relative_start })
+                        end
+                    else
+                        table.insert(history_lines, file)
+                    end
                 end
 
                 vim.api.nvim_buf_set_lines(history_buf, 0, -1, false, history_lines)
                 vim.bo[history_buf].modifiable = false
+
+                -- Apply muted highlighting to relative time portions
+                local history_ns_id = vim.api.nvim_create_namespace('file_history_relative_time')
+                for _, pos in ipairs(relative_time_positions) do
+                    local line_text = history_lines[pos.line + 1] -- +1 because "Current" is line 1
+                    vim.api.nvim_buf_add_highlight(history_buf, history_ns_id, 'Comment', pos.line,
+                        pos.start_col, #line_text)
+                end
 
                 local selector_win = vim.api.nvim_open_win(history_buf, true, {
                     relative = 'editor',
