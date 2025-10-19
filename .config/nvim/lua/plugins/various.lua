@@ -5,7 +5,7 @@ return {
         dependencies = { 'nvim-lua/plenary.nvim' },
         opts = {
             keywords = {
-                WARN = { TODO = ' ', color = 'warning' },
+                { TODO = ' ', color = 'warning' }
             },
         },
     },
