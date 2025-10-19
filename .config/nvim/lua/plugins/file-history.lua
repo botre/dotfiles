@@ -224,8 +224,8 @@ return {
                 local list_width = M.config.ui.list_width
                 local diff_width = width - list_width - 3 -- 3 for borders
 
-                -- Keybinds section at bottom takes 1 line
-                local keybinds_height = 1
+                -- Keybinds section at bottom takes 2 lines
+                local keybinds_height = 2
                 -- Content area (history + diff) takes remaining height
                 local content_height = height - keybinds_height
 
@@ -284,13 +284,15 @@ return {
                 vim.bo[keybinds_buf].bufhidden = 'wipe'
                 vim.bo[keybinds_buf].filetype = 'filehistory'
 
-                -- Build keybinds line with filename and keybinds
-                local keybinds_text = file_icon .. ' ' .. filename .. '    ' ..
-                    M.config.keybinds.next_mode .. ': mode | ' ..
+                -- Build keybinds lines with filename and keybinds
+                local keybinds_text = M.config.keybinds.next_mode .. ': mode | ' ..
                     M.config.keybinds.pick .. ': restore | ' ..
                     M.config.keybinds.close .. ': close'
 
-                local keybinds_lines = { keybinds_text }
+                local keybinds_lines = {
+                    ' ' .. file_icon .. ' ' .. filename,
+                    ' ' .. keybinds_text
+                }
 
                 vim.api.nvim_buf_set_lines(keybinds_buf, 0, -1, false, keybinds_lines)
                 vim.bo[keybinds_buf].modifiable = false
@@ -298,25 +300,22 @@ return {
                 -- Add highlighting
                 local ns_id = vim.api.nvim_create_namespace('file_history_keybinds')
 
-                -- Highlight the file icon
+                -- Highlight the file icon in line 1
                 if icon_hl then
-                    vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, icon_hl, 0, 0, #file_icon)
+                    vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, icon_hl, 0, 1, 1 + #file_icon)
                 end
 
-                -- Highlight the keybind letters
+                -- Highlight the keybind letters in line 2
                 local function highlight_key(key, start_pos)
                     local key_start = keybinds_text:find(vim.pesc(key), start_pos, true)
                     if key_start then
-                        vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, 'Function', 0, key_start - 1,
-                            key_start - 1 + #key)
+                        vim.api.nvim_buf_add_highlight(keybinds_buf, ns_id, 'Function', 1, key_start, key_start + #key)
                         return key_start + #key
                     end
                     return start_pos
                 end
 
-                -- Start highlighting after the filename
-                local filename_end = #file_icon + #filename + 4
-                local pos = filename_end
+                local pos = 0
                 pos = highlight_key(M.config.keybinds.next_mode, pos)
                 pos = highlight_key(M.config.keybinds.pick, pos)
                 highlight_key(M.config.keybinds.close, pos)
@@ -329,7 +328,7 @@ return {
                     row = base_row + content_height,
                     col = base_col,
                     style = 'minimal',
-                    border = 'rounded',
+                    border = { '─', ' ', ' ', '│', '└', '─', '┘', '│' },
                 })
 
                 -- Focus selector window
