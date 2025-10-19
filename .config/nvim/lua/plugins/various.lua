@@ -42,11 +42,13 @@ return {
             })
         end,
         keys = {
-            '<leader>?',
-            function()
-                require('which-key').show({ global = false })
-            end,
-            desc = 'Show Keymaps',
+            {
+                '<leader>?',
+                function()
+                    require('which-key').show({ global = false })
+                end,
+                desc = 'Show Keymaps',
+            }
         }
     },
     {
