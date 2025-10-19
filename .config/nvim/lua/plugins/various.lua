@@ -41,15 +41,6 @@ return {
                 { '<leader>n',   desc = 'Toggle Relative Numbers' },
             })
         end,
-        keys = {
-            {
-                '<leader>?',
-                function()
-                    require('which-key').show({ global = false })
-                end,
-                desc = 'Show Keymaps',
-            }
-        }
     },
     {
         'kana/vim-textobj-entire',
