@@ -46,6 +46,13 @@ return {
                 end
             end
 
+            -- Calculate SHA256 hash of file contents
+            local function calculate_hash(lines)
+                local content = table.concat(lines, '\n')
+                -- Use vim's built-in sha256 function
+                return vim.fn.sha256(content)
+            end
+
             -- Get all history files for a given file
             local function get_history_files(filepath)
                 local history_dir = get_history_dir(filepath)
@@ -90,6 +97,23 @@ return {
                     return
                 end
 
+                -- Read current file contents
+                local current_lines = vim.fn.readfile(filepath)
+                local current_hash = calculate_hash(current_lines)
+
+                -- Check if content has changed compared to the latest history entry
+                local history_files = get_history_files(filepath)
+                if #history_files > 0 then
+                    local latest_history = history_files[1]
+                    local latest_lines = vim.fn.readfile(latest_history)
+                    local latest_hash = calculate_hash(latest_lines)
+
+                    -- Skip saving if content hasn't changed
+                    if current_hash == latest_hash then
+                        return
+                    end
+                end
+
                 local history_dir = get_history_dir(filepath)
                 local history_filename = get_history_filename(filepath)
                 local history_path = history_dir .. '/' .. history_filename
@@ -98,10 +122,49 @@ return {
                 ensure_dir_exists(history_dir)
 
                 -- Copy the file to history
-                vim.fn.writefile(vim.fn.readfile(filepath), history_path)
+                vim.fn.writefile(current_lines, history_path)
 
                 -- Cleanup old history
                 cleanup_old_history(filepath)
+            end
+
+            -- Format time in a human-readable way
+            local function format_time_display(timestamp_str)
+                -- Parse the timestamp (format: YYYY-MM-DD_HH-MM-SS)
+                local year, month, day, hour, min, sec = timestamp_str:match(
+                    '(%d%d%d%d)%-(%d%d)%-(%d%d)_(%d%d)%-(%d%d)%-(%d%d)')
+                if not year then
+                    return timestamp_str
+                end
+
+                local time = os.time({
+                    year = tonumber(year),
+                    month = tonumber(month),
+                    day = tonumber(day),
+                    hour = tonumber(hour),
+                    min = tonumber(min),
+                    sec = tonumber(sec)
+                })
+
+                local now = os.time()
+                local diff = now - time
+
+                -- Show relative time for recent changes
+                if diff < 60 then
+                    return 'Just now'
+                elseif diff < 3600 then
+                    local mins = math.floor(diff / 60)
+                    return mins .. ' minute' .. (mins > 1 and 's' or '') .. ' ago'
+                elseif diff < 86400 then
+                    local hours = math.floor(diff / 3600)
+                    return hours .. ' hour' .. (hours > 1 and 's' or '') .. ' ago'
+                elseif diff < 604800 then
+                    local days = math.floor(diff / 86400)
+                    return days .. ' day' .. (days > 1 and 's' or '') .. ' ago'
+                else
+                    -- For older entries, show a clean date format
+                    return os.date('%b %d, %Y at %H:%M', time)
+                end
             end
 
             -- Browse file history with Telescope
@@ -136,15 +199,11 @@ return {
                         entry_maker = function(entry)
                             -- Extract timestamp from filename
                             local timestamp = entry:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
-                            local display = timestamp or entry
-
-                            -- Get file modification time for additional info
-                            local mtime = vim.fn.getftime(entry)
-                            local time_str = os.date('%Y-%m-%d %H:%M:%S', mtime)
+                            local display = timestamp and format_time_display(timestamp) or entry
 
                             return {
                                 value = entry,
-                                display = time_str .. ' (' .. timestamp .. ')',
+                                display = display,
                                 ordinal = entry,
                                 path = entry,
                             }
