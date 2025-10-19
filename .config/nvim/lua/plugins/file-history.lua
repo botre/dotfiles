@@ -7,7 +7,7 @@ return {
 
             -- Configuration
             M.config = {
-                history_dir = vim.fn.expand('~/.nvim_local_ ==history'),
+                history_dir = vim.fn.expand('~/.nvim_local_history'),
                 max_changes = 100,
                 keybinds = {
                     pick = '<CR>',
@@ -201,22 +201,17 @@ return {
                 vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
                 vim.api.nvim_buf_set_option(buf, 'filetype', 'filehistory')
 
-                -- Build the display lines with dynamic keybindings
-                local kb = M.config.keybinds
+                -- Build the display lines
                 local lines = {
                     'File History: ' .. filename,
-                    '',
-                    'Keybindings:',
-                    string.format('  %-6s - Pick this version', kb.pick),
-                    string.format('  %-6s - Close panels', kb.close),
-                    '',
-                    '───────────────────────────────────────',
                     ''
                 }
+                -- Add virtual "Current" entry at the top
+                table.insert(lines, 'Current')
                 for i, file in ipairs(history_files) do
                     local timestamp = file:match('%.(%d%d%d%d%-%d%d%-%d%d_%d%d%-%d%d%-%d%d)$')
                     local display = timestamp and format_time_display(timestamp) or file
-                    table.insert(lines, string.format('%d. %s', i, display))
+                    table.insert(lines, display)
                 end
 
                 vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -245,9 +240,11 @@ return {
                 -- Set up keybindings for the history buffer
                 local function get_selected_index()
                     local line = vim.api.nvim_win_get_cursor(selector_win)[1]
-                    -- Skip header lines (8 lines: title, empty, keybindings x3, empty, separator, empty)
-                    if line <= 8 then return nil end
-                    local idx = line - 8
+                    -- Skip header lines (2 lines: title, empty)
+                    if line <= 2 then return nil end
+                    -- Line 3 is "Current" (index 0), line 4+ are history files (index 1+)
+                    local idx = line - 3
+                    -- idx 0 = Current, idx 1+ = history_files[idx]
                     return idx <= #history_files and idx or nil
                 end
 
@@ -256,23 +253,45 @@ return {
                     local idx = get_selected_index()
                     if not idx then return end
 
-                    local current_history = history_files[idx]
-                    local previous_history = history_files[idx + 1]
-
                     -- Generate diff
                     local diff_output
-                    if not previous_history then
-                        -- Compare with current file
+
+                    if idx == 0 then
+                        -- "Current" entry: compare current buffer with latest saved history
+                        local current_buf = vim.api.nvim_win_get_buf(orig_win)
+                        local current_lines = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
+
+                        -- Write current buffer to a temporary file
+                        local tmp_file = os.tmpname()
+                        vim.fn.writefile(current_lines, tmp_file)
+
+                        -- Compare with the most recent history file
+                        local latest_history = history_files[1]
                         local cmd = string.format('diff -u %s %s',
-                            vim.fn.shellescape(current_history),
-                            vim.fn.shellescape(filepath))
+                            vim.fn.shellescape(latest_history),
+                            vim.fn.shellescape(tmp_file))
                         diff_output = vim.fn.systemlist(cmd)
+
+                        -- Clean up temp file
+                        vim.fn.delete(tmp_file)
                     else
-                        -- Compare with previous history entry
-                        local cmd = string.format('diff -u %s %s',
-                            vim.fn.shellescape(previous_history),
-                            vim.fn.shellescape(current_history))
-                        diff_output = vim.fn.systemlist(cmd)
+                        -- Regular history entry
+                        local current_history = history_files[idx]
+                        local previous_history = history_files[idx + 1]
+
+                        if not previous_history then
+                            -- Compare with current file
+                            local cmd = string.format('diff -u %s %s',
+                                vim.fn.shellescape(current_history),
+                                vim.fn.shellescape(filepath))
+                            diff_output = vim.fn.systemlist(cmd)
+                        else
+                            -- Compare with previous history entry
+                            local cmd = string.format('diff -u %s %s',
+                                vim.fn.shellescape(previous_history),
+                                vim.fn.shellescape(current_history))
+                            diff_output = vim.fn.systemlist(cmd)
+                        end
                     end
 
                     -- Update diff buffer
@@ -288,19 +307,31 @@ return {
                 })
 
                 -- Pick (restore) from history
-                vim.keymap.set('n', kb.pick, function()
+                vim.keymap.set('n', M.config.keybinds.pick, function()
                     local idx = get_selected_index()
                     if idx then
+                        if idx == 0 then
+                            -- "Current" entry - no need to restore
+                            vim.notify('Already viewing current version', vim.log.levels.INFO)
+                            return
+                        end
                         local lines = vim.fn.readfile(history_files[idx])
                         vim.api.nvim_set_current_win(orig_win)
                         local current_buf = vim.api.nvim_win_get_buf(orig_win)
                         vim.api.nvim_buf_set_lines(current_buf, 0, -1, false, lines)
                         vim.notify('Content replaced with selected version', vim.log.levels.INFO)
+                        -- Close the panels
+                        if vim.api.nvim_win_is_valid(diff_win) then
+                            vim.api.nvim_win_close(diff_win, true)
+                        end
+                        if vim.api.nvim_win_is_valid(selector_win) then
+                            vim.api.nvim_win_close(selector_win, true)
+                        end
                     end
                 end, { buffer = buf, nowait = true })
 
                 -- Close the panels
-                vim.keymap.set('n', kb.close, function()
+                vim.keymap.set('n', M.config.keybinds.close, function()
                     if vim.api.nvim_win_is_valid(diff_win) then
                         vim.api.nvim_win_close(diff_win, true)
                     end
