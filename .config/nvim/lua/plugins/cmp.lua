@@ -1,21 +1,3 @@
--- Sources by priority, higher number means higher priority
-local sources_by_priority = {
-    snippets = 5,
-    lsp = 4,
-    emoji = 4,
-    path = 3,
-    dictionary = 2,
-    buffer = 1
-}
-
-local sources_list = {}
-for source, _ in pairs(sources_by_priority) do
-    table.insert(sources_list, source)
-end
-table.sort(sources_list, function(a, b)
-    return sources_by_priority[a] > sources_by_priority[b]
-end)
-
 return {
     {
         'saghen/blink.cmp',
@@ -50,7 +32,7 @@ return {
                 documentation = { auto_show = true }
             },
             sources = {
-                default = sources_list,
+                default = { 'snippets', 'lsp', 'emoji', 'path', 'dictionary', 'buffer' },
                 providers = {
                     emoji = {
                         module = 'blink-emoji',
