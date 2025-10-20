@@ -1,8 +1,10 @@
 -- Sources by priority, higher number means higher priority
 local sources_by_priority = {
-    snippets = 4,
-    lsp = 3,
-    path = 2,
+    snippets = 5,
+    lsp = 4,
+    emoji = 4,
+    path = 3,
+    dictionary = 2,
     buffer = 1
 }
 
@@ -19,6 +21,8 @@ return {
         'saghen/blink.cmp',
         dependencies = {
             'rafamadriz/friendly-snippets',
+            'moyiz/blink-emoji.nvim',
+            'Kaiser-Yang/blink-cmp-dictionary',
         },
         version = '1.*',
         opts = {

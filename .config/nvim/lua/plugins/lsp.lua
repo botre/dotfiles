@@ -55,8 +55,9 @@ return {
                     { buffer = bufnr, remap = false, desc = 'Go to implementation' })
                 vim.keymap.set('n', '<leader>gt', vim.lsp.buf.type_definition,
                     { buffer = bufnr, remap = false, desc = 'Go to type definition' })
-                vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename,
-                    { buffer = bufnr, remap = false, desc = 'Rename symbol' })
+                vim.keymap.set('n', '<leader>rn', function()
+                    return ':IncRename ' .. vim.fn.expand('<cword>')
+                end, { buffer = bufnr, remap = false, desc = 'Rename symbol', expr = true })
                 vim.keymap.set('n', 'K', vim.lsp.buf.hover,
                     { buffer = bufnr, remap = false, desc = 'Hover documentation' })
                 vim.keymap.set('n', 'gd', vim.lsp.buf.definition,
@@ -115,6 +116,12 @@ return {
                     null_ls.builtins.formatting.prettierd,
                 },
             })
+        end,
+    },
+    {
+        'smjonas/inc-rename.nvim',
+        config = function()
+            require('inc_rename').setup()
         end,
     },
 }
