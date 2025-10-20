@@ -70,16 +70,6 @@ return {
             },
             fuzzy = {
                 implementation = 'prefer_rust_with_warning',
-                sorts = {
-                    function(a, b)
-                        local priority_a = sources_by_priority[a.source_id] or 0
-                        local priority_b = sources_by_priority[b.source_id] or 0
-                        return priority_a > priority_b
-                    end,
-                    -- Defaults
-                    'score',
-                    'sort_text'
-                }
             }
         },
         opts_extend = { 'sources.default' },

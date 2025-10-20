@@ -22,9 +22,14 @@ return {
                 pattern = 'OilEnter',
                 callback = vim.schedule_wrap(function(args)
                     local oil = require('oil')
-                    if vim.api.nvim_get_current_buf() == args.data.buf and oil.get_cursor_entry() then
-                        oil.open_preview()
-                    end
+                    -- Add a small delay to ensure oil is fully loaded
+                    vim.defer_fn(function()
+                        if vim.api.nvim_buf_is_valid(args.data.buf)
+                           and vim.api.nvim_get_current_buf() == args.data.buf
+                           and oil.get_cursor_entry() then
+                            oil.open_preview()
+                        end
+                    end, 100)
                 end),
             })
         end,
