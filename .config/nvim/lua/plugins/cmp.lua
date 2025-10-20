@@ -51,6 +51,16 @@ return {
             },
             sources = {
                 default = sources_list,
+                providers = {
+                    emoji = {
+                        module = 'blink-emoji',
+                        name = 'Emoji',
+                        score_offset = 15,
+                        opts = {
+                            insert = true,
+                        },
+                    },
+                },
             },
             fuzzy = {
                 implementation = 'prefer_rust_with_warning',
