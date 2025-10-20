@@ -60,6 +60,12 @@ return {
                             insert = true,
                         },
                     },
+                    dictionary = {
+                        module = 'blink-cmp-dictionary',
+                        name = 'Dict',
+                        score_offset = 10,
+                        min_keyword_length = 3,
+                    },
                 },
             },
             fuzzy = {
