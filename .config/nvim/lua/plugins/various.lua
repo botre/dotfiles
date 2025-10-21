@@ -65,6 +65,7 @@ return {
         lazy = false,
         dependencies = { 'MunifTanjim/nui.nvim' },
         opts = {
+            disable_mouse = false,
             max_count = 6,
             restriction_mode = 'hint',
         },
