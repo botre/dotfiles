@@ -69,10 +69,6 @@ return {
     { 'tpope/vim-commentary' },
     { 'tpope/vim-eunuch' },
     { 'tpope/vim-surround' },
-    {
-        'tris203/precognition.nvim',
-        opts = {},
-    },
     { 'unblevable/quick-scope' },
     {
         'windwp/nvim-autopairs',
