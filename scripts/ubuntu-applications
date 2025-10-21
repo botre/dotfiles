@@ -35,6 +35,7 @@ apt_applications=(
     ["gnome-shell-extensions"]=""
     ["gnome-shell-extension-manager"]=""
     ["gnome-tweaks"]=""
+    ["flameshot"]=""
 )
 
 flatpak_applications=(
