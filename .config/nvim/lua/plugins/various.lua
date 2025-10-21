@@ -60,9 +60,19 @@ return {
             })
         end
     },
+    {
+        'm4xshen/hardtime.nvim',
+        lazy = false,
+        dependencies = { 'MunifTanjim/nui.nvim' },
+        opts = {},
+    },
     { 'tpope/vim-commentary' },
     { 'tpope/vim-eunuch' },
     { 'tpope/vim-surround' },
+    {
+        'tris203/precognition.nvim',
+        opts = {},
+    },
     { 'unblevable/quick-scope' },
     {
         'windwp/nvim-autopairs',
