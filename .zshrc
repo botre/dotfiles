@@ -69,6 +69,7 @@ alias lsa="ls -a"
 alias lzd="lazydocker"
 alias lzg="lazygit"
 
+alias nvim="nvim --listen /tmp/nvim-server.pipe"
 alias v="nvim"
 alias vi="nvim"
 alias vim="nvim"
