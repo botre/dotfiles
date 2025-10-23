@@ -69,6 +69,8 @@ alias lsa="ls -a"
 alias lzd="lazydocker"
 alias lzg="lazygit"
 
+# Start nvim with RPC server enabled. This allows external tools (like lazygit)
+# to open files in the same nvim instance using --remote-tab
 alias nvim="nvim --listen /tmp/nvim-server.pipe"
 alias v="nvim"
 alias vi="nvim"
