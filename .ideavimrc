@@ -48,6 +48,9 @@ map <leader>]e <Action>(GotoNextError)
 map <leader>[f <Action>(MethodUp)
 map <leader>]f <Action>(MethodDown)
 
+map [q <Action>(PreviousOccurence)
+map ]q <Action>(NextOccurence)
+
 map <leader><space> <Action>(RecentFiles)
 map <leader>ff <Action>(GotoFile)
 map <leader>fg <Action>(FindInPath)
