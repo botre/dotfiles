@@ -47,6 +47,12 @@ return {
         end,
     },
     {
+        'junegunn/fzf',
+        run = function()
+            vim.fn['fzf#install']()
+        end,
+    },
+    {
         'kana/vim-textobj-entire',
         dependencies = {
             'kana/vim-textobj-user'
