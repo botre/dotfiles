@@ -4,6 +4,7 @@ fi
 
 path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
+path+=("$HOME/.local/bin")
 export PATH
 
 export ZSH="$HOME/.oh-my-zsh"
