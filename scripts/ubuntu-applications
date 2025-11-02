@@ -192,6 +192,10 @@ install_app "mise" \
     "https://mise.jdx.dev/gpg-key.pub" \
     "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=amd64] https://mise.jdx.dev/deb stable main"
 
+install_app "keybase" \
+    "https://keybase.io/docs/server_security/code_signing_key.asc" \
+    "deb [signed-by=/etc/apt/keyrings/keybase.gpg] http://prerelease.keybase.io/deb stable main"
+
 # Install Tailscale
 if ! command -v tailscale &> /dev/null; then
     echo "Installing Tailscale..."
