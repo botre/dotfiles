@@ -1,7 +1,7 @@
 cask "1password"
 cask "claude-code"
 cask "firefox"
+cask "gcloud-cli"
 cask "google-chrome"
-cask "google-cloud-sdk"
 cask "rectangle"
 cask "the-unarchiver"
