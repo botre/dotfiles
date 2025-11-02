@@ -192,6 +192,14 @@ install_app "mise" \
     "https://mise.jdx.dev/gpg-key.pub" \
     "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=amd64] https://mise.jdx.dev/deb stable main"
 
+# Install Tailscale
+if ! command -v tailscale &> /dev/null; then
+    echo "Installing Tailscale..."
+    curl -fsSL https://tailscale.com/install.sh | sh
+else
+    echo "Tailscale is already installed. Skipping..."
+fi
+
 # Install Claude Code
 if ! command -v claude &> /dev/null; then
     echo "Installing Claude Code..."
