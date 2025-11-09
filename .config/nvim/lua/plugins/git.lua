@@ -20,4 +20,13 @@ return {
             end, { desc = 'Next change' })
         end,
     },
+    {
+        'f-person/git-blame.nvim',
+        config = function()
+            require('gitblame').setup({
+                enabled = false,
+            })
+            vim.keymap.set('n', '<leader>gb', ':GitBlameToggle<CR>', { desc = 'Toggle git blame' })
+        end,
+    },
 }

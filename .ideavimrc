@@ -65,6 +65,7 @@ map <leader>gi <Action>(GotoImplementation)
 map <leader>gt <Action>(GotoTypeDeclaration)
 
 map <leader>gg <Action>(CheckinProject)
+map <leader>gb <Action>(Annotate)
 
 map <leader>rf <Action>(RenameFile)
 map <leader>rn <Action>(RenameElement)
