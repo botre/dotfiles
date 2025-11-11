@@ -9,6 +9,11 @@ return {
                         '.git/',
                         'node_modules/',
                     }
+                },
+                pickers = {
+                    oldfiles = {
+                        cwd_only = true, -- Show recent files from current project only
+                    }
                 }
             })
 

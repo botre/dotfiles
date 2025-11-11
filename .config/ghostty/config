@@ -1,9 +1,12 @@
 adjust-cursor-thickness = 300%
+copy-on-select = false
 font-family = Hack Nerd Font
 font-family-bold = Hack Nerd Font Bold
 font-family-bold-italic = Hack Nerd Font Bold Italic
 font-family-italic = Hack Nerd Font Italic
 font-size = 12
+keybind = performable:ctrl+c=copy_to_clipboard
+keybind = ctrl+v=paste_from_clipboard
 resize-overlay = never
 term = xterm-256color
 theme = catppuccin-latte.conf
