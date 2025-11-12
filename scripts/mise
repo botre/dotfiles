@@ -3,6 +3,7 @@
 set -e
 
 mise use bun@1 --global
+mise use go@1.24 --global
 mise use lua@5.4 --global
 mise use node@22 --global
 mise use pnpm@10 --global
