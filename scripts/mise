@@ -6,6 +6,7 @@ mise use bun@1 --global
 mise use lua@5.4 --global
 mise use node@22 --global
 mise use pnpm@10 --global
+mise use ruby@3.2 --global
 mise use terraform@1.11 --global
 mise use yarn@1.22 --global
 
