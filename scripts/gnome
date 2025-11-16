@@ -28,6 +28,9 @@ gsettings set org.gnome.desktop.peripherals.touchpad click-method 'fingers'
 # Disable animations
 gsettings set org.gnome.desktop.interface enable-animations false
 
+# Disable hot corners
+gsettings set org.gnome.desktop.interface enable-hot-corners false
+
 # Disable workspaces
 gsettings set org.gnome.mutter dynamic-workspaces false
 gsettings set org.gnome.desktop.wm.preferences num-workspaces 1
