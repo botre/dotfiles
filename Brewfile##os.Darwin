@@ -1,2 +1,0 @@
-instance_eval(File.read("Brewfile.binaries"))
-instance_eval(File.read("Brewfile.casks"))

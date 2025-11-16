@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Home directory: $HOME"
+
+# Check if yay is installed
+if ! command -v yay &> /dev/null; then
+    echo "yay is not installed. Installing yay..."
+    sudo pacman -S --needed git base-devel
+    git clone https://aur.archlinux.org/yay.git /tmp/yay
+    cd /tmp/yay
+    makepkg -si --noconfirm
+    cd -
+    rm -rf /tmp/yay
+fi
+
+# Update system
+echo "Updating system..."
+yay -Syu --noconfirm
+
+# Read packages from arch-packages.txt
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PACKAGES_FILE="$SCRIPT_DIR/../arch-packages.txt"
+
+if [ ! -f "$PACKAGES_FILE" ]; then
+    echo "Error: $PACKAGES_FILE not found!"
+    exit 1
+fi
+
+echo "Installing packages from arch-packages.txt..."
+
+# Read packages and install them
+while IFS= read -r package; do
+    # Skip empty lines and comments
+    if [[ -z "$package" || "$package" =~ ^[[:space:]]*# ]]; then
+        continue
+    fi
+
+    # Trim whitespace
+    package=$(echo "$package" | xargs)
+
+    if yay -Qi "$package" &> /dev/null; then
+        echo "$package is already installed. Skipping..."
+    else
+        echo "Installing $package..."
+        yay -S --noconfirm "$package"
+    fi
+done < "$PACKAGES_FILE"
+
+echo "Cleaning up..."
+yay -Yc --noconfirm
+
+echo "Done"

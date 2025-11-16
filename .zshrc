@@ -1,7 +1,3 @@
-if [[ -d /home/linuxbrew/.linuxbrew ]]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
-
 path+=("/usr/local/bin")
 path+=("/usr/local/sbin")
 path+=("$HOME/.local/bin")
