@@ -9,6 +9,7 @@ claude-code
 coreutils
 curl
 docker
+docker-compose
 eza
 fastfetch
 fd
