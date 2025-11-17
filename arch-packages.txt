@@ -24,6 +24,7 @@ gnome-shell-extensions
 gnome-tweaks
 gnupg
 google-chrome
+google-cloud-cli
 imagemagick
 jetbrains-toolbox
 jq

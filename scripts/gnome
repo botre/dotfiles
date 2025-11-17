@@ -18,6 +18,9 @@ gsettings set org.gnome.desktop.screensaver lock-delay 0
 # Always show scroll bars
 gsettings set org.gnome.desktop.interface overlay-scrolling false
 
+# Use 24-hour clock format
+gsettings set org.gnome.desktop.interface clock-format '24h'
+
 # Disable natural scrolling
 gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false
 gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll false
