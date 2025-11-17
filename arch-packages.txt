@@ -6,6 +6,7 @@ bat
 beeper
 bitwig-studio
 claude-code
+cloud-sql-proxy
 coreutils
 curl
 docker
