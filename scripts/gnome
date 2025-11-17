@@ -21,6 +21,9 @@ gsettings set org.gnome.desktop.interface overlay-scrolling false
 # Use 24-hour clock format
 gsettings set org.gnome.desktop.interface clock-format '24h'
 
+# Configure compose key (right alt)
+gsettings set org.gnome.desktop.input-sources xkb-options "['compose:ralt']"
+
 # Disable natural scrolling
 gsettings set org.gnome.desktop.peripherals.mouse natural-scroll false
 gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll false
