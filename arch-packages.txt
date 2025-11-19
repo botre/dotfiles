@@ -39,6 +39,7 @@ mise
 neovim
 nmap
 obsidian-bin
+opencode-bin
 pgvector
 postgresql-libs
 procps
