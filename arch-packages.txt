@@ -58,6 +58,7 @@ tree
 unzip
 uv
 vlc
+walker-bin
 watchman-bin
 wget
 xclip
