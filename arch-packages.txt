@@ -37,6 +37,7 @@ lazydocker
 lazygit
 libmpeg2
 mise
+mpv-full
 neovim
 nmap
 obsidian-bin
@@ -57,7 +58,6 @@ transmission-gtk
 tree
 unzip
 uv
-vlc
 watchman-bin
 wget
 xclip
