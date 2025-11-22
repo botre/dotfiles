@@ -66,16 +66,6 @@ return {
             })
         end
     },
-    {
-        'm4xshen/hardtime.nvim',
-        lazy = false,
-        dependencies = { 'MunifTanjim/nui.nvim' },
-        opts = {
-            disable_mouse = false,
-            max_count = 6,
-            restriction_mode = 'hint',
-        },
-    },
     { 'tpope/vim-commentary' },
     { 'tpope/vim-eunuch' },
     { 'tpope/vim-surround' },
