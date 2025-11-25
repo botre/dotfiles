@@ -18,7 +18,6 @@ plugins=(
   aws
   brew
   docker
-  fd
   gcloud
   gh
   git
@@ -28,7 +27,6 @@ plugins=(
   node
   npm
   react-native
-  ripgrep
   ssh
   systemd
   terraform
