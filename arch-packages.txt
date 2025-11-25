@@ -30,6 +30,7 @@ gnupg
 google-chrome
 google-cloud-cli
 imagemagick
+jdk-openjdk
 jetbrains-toolbox
 jq
 keybase-bin
