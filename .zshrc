@@ -94,6 +94,10 @@ eval "$(starship init zsh)"
 export GOPATH=$(go env GOPATH)
 export PATH=$PATH:$(go env GOPATH)/bin
 
+# Java development
+export JAVA_HOME=/usr/lib/jvm/default
+export PATH=$JAVA_HOME/bin:$PATH
+
 # Android development
 export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
