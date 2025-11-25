@@ -86,5 +86,11 @@ eval "$(zoxide init zsh --cmd cd)"
 eval "$(thefuck --alias)"
 eval "$(starship init zsh)"
 
+# Go development
 export GOPATH=$(go env GOPATH)
 export PATH=$PATH:$(go env GOPATH)/bin
+
+# Android development
+export ANDROID_HOME=$HOME/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/platform-tools
