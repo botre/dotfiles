@@ -14,9 +14,11 @@ export EDITOR="$VISUAL"
 VI_MODE_SET_CURSOR=true
 
 plugins=(
+  archlinux
   aws
   brew
   docker
+  fd
   gcloud
   gh
   git
@@ -26,7 +28,9 @@ plugins=(
   node
   npm
   react-native
+  ripgrep
   ssh
+  systemd
   terraform
   vi-mode
   fzf # must be after vi-mode
