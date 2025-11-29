@@ -97,7 +97,6 @@ return {
                 ensure_installed = {
                     'black',
                     'clang-format',
-                    'mypy',
                     'prettierd',
                 },
             })
@@ -106,7 +105,6 @@ return {
             null_ls.setup({
                 sources = {
                     -- Python
-                    null_ls.builtins.diagnostics.mypy,
                     null_ls.builtins.formatting.black,
 
                     -- C/C++
