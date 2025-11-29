@@ -9,6 +9,7 @@ claude-code
 cloud-sql-proxy
 coreutils
 curl
+dnsmasq
 docker
 docker-compose
 eza
@@ -31,13 +32,14 @@ google-chrome
 google-cloud-cli
 imagemagick
 jdk21-openjdk
-jre21-openjdk
 jetbrains-toolbox
 jq
+jre21-openjdk
 keybase-bin
 lazydocker
 lazygit
 libmpeg2
+libvirt
 mise
 mpv-full
 neovim
@@ -47,6 +49,7 @@ opencode-bin
 pgvector
 postgresql-libs
 procps
+qemu-full
 ripgrep
 slack-desktop
 sops
@@ -60,6 +63,8 @@ transmission-gtk
 tree
 unzip
 uv
+vagrant
+virt-manager
 watchman-bin
 wget
 xclip
