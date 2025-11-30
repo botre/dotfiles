@@ -11,9 +11,12 @@ export LC_ALL=en_US.UTF-8
 export VISUAL=nvim
 export EDITOR="$VISUAL"
 
+export SSH_AUTH_SOCK=~/.1password/agent.sock
+
 VI_MODE_SET_CURSOR=true
 
 plugins=(
+  1password
   archlinux
   aws
   brew
