@@ -32,10 +32,8 @@ gnupg
 google-chrome
 google-cloud-cli
 imagemagick
-jdk21-openjdk
 jetbrains-toolbox
 jq
-jre21-openjdk
 keybase-bin
 lazydocker
 lazygit
@@ -75,3 +73,8 @@ yq
 zellij
 zoxide
 zsh
+
+jdk17-openjdk
+jdk21-openjdk
+jre17-openjdk
+jre21-openjdk
