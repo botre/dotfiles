@@ -38,6 +38,7 @@ keybase-bin
 lazydocker
 lazygit
 libmpeg2
+libreoffice-still
 libvirt
 mise
 mpv-full
