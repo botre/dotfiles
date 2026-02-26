@@ -66,6 +66,7 @@ uv
 virt-manager
 watchman-bin
 wget
+worktrunk-bin
 xclip
 yadm
 yamllint
