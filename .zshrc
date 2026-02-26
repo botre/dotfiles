@@ -103,3 +103,6 @@ export PATH=$JAVA_HOME/bin:$PATH
 export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
+
+# Worktrunk setup
+if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
