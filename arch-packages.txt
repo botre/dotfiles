@@ -1,5 +1,6 @@
 1password
 1password-cli
+act
 arduino-ide-bin
 aws-cli-bin
 bash
