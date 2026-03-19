@@ -65,6 +65,17 @@ alias g='git'
 
 alias ip='curl ipv4.icanhazip.com'
 
+# Auto-detect package manager from lockfile
+p() {
+  if   [[ -f bun.lockb || -f bun.lock ]]; then cmd=bun
+  elif [[ -f pnpm-lock.yaml ]]; then cmd=pnpm
+  elif [[ -f yarn.lock ]]; then cmd=yarn
+  else cmd=npm
+  fi
+  echo "→ $cmd $@"
+  $cmd "$@"
+}
+
 alias ls='eza --icons'
 alias lsa="ls -a"
 
