@@ -51,6 +51,7 @@ pgvector
 postgresql-libs
 procps
 qemu-full
+render-cli-bin
 ripgrep
 slack-desktop
 sops
