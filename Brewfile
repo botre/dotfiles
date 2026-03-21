@@ -44,6 +44,7 @@ brew "zoxide"
 # Casks
 cask "1password"
 cask "alt-tab"
+cask "claude"
 cask "claude-code"
 cask "firefox"
 cask "gcloud-cli"
