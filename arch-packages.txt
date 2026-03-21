@@ -61,6 +61,7 @@ tailscale
 tar
 thefuck
 ticktick
+tmux
 transmission-gtk
 tree
 unzip
@@ -74,7 +75,6 @@ yadm
 yamllint
 yazi
 yq
-zellij
 zoxide
 zsh
 
