@@ -98,10 +98,6 @@ function yaz() {
 	rm -f -- "$tmp"
 }
 
-eval "$(zoxide init zsh --cmd cd)"
-eval "$(thefuck --alias)"
-eval "$(starship init zsh)"
-
 # Go development
 export GOPATH=$(go env GOPATH)
 export PATH=$PATH:$(go env GOPATH)/bin
@@ -115,5 +111,8 @@ export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 
-# Worktrunk setup
+# Shell tool integrations (order matters, zoxide must be last)
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
+eval "$(thefuck --alias)"
+eval "$(starship init zsh)"
+eval "$(zoxide init zsh --cmd cd)"
