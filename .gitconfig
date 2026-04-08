@@ -10,7 +10,7 @@
     last = log -1 HEAD
     p = push
     pl = pull
-    recent = "!git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'"
+    recent = "!git for-each-ref --sort=-committerdate refs/heads/ --format='%(refname:short) | %(objectname:short) | %(contents:subject) (%(committerdate:relative))' | fzf --ansi --preview 'git log --oneline --graph --color=always {1} -- | head -20' --preview-window=right:50% | awk -F' \\\\| ' '{print $1}' | xargs -r git checkout"
     rh = reset --hard
     s = status
 [core]
