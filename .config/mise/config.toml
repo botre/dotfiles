@@ -1,4 +1,5 @@
 [tools]
+# Programming languages
 bun = "1"
 go = "latest"
 lua = "5.4"
@@ -7,3 +8,6 @@ pnpm = "10"
 ruby = "3.4"
 terraform = "1.11"
 yarn = "1.22"
+
+# NPM packages
+"npm:skills" = "latest"
