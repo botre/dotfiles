@@ -8,4 +8,3 @@ The order of execution matters:
 - scripts/gnome (Arch only)
 - scripts/fonts
 - scripts/zsh
-- scripts/mise
