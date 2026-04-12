@@ -36,7 +36,7 @@ helm
 imagemagick
 jetbrains-toolbox
 jq
-k3s
+k3d
 keybase-bin
 kubectl
 lazydocker
