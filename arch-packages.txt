@@ -32,10 +32,13 @@ gnome-tweaks
 gnupg
 google-chrome
 google-cloud-cli
+helm
 imagemagick
 jetbrains-toolbox
 jq
+k3s
 keybase-bin
+kubectl
 lazydocker
 lazygit
 libmpeg2
