@@ -1,6 +1,7 @@
 1password
 1password-cli
 act
+age
 arduino-ide-bin
 aws-cli-bin
 bash

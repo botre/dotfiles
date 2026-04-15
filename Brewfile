@@ -1,4 +1,5 @@
 # Binaries
+brew "age"
 brew "awscli"
 brew "bash"
 brew "bat"
