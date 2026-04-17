@@ -2,6 +2,7 @@
 1password-cli
 act
 age
+ansible
 arduino-ide-bin
 aws-cli-bin
 bash
