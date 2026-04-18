@@ -68,7 +68,6 @@ tar
 thefuck
 ticktick
 tmux
-tor-browser-bin
 transmission-gtk
 tree
 unzip
