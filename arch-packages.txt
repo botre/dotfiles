@@ -59,6 +59,7 @@ procps
 qemu-full
 render-cli-bin
 ripgrep
+rpi-imager
 slack-desktop
 sops
 spotify
