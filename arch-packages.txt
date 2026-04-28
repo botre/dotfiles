@@ -66,6 +66,10 @@ spotify
 starship
 tailscale
 tar
+tesseract
+tesseract-data-eng
+tesseract-data-fra
+tesseract-data-nld
 thefuck
 ticktick
 tmux
