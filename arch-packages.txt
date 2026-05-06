@@ -16,6 +16,7 @@ curl
 dnsmasq
 discord
 docker
+docker-buildx
 docker-compose
 eza
 fastfetch
