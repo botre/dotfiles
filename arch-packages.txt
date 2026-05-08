@@ -79,6 +79,7 @@ transmission-gtk
 tree
 unzip
 uv
+vhs
 virt-manager
 watchman-bin
 wget
