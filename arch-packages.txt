@@ -55,6 +55,7 @@ neovim
 nmap
 obsidian-bin
 opencode-bin
+opensnitch
 pgvector
 postgresql-libs
 procps
