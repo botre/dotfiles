@@ -9,6 +9,7 @@ bash
 bat
 beeper
 bitwig-studio
+clamav
 claude-code
 cloud-sql-proxy
 coreutils
@@ -79,6 +80,7 @@ tmux
 transmission-gtk
 tree
 unzip
+usbguard
 uv
 vhs
 virt-manager
