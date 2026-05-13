@@ -57,8 +57,9 @@ gsettings set org.gnome.desktop.wm.preferences auto-raise true
 # Disable lock screen notifications
 gsettings set org.gnome.desktop.notifications show-in-lock-screen false
 
-# Enable AppIndicator extension for system tray icon support
+# Allow user extensions globally, then enable AppIndicator (system tray support)
+gsettings set org.gnome.shell disable-user-extensions false
 gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com 2>/dev/null \
-  || echo "AppIndicator extension not installed yet — install gnome-shell-extension-appindicator first"
+  || echo "AppIndicator extension missing"
 
 echo "Done"
