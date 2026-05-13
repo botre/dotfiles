@@ -33,7 +33,6 @@ gawk
 git
 github-cli
 gnome-online-accounts
-gnome-shell-extension-appindicator
 gnome-shell-extensions
 gnome-tweaks
 gnupg
@@ -57,7 +56,6 @@ neovim
 nmap
 obsidian-bin
 opencode-bin
-opensnitch
 pgvector
 postgresql-libs
 procps
@@ -81,8 +79,6 @@ tmux
 transmission-gtk
 tree
 unzip
-usbguard
-usbguard-qt
 uv
 vhs
 virt-manager
