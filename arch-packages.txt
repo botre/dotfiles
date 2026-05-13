@@ -81,6 +81,7 @@ transmission-gtk
 tree
 unzip
 usbguard
+usbguard-notifier
 uv
 vhs
 virt-manager
