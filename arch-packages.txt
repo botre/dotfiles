@@ -84,6 +84,7 @@ vhs
 virt-manager
 watchman-bin
 wget
+wl-clipboard
 worktrunk-bin
 xclip
 yadm
