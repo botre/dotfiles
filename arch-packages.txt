@@ -33,6 +33,7 @@ gawk
 git
 github-cli
 gnome-online-accounts
+gnome-shell-extension-appindicator
 gnome-shell-extensions
 gnome-tweaks
 gnupg
