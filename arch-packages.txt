@@ -78,6 +78,7 @@ ticktick
 tmux
 transmission-gtk
 tree
+tree-sitter-cli
 unzip
 uv
 vhs
