@@ -1,5 +1,4 @@
 return {
-    { 'adelarsq/vim-matchit' },
     {
         'folke/todo-comments.nvim',
         dependencies = { 'nvim-lua/plenary.nvim' },
@@ -48,7 +47,7 @@ return {
     },
     {
         'junegunn/fzf',
-        run = function()
+        build = function()
             vim.fn['fzf#install']()
         end,
     },
@@ -66,7 +65,6 @@ return {
             })
         end
     },
-    { 'tpope/vim-commentary' },
     { 'tpope/vim-eunuch' },
     { 'tpope/vim-surround' },
     { 'unblevable/quick-scope' },

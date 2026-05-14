@@ -281,8 +281,10 @@ return {
                 local history_ns_id = vim.api.nvim_create_namespace('file_history_relative_time')
                 for _, pos in ipairs(relative_time_positions) do
                     local line_text = history_lines[pos.line + 1] -- +1 because "Current" is line 1
-                    vim.api.nvim_buf_add_highlight(history_buf, history_ns_id, 'Comment', pos.line,
-                        pos.start_col, #line_text)
+                    vim.api.nvim_buf_set_extmark(history_buf, history_ns_id, pos.line, pos.start_col, {
+                        end_col = #line_text,
+                        hl_group = 'Comment',
+                    })
                 end
 
                 local selector_win = vim.api.nvim_open_win(history_buf, true, {
@@ -344,7 +346,10 @@ return {
 
                 -- Highlight file icon
                 if icon_hl then
-                    vim.api.nvim_buf_add_highlight(info_buf, ns_id, icon_hl, 1, 1, 1 + #file_icon)
+                    vim.api.nvim_buf_set_extmark(info_buf, ns_id, 1, 1, {
+                        end_col = 1 + #file_icon,
+                        hl_group = icon_hl,
+                    })
                 end
 
                 -- Highlight keybind letters
@@ -353,8 +358,10 @@ return {
                     local search_start = #file_icon + #filename + 5 -- Start after filename
                     local key_start = info_line:find(key, search_start, true)
                     if key_start then
-                        vim.api.nvim_buf_add_highlight(info_buf, ns_id, 'Function', 1, key_start - 1,
-                            key_start - 1 + #key)
+                        vim.api.nvim_buf_set_extmark(info_buf, ns_id, 1, key_start - 1, {
+                            end_col = key_start - 1 + #key,
+                            hl_group = 'Function',
+                        })
                     end
                 end
 
