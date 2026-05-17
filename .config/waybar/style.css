@@ -1,0 +1,39 @@
+/* waybar -- Catppuccin Latte, Hack Nerd Font. */
+
+* {
+  font-family: "Hack Nerd Font";
+  font-size: 13px;
+  min-height: 0;
+}
+
+window#waybar {
+  background-color: #e6e9ef; /* mantle */
+  color: #4c4f69;            /* text   */
+}
+
+#workspaces button {
+  padding: 0 8px;
+  color: #6c6f85;            /* subtext0 */
+  background: transparent;
+}
+
+#workspaces button.active {
+  color: #1e66f5;            /* blue */
+}
+
+#workspaces button.urgent {
+  color: #d20f39;            /* red */
+}
+
+#clock,
+#tray,
+#pulseaudio,
+#network,
+#bluetooth,
+#backlight,
+#battery {
+  padding: 0 10px;
+}
+
+#battery.warning  { color: #df8e1d; } /* yellow */
+#battery.critical { color: #d20f39; } /* red    */

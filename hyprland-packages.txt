@@ -1,0 +1,35 @@
+# Hyprland desktop — minimal/fast stack.
+# Installed by scripts/hyprland-applications (reads this file like arch-packages.txt).
+# Runs alongside GNOME; pick the session at the GDM login screen.
+
+# Compositor & session
+hyprland
+hyprlock
+hypridle
+hyprpolkit-agent
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+qt5-wayland
+qt6-wayland
+
+# Bar, launcher, notifications
+waybar
+fuzzel
+mako
+
+# Screenshots & clipboard history
+grim
+slurp
+wl-clipboard
+cliphist
+
+# Hardware controls
+brightnessctl
+playerctl
+pavucontrol
+network-manager-applet
+blueman
+
+# Session keyring & polkit
+gnome-keyring
+polkit
