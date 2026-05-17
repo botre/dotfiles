@@ -51,7 +51,10 @@ gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled false
 gsettings set org.gnome.desktop.sound event-sounds false
 
 # Automatic new window focus
-gsettings set org.gnome.desktop.wm.preferences focus-new-windows 'strict'
+# 'smart' lets new windows/popups grab focus and raise to the front, even when
+# the app doesn't implement XDG activation. 'strict' would instead enforce
+# protocol compliance and demote non-compliant windows to a "ready" notification.
+gsettings set org.gnome.desktop.wm.preferences focus-new-windows 'smart'
 gsettings set org.gnome.desktop.wm.preferences auto-raise true
 
 # Disable lock screen notifications
