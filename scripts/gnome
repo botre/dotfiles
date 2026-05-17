@@ -57,9 +57,6 @@ gsettings set org.gnome.desktop.sound event-sounds false
 gsettings set org.gnome.desktop.wm.preferences focus-new-windows 'smart'
 gsettings set org.gnome.desktop.wm.preferences auto-raise true
 
-# Show notification banners on screen (i.e. keep Do Not Disturb off)
-gsettings set org.gnome.desktop.notifications show-banners true
-
 # Disable lock screen notifications
 gsettings set org.gnome.desktop.notifications show-in-lock-screen false
 
