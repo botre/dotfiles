@@ -9,5 +9,8 @@ ruby = "3.4"
 terraform = "1.11"
 yarn = "1.22"
 
+# CLI tools
+fnox = "latest"
+
 # NPM packages
 "npm:skills" = "latest"
