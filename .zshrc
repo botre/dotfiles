@@ -50,8 +50,11 @@ alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
 alias cat="bat"
 
+# Clipboard copy, detecting the platform
 if [[ "$(uname)" == "Darwin" ]]; then
     alias copy='pbcopy'
+elif [[ -n "$WAYLAND_DISPLAY" ]]; then
+    alias copy='wl-copy'
 else
     alias copy='xclip -sel clip'
 fi
@@ -113,6 +116,6 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 # Shell tool integrations (order matters, zoxide must be last)
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
-eval "$(thefuck --alias)"
+eval "$(pay-respects zsh --alias f)"
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"

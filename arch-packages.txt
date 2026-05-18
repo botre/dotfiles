@@ -31,6 +31,7 @@ flyctl-bin
 fzf
 gawk
 git
+git-delta
 github-cli
 gnome-online-accounts
 gnome-shell-extensions
@@ -56,6 +57,7 @@ neovim
 nmap
 obsidian-bin
 opencode-bin
+pay-respects
 pgvector
 postgresql-libs
 procps
@@ -73,7 +75,6 @@ tesseract
 tesseract-data-eng
 tesseract-data-fra
 tesseract-data-nld
-thefuck
 ticktick
 tmux
 transmission-gtk
