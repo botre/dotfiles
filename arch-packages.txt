@@ -39,6 +39,7 @@ gnome-tweaks
 gnupg
 google-chrome
 google-cloud-cli
+hcloud
 helm
 imagemagick
 jetbrains-toolbox
