@@ -1,0 +1,4 @@
+theme = "catppuccin-latte"
+mode = "auto"
+line_numbers = true
+menu_bar = true

@@ -1,0 +1,14 @@
+[user]
+name = "botre"
+email = "git@bjornkrols.com"
+
+[ui]
+default-command = "log"
+# Render diffs through git's formatter so delta styles them exactly like `git diff`.
+diff-formatter = ":git"
+pager = "delta"
+
+[git]
+# Git-compatible mode: new `jj git init` / `jj git clone` are colocated by default,
+# so jj and git share one working copy and can be mixed freely.
+colocate = true

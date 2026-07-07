@@ -41,9 +41,11 @@ google-chrome
 google-cloud-cli
 hcloud
 helm
+herdr-bin
 imagemagick
 jetbrains-toolbox
 jq
+jujutsu
 k9s
 keybase-bin
 kubectl

@@ -10,4 +10,5 @@ terraform = "1.11"
 yarn = "1.22"
 
 # NPM packages
+"npm:hunkdiff" = "latest"
 "npm:skills" = "latest"

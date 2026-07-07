@@ -1,0 +1,5 @@
+[keys]
+prefix = "ctrl+a"
+
+[theme]
+name = "catppuccin-latte"
