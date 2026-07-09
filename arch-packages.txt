@@ -27,7 +27,6 @@ ffmpeg
 file
 firefox
 flux-bin
-flyctl-bin
 fzf
 gawk
 git
