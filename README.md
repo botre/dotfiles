@@ -20,9 +20,3 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 ## arch-applications
 
 `scripts/arch-applications` reads `arch-packages.txt` and installs every listed package with `yay` (installing `yay` itself first if it's missing). Add or remove a line to change what gets installed on the next run.
-
-## Version control & terminal tooling
-
-- **jujutsu (`jj`)** — Git-compatible VCS configured for colocated mode (`jj` and `git` share one working copy). Config in `.config/jj/config.toml`; installed via `arch-packages.txt`.
-- **hunk** — review-first terminal diff viewer that auto-detects git/jj. Config in `.config/hunk/config.toml`; installed via mise (`npm:hunkdiff` in `.config/mise/config.toml`), as it has no Arch package.
-- **herdr** — tmux-style multiplexer for agents, prefix rebound to `Ctrl-a` to match `.tmux.conf`. Config in `.config/herdr/config.toml`; installed via `arch-packages.txt` (`herdr-bin`).
