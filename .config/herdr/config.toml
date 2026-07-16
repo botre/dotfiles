@@ -3,3 +3,6 @@ prefix = "ctrl+a"
 
 [theme]
 name = "catppuccin-latte"
+
+[ui.sound]
+enabled = false
