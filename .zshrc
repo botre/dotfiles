@@ -121,3 +121,12 @@ if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)
 eval "$(pay-respects zsh --alias f)"
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
+
+# Coding agents (Claude Code) snapshot this file's aliases and replay them for every tool
+# call. Shadowing coreutils with prettifiers makes the agent fall back to `/bin/ls`, which
+# the permission engine cannot match against its bare-name read-only allowlist, so every
+# listing costs an approval prompt. Give agent shells the real tools; interactive is unchanged.
+# Must stay last: it has to run after every alias definition above.
+if [[ -n "$CLAUDECODE" ]]; then
+  unalias ls lsa cat 2>/dev/null
+fi

@@ -1,0 +1,28 @@
+**/.claude/settings.local.json
+
+# Claude Code state that must never reach a repo (the dotfiles remote is public).
+# Only settings.json, hooks/, skills/ and commands/ are meant to be tracked.
+**/.claude/*.json
+!**/.claude/settings.json
+**/.claude/.credentials.json
+**/.claude/history.jsonl
+**/.claude/*.log
+**/.claude/*.lock
+**/.claude/projects/
+**/.claude/sessions/
+**/.claude/todos/
+**/.claude/shell-snapshots/
+**/.claude/file-history/
+**/.claude/paste-cache/
+**/.claude/image-cache/
+**/.claude/session-env/
+**/.claude/telemetry/
+**/.claude/plans/
+**/.claude/backups/
+**/.claude/tasks/
+**/.claude/jobs/
+**/.claude/daemon/
+**/.claude/ide/
+**/.claude/plugins/
+**/.claude/memory/
+**/.claude/cache/

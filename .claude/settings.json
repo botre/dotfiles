@@ -1,0 +1,120 @@
+{
+  "attribution": {
+    "commit": ""
+  },
+  "disableClaudeAiConnectors": true,
+  "model": "opus[1m]",
+  "effortLevel": "xhigh",
+  "theme": "light",
+  "tui": "fullscreen",
+  "enabledPlugins": {},
+  "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "permissions": {
+    "allow": [
+      "WebSearch",
+
+      "Read(//tmp/**)",
+
+      "mcp__chrome-devtools__*",
+
+      "mcp__linear-server__get_issue",
+      "mcp__linear-server__get_issue_status",
+      "mcp__linear-server__get_project",
+      "mcp__linear-server__get_milestone",
+      "mcp__linear-server__get_initiative",
+      "mcp__linear-server__get_document",
+      "mcp__linear-server__get_team",
+      "mcp__linear-server__get_user",
+      "mcp__linear-server__get_status_updates",
+      "mcp__linear-server__get_attachment",
+      "mcp__linear-server__get_diff",
+      "mcp__linear-server__get_diff_threads",
+      "mcp__linear-server__list_issues",
+      "mcp__linear-server__list_issue_statuses",
+      "mcp__linear-server__list_issue_labels",
+      "mcp__linear-server__list_projects",
+      "mcp__linear-server__list_project_labels",
+      "mcp__linear-server__list_milestones",
+      "mcp__linear-server__list_initiatives",
+      "mcp__linear-server__list_documents",
+      "mcp__linear-server__list_teams",
+      "mcp__linear-server__list_users",
+      "mcp__linear-server__list_cycles",
+      "mcp__linear-server__list_comments",
+      "mcp__linear-server__list_diffs",
+      "mcp__linear-server__search_documentation",
+
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git stash list:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git add:*)",
+      "Bash(git checkout:*)",
+
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+
+      "Bash(rg:*)",
+      "Bash(fd:*)",
+      "Bash(jq:*)",
+      "Bash(tree:*)",
+      "Bash(dig:*)",
+
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm tc:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm lint:fix:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm exec vitest run:*)",
+      "Bash(pnpm exec prisma generate:*)",
+
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npx next:*)",
+
+      "Bash(bun run:*)",
+      "Bash(bunx tsc:*)",
+
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)",
+      "Bash(go mod tidy:*)",
+
+      "Bash(make test:*)",
+
+      "Bash(tickli task:*)",
+      "Bash(tickli project:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
