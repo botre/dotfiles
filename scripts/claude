@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -e
+
+# MCP servers live in ~/.claude.json, which also holds machine-local state
+# (account, session history, caches) and is therefore not tracked in this repo.
+# This script registers them instead, so a fresh machine ends up with the same
+# set. Re-running it is safe: every server is removed before it is re-added.
+
+if ! command -v claude &> /dev/null; then
+    echo "Error: claude is not installed!"
+    exit 1
+fi
+
+if ! command -v mise &> /dev/null; then
+    echo "Error: mise is not installed!"
+    exit 1
+fi
+
+# chrome-devtools
+# --isolated gives every session its own temporary Chrome profile, so
+# concurrent sessions do not fight over a shared one.
+echo "Registering chrome-devtools..."
+claude mcp remove --scope user chrome-devtools &> /dev/null || true
+claude mcp add --scope user chrome-devtools -- mise exec node@22 -- npx -y chrome-devtools-mcp@latest --isolated
+
+echo "Done"

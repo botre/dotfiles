@@ -7,6 +7,11 @@
   "effortLevel": "xhigh",
   "theme": "light",
   "tui": "fullscreen",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "voiceEnabled": true,
   "enabledPlugins": {},
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,

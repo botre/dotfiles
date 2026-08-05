@@ -16,6 +16,7 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 - `scripts/gnome` (Arch only) — applies GNOME settings
 - `scripts/fonts` — installs fonts
 - `scripts/zsh` — sets zsh as the default shell and installs plugins
+- `scripts/claude` — registers Claude Code MCP servers
 
 ## arch-applications
 
