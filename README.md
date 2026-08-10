@@ -14,6 +14,7 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 - `scripts/mac-applications` (macOS only) — installs apps via Homebrew using `Brewfile`
 - `scripts/arch-applications` (Arch only) — installs apps via `yay` using `arch-packages.txt`
 - `scripts/gnome` (Arch only) — applies GNOME settings
+- `scripts/nix` — installs Nix via the Determinate installer, with flakes enabled
 - `scripts/fonts` — installs fonts
 - `scripts/zsh` — sets zsh as the default shell and installs plugins
 - `scripts/claude` — registers Claude Code MCP servers
