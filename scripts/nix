@@ -17,36 +17,58 @@ set -e
 # Arch repos owns the same paths and conflicts with this install.
 #
 # To remove Nix again: /nix/nix-installer uninstall
+# It leaves /etc/nix/sentry-endpoint behind, which has to go by hand.
 
 if command -v nix &> /dev/null || [ -d /nix ]; then
-    echo "Nix is already installed. Skipping..."
-    exit 0
+    echo "Nix is already installed. Skipping install..."
+else
+    if ! command -v curl &> /dev/null; then
+        echo "Error: curl is not installed!"
+        exit 1
+    fi
+
+    echo "Installing Nix..."
+
+    # --no-confirm             non-interactive, this is a bootstrap script
+    # --prefer-upstream-nix    upstream Nix rather than Determinate Nix, see above
+    # --diagnostic-endpoint "" opts out of the installer's anonymous telemetry
+    # --extra-conf             trusted-users lets this user use per-flake
+    #                          substituters without sudo. min-free/max-free let
+    #                          the daemon collect garbage mid-build once free
+    #                          space drops under 5G, freeing up to 20G, so a
+    #                          long build cannot fill the disk between the
+    #                          weekly timer runs set up below.
+    curl -fsSL https://install.determinate.systems/nix | sh -s -- install \
+        --no-confirm \
+        --prefer-upstream-nix \
+        --diagnostic-endpoint "" \
+        --extra-conf \
+            "trusted-users = root $(id -un)" \
+            "min-free = 5368709120" \
+            "max-free = 21474836480"
+
+    # The installer wires Nix into the shell profiles, but this shell already
+    # read them, so source it directly to self-test the install before exiting.
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+    # `nix config show` needs nix-command to run at all, and the grep asserts
+    # flakes actually ended up enabled rather than trusting the installer did it.
+    nix --version
+    nix config show | grep '^experimental-features'
 fi
 
-if ! command -v curl &> /dev/null; then
-    echo "Error: curl is not installed!"
+# Upstream Nix, unlike Determinate Nix, collects no garbage on its own. The
+# timer trims generations older than 30 days; min-free/max-free above are the
+# safety net for when a single build would otherwise fill the disk.
+TIMER="$HOME/.config/systemd/user/nix-gc.timer"
+
+if [ ! -f "$TIMER" ]; then
+    echo "Error: $TIMER not found!"
     exit 1
 fi
 
-echo "Installing Nix..."
-
-# --no-confirm             non-interactive, this is a bootstrap script
-# --prefer-upstream-nix    upstream Nix rather than Determinate Nix, see above
-# --diagnostic-endpoint "" opts out of the installer's anonymous telemetry
-# --extra-conf             lets this user use per-flake substituters without sudo
-curl -fsSL https://install.determinate.systems/nix | sh -s -- install \
-    --no-confirm \
-    --prefer-upstream-nix \
-    --diagnostic-endpoint "" \
-    --extra-conf "trusted-users = root $(id -un)"
-
-# The installer wires Nix into the shell profiles, but this shell already read
-# them, so source it directly to self-test the install before exiting.
-. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-
-# `nix config show` needs nix-command to run at all, and the grep asserts flakes
-# actually ended up enabled rather than trusting that the installer did it.
-nix --version
-nix config show | grep '^experimental-features'
+echo "Enabling the Nix garbage collection timer..."
+systemctl --user daemon-reload
+systemctl --user enable --now nix-gc.timer
 
 echo "Done"

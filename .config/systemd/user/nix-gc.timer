@@ -1,0 +1,12 @@
+[Unit]
+Description=Collect Nix garbage weekly
+
+[Timer]
+OnCalendar=weekly
+# This is a user timer on a laptop that is asleep or logged out plenty, so catch
+# up on the next login rather than silently skipping a week.
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target
