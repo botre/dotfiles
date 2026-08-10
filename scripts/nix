@@ -6,9 +6,12 @@ set -e
 # the upstream shell installer gets wrong on systemd distros: the daemon unit,
 # the nixbld build users, and a working uninstaller at /nix/nix-installer.
 #
-# --determinate is deliberately NOT passed. That flag installs Determinate Nix,
-# which manages /etc/nix/nix.conf through determinate-nixd and steers toward
-# FlakeHub. The plain install is upstream Nix with flakes enabled and no account.
+# --prefer-upstream-nix is required to get upstream Nix. Omitting it does NOT
+# get you upstream: in an automated context (--no-confirm) the installer
+# defaults to Determinate Nix, which installs determinate-nixd, rewrites
+# /etc/nix/nix.conf as a managed file, and adds FlakeHub substituters. The
+# --determinate flag only force-enables that default, so leaving it off is not
+# enough. Upstream keeps /etc/nix/nix.conf ours and needs no account.
 #
 # Nix is deliberately absent from arch-packages.txt: the `nix` package in the
 # Arch repos owns the same paths and conflicts with this install.
@@ -28,10 +31,12 @@ fi
 echo "Installing Nix..."
 
 # --no-confirm             non-interactive, this is a bootstrap script
+# --prefer-upstream-nix    upstream Nix rather than Determinate Nix, see above
 # --diagnostic-endpoint "" opts out of the installer's anonymous telemetry
 # --extra-conf             lets this user use per-flake substituters without sudo
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install \
     --no-confirm \
+    --prefer-upstream-nix \
     --diagnostic-endpoint "" \
     --extra-conf "trusted-users = root $(id -un)"
 
@@ -39,7 +44,9 @@ curl -fsSL https://install.determinate.systems/nix | sh -s -- install \
 # them, so source it directly to self-test the install before exiting.
 . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 
+# `nix config show` needs nix-command to run at all, and the grep asserts flakes
+# actually ended up enabled rather than trusting that the installer did it.
 nix --version
-nix config show experimental-features
+nix config show | grep '^experimental-features'
 
 echo "Done"
