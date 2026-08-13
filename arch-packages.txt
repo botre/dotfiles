@@ -38,6 +38,7 @@ gnome-tweaks
 gnupg
 google-chrome
 google-cloud-cli
+google-cloud-cli-gke-gcloud-auth-plugin
 hcloud
 helm
 herdr-bin
@@ -69,6 +70,7 @@ render-cli-bin
 ripgrep
 rpi-imager
 slack-desktop
+socat
 sops
 spotify
 starship
