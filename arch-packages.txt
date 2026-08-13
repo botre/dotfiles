@@ -61,6 +61,7 @@ obsidian-bin
 opencode-bin
 pay-respects
 pgvector
+pi
 postgresql-libs
 procps
 qemu-full
