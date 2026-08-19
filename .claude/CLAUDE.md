@@ -5,10 +5,18 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 
 ## Commits & PRs
 
-- Never add a `Co-Authored-By: Claude` trailer to commits, or a "Generated with Claude Code"
-  footer to PR bodies. `includeCoAuthoredBy: false` in `~/.claude/settings.json` enforces
-  this, but the preference stands on its own — keep this rule even where that setting is
-  absent, and do not treat the setting's presence as a reason to drop it.
+- Never attribute anything to Claude in a commit or a PR. That covers, at minimum: a
+  `Co-Authored-By: Claude` trailer, a `Claude-Session:` trailer, a "Generated with Claude
+  Code" footer, and a bare `https://claude.ai/code/session_…` link in a PR body — and any
+  future variant of the same idea. Commit messages and PR bodies end with their own content.
+- `"attribution": {"commit": "", "pr": "", "sessionUrl": false}` together with
+  `includeCoAuthoredBy: false` in `~/.claude/settings.json` enforces this. `commit` and `pr`
+  hide the commit trailer and the PR footer; `sessionUrl` is what suppresses the
+  `Claude-Session:` trailer and the session link in PR bodies, and it defaults to on for
+  Remote Control and web sessions. `includeCoAuthoredBy` is deprecated but still load-bearing:
+  one PR-body path treats an empty `pr` as unset and only that key silences it there.
+- The preference stands on its own — keep this rule even where those settings are absent, and
+  do not treat their presence as a reason to drop it.
 
 ## Git
 
