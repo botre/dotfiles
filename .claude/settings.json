@@ -2,6 +2,7 @@
   "attribution": {
     "commit": ""
   },
+  "includeCoAuthoredBy": false,
   "disableClaudeAiConnectors": true,
   "model": "opus[1m]",
   "effortLevel": "xhigh",
