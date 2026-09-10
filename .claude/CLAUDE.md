@@ -28,6 +28,18 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 - The preference stands on its own: keep this rule even where those settings are absent, and
   do not treat their presence as a reason to drop it.
 
+## PR descriptions
+
+- Read the diff with `git diff main`. Do not just rely on session context.
+- Sentences: max 20 words. Active voice. Simple tenses only.
+  No "-ing" verbs. Do not omit articles or subjects.
+- One topic per paragraph, max 6 sentences. No headers, no bold.
+- Paragraph 1: the problem, then what the PR does.
+- Paragraph 2: limits, risks, and what the PR does not change.
+- Paragraph 3: numbered test steps. One action per step.
+- Do not describe what the reviewer can see in the diff.
+- Max 150 words.
+
 ## Git
 
 - Never `git commit --amend` in a `--depth 1` shallow clone. The tip commit's parent is
