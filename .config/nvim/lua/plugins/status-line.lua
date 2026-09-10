@@ -7,7 +7,7 @@ return {
                 options = {
                     theme = 'auto',
                     disabled_filetypes = {
-                        'NvimTree',
+                        'snacks_picker_list',
                     },
                 },
             })
