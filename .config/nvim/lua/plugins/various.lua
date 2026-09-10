@@ -46,10 +46,35 @@ return {
         end,
     },
     {
-        'kana/vim-textobj-entire',
-        dependencies = {
-            'kana/vim-textobj-user'
-        }
+        -- v4 registers its keymaps from plugin/, so setup() is only for
+        -- overriding defaults and is not needed to initialize the plugin.
+        'kylechui/nvim-surround',
+        version = '*',
+        event = 'VeryLazy',
+    },
+    {
+        'nvim-mini/mini.ai',
+        event = 'VeryLazy',
+        config = function()
+            require('mini.ai').setup({
+                custom_textobjects = {
+                    -- Stands in for vim-textobj-entire. A single-region spec
+                    -- means ae and ie both select the whole buffer, where
+                    -- vim-textobj-entire had ie skip leading and trailing
+                    -- blank lines.
+                    e = function()
+                        return {
+                            from = { line = 1, col = 1 },
+                            to = {
+                                line = vim.fn.line('$'),
+                                col = math.max(vim.fn.getline('$'):len(), 1),
+                            },
+                            vis_mode = 'V',
+                        }
+                    end,
+                },
+            })
+        end,
     },
     {
         'letieu/btw.nvim',
@@ -60,7 +85,6 @@ return {
         end
     },
     { 'tpope/vim-eunuch' },
-    { 'tpope/vim-surround' },
     { 'unblevable/quick-scope' },
     {
         'windwp/nvim-autopairs',
