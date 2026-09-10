@@ -11,6 +11,11 @@ return {
         'lewis6991/gitsigns.nvim',
         config = function()
             require('gitsigns').setup()
+
+            vim.keymap.set('n', '<leader>gb', function()
+                require('gitsigns').toggle_current_line_blame()
+            end, { desc = 'Toggle git blame' })
+
             -- VCS Navigation
             vim.keymap.set('n', '<leader>[c', function()
                 vim.cmd('Gitsigns prev_hunk')
@@ -18,15 +23,6 @@ return {
             vim.keymap.set('n', '<leader>]c', function()
                 vim.cmd('Gitsigns next_hunk')
             end, { desc = 'Next change' })
-        end,
-    },
-    {
-        'f-person/git-blame.nvim',
-        config = function()
-            require('gitblame').setup({
-                enabled = false,
-            })
-            vim.keymap.set('n', '<leader>gb', ':GitBlameToggle<CR>', { desc = 'Toggle git blame' })
         end,
     },
 }
