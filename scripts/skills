@@ -38,8 +38,11 @@ while IFS= read -r source; do
 
     # --skill '*' takes every skill in the repo, which is what the
     # single-skill upstreams want too. --yes keeps it non-interactive.
+    #
+    # stdin is redirected because the CLI reads it. Without this it swallows
+    # the rest of the sources file and only the first line ever installs.
     echo "Installing $source..."
-    skills add "$source" --global --yes --skill '*'
+    skills add "$source" --global --yes --skill '*' < /dev/null
 done < "$SOURCES_FILE"
 
 echo "Done"

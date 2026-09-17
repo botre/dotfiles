@@ -20,9 +20,37 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 - `scripts/claude` — registers Claude Code MCP servers
 - `scripts/skills`: installs agent skills with the `skills` CLI using `skills.txt`
 
+## mac-settings
+
+`scripts/mac-settings` (macOS only) applies system defaults with `defaults write` and `systemsetup`: automatic updates, automatic time zone, firewall on, and analytics sharing off. It needs `sudo`.
+
+## mac-applications
+
+`scripts/mac-applications` (macOS only) installs Homebrew if it is missing, then runs `brew bundle` against `Brewfile`. Add or remove a line in `Brewfile` to change what gets installed.
+
 ## arch-applications
 
 `scripts/arch-applications` reads `arch-packages.txt` and installs every listed package with `yay` (installing `yay` itself first if it's missing). Add or remove a line to change what gets installed on the next run.
+
+## gnome
+
+`scripts/gnome` (Arch only) applies desktop settings with `gsettings`: automatic time zone, usage-data collection off, immediate lock after sleep, permanent scroll bars, and a 24-hour clock.
+
+## nix
+
+`scripts/nix` installs Nix with the Determinate Systems installer, which gets the daemon unit, the build users, and the uninstaller right on systemd distros. It passes `--prefer-upstream-nix` deliberately: without it an automated install silently gives you Determinate Nix instead, which rewrites `/etc/nix/nix.conf` and adds FlakeHub substituters. It also enables flakes and sets up a weekly garbage-collection timer, since upstream Nix collects nothing on its own. Nix stays out of `arch-packages.txt` on purpose, and the script explains why.
+
+## fonts
+
+`scripts/fonts` downloads Hack Nerd Font and installs it to the right per-OS directory, `~/Library/Fonts` on macOS and `~/.local/share/fonts` on Linux.
+
+## zsh
+
+`scripts/zsh` sets zsh as the login shell with `chsh` and installs Oh My Zsh.
+
+## claude
+
+`scripts/claude` registers Claude Code MCP servers. They live in `~/.claude.json`, which also holds machine-local state and is therefore not tracked here. Every server is removed before it is re-added, so re-running converges.
 
 ## skills
 
