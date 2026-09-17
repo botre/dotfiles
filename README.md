@@ -18,7 +18,16 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 - `scripts/fonts` — installs fonts
 - `scripts/zsh` — sets zsh as the default shell and installs plugins
 - `scripts/claude` — registers Claude Code MCP servers
+- `scripts/skills`: installs agent skills with the `skills` CLI using `skills.txt`
 
 ## arch-applications
 
 `scripts/arch-applications` reads `arch-packages.txt` and installs every listed package with `yay` (installing `yay` itself first if it's missing). Add or remove a line to change what gets installed on the next run.
+
+## skills
+
+`scripts/skills` reads `skills.txt` and installs every listed source with the `skills` CLI, taking every skill that source offers. Add or remove a line to change what gets installed on the next run.
+
+The sources are a list rather than a single repo on purpose. Most skills come from `botre/skills`, but some come from elsewhere, and a reinstall that pulls only the one repo drops the others silently.
+
+Skills install into `~/.agents/skills` as copies, with each agent directory holding symlinks into that tree, so none of them can be tracked in this repo directly.

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Agent skills install into ~/.agents/skills as copies rather than as a
+# checkout, and each agent directory gets a symlink pointing at that copy.
+# Nothing there can be tracked in this repo, so this script declares the
+# sources instead and a fresh machine ends up with the same set. Re-running it
+# is safe: the skills CLI rewrites each skill in place.
+#
+# The sources are deliberately a list rather than a single repo. Most skills
+# come from botre/skills, but not all of them, and a clean reinstall that only
+# pulls the one repo drops the rest without saying so. Add a line to add an
+# upstream.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCES_FILE="$SCRIPT_DIR/../skills.txt"
+
+# Installed through mise as npm:skills, so it is not on PATH until mise has run.
+if ! command -v skills &> /dev/null; then
+    echo "Error: skills is not installed!"
+    echo "It comes from mise as npm:skills, so run 'mise install' first."
+    exit 1
+fi
+
+if [ ! -f "$SOURCES_FILE" ]; then
+    echo "Error: $SOURCES_FILE not found!"
+    exit 1
+fi
+
+while IFS= read -r source; do
+    # Skip empty lines and comments
+    if [[ -z "$source" || "$source" =~ ^[[:space:]]*# ]]; then
+        continue
+    fi
+
+    source=$(echo "$source" | xargs)
+
+    # --skill '*' takes every skill in the repo, which is what the
+    # single-skill upstreams want too. --yes keeps it non-interactive.
+    echo "Installing $source..."
+    skills add "$source" --global --yes --skill '*'
+done < "$SOURCES_FILE"
+
+echo "Done"
