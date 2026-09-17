@@ -14,7 +14,6 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 - `scripts/mac-applications` (macOS only) — installs apps via Homebrew using `Brewfile`
 - `scripts/arch-applications` (Arch only) — installs apps via `yay` using `arch-packages.txt`
 - `scripts/gnome` (Arch only) — applies GNOME settings
-- `scripts/nix` — installs Nix via the Determinate installer, with flakes enabled and weekly store garbage collection
 - `scripts/fonts` — installs fonts
 - `scripts/zsh` — sets zsh as the default shell and installs plugins
 - `scripts/claude` — registers Claude Code MCP servers
@@ -35,10 +34,6 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 ## gnome
 
 `scripts/gnome` (Arch only) applies desktop settings with `gsettings`: automatic time zone, usage-data collection off, immediate lock after sleep, permanent scroll bars, and a 24-hour clock.
-
-## nix
-
-`scripts/nix` installs Nix with the Determinate Systems installer, which gets the daemon unit, the build users, and the uninstaller right on systemd distros. It passes `--prefer-upstream-nix` deliberately: without it an automated install silently gives you Determinate Nix instead, which rewrites `/etc/nix/nix.conf` and adds FlakeHub substituters. It also enables flakes and sets up a weekly garbage-collection timer, since upstream Nix collects nothing on its own. Nix stays out of `arch-packages.txt` on purpose, and the script explains why.
 
 ## fonts
 
