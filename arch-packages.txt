@@ -91,6 +91,7 @@ vhs
 virt-manager
 watchman-bin
 wget
+whisper-cpp
 wl-clipboard
 worktrunk-bin
 xclip
@@ -98,6 +99,7 @@ yadm
 yamllint
 yazi
 yq
+yt-dlp
 zoxide
 zsh
 
