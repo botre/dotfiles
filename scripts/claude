@@ -24,7 +24,7 @@ fi
 # concurrent sessions do not fight over a shared one.
 echo "Registering chrome-devtools..."
 claude mcp remove --scope user chrome-devtools &> /dev/null || true
-claude mcp add --scope user chrome-devtools -- mise exec node@22 -- npx -y chrome-devtools-mcp@latest --isolated
+claude mcp add --scope user chrome-devtools -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --isolated
 
 # chrome-live
 # --autoConnect attaches to the Chrome already running with your own profile
@@ -32,7 +32,7 @@ claude mcp add --scope user chrome-devtools -- mise exec node@22 -- npx -y chrom
 # chrome://inspect/#remote-debugging.
 echo "Registering chrome-live..."
 claude mcp remove --scope user chrome-live &> /dev/null || true
-claude mcp add --scope user chrome-live -- mise exec node@22 -- npx -y chrome-devtools-mcp@latest --autoConnect
+claude mcp add --scope user chrome-live -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --autoConnect
 
 # figma
 # Log in once with /mcp inside Claude Code.
