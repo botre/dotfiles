@@ -97,7 +97,6 @@
       "Bash(npx playwright:*)",
       "Bash(npx next:*)",
 
-      "Bash(bun run:*)",
       "Bash(bunx tsc:*)",
 
       "Bash(go build:*)",
