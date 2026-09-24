@@ -5,7 +5,9 @@ set -e
 # MCP servers live in ~/.claude.json, which also holds machine-local state
 # (account, session history, caches) and is therefore not tracked in this repo.
 # This script registers them instead, so a fresh machine ends up with the same
-# set. Re-running it is safe: every server is removed before it is re-added.
+# set. Re-running it is safe: every local server is removed before it is
+# re-added. Remote servers are only added when missing, because removing one
+# also deletes its OAuth login.
 
 if ! command -v claude &> /dev/null; then
     echo "Error: claude is not installed!"
@@ -23,5 +25,22 @@ fi
 echo "Registering chrome-devtools..."
 claude mcp remove --scope user chrome-devtools &> /dev/null || true
 claude mcp add --scope user chrome-devtools -- mise exec node@22 -- npx -y chrome-devtools-mcp@latest --isolated
+
+# chrome-live
+# --autoConnect attaches to the Chrome already running with your own profile
+# instead. It needs Chrome 144+ with remote debugging turned on at
+# chrome://inspect/#remote-debugging.
+echo "Registering chrome-live..."
+claude mcp remove --scope user chrome-live &> /dev/null || true
+claude mcp add --scope user chrome-live -- mise exec node@22 -- npx -y chrome-devtools-mcp@latest --autoConnect
+
+# figma
+# Log in once with /mcp inside Claude Code.
+if claude mcp get figma &> /dev/null; then
+    echo "figma is already registered. Skipping..."
+else
+    echo "Registering figma..."
+    claude mcp add --scope user --transport http figma https://mcp.figma.com/mcp
+fi
 
 echo "Done"
