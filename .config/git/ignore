@@ -26,11 +26,3 @@
 **/.claude/plugins/
 **/.claude/memory/
 **/.claude/cache/
-
-# systemd user units. `systemctl --user enable` drops machine-generated symlinks
-# (*.target.wants/, service aliases) right next to the units this repo tracks, so
-# allowlist ours rather than trying to enumerate the generated ones. A new unit
-# here needs its own negation to be seen.
-.config/systemd/user/*
-!.config/systemd/user/nix-gc.service
-!.config/systemd/user/nix-gc.timer

@@ -27,10 +27,6 @@
     conflictStyle = zdiff3
 [fetch]
     prune = true
-[http]
-    postBuffer = 524288000
-[hub]
-    protocol = https
 [pull]
     rebase = true
 [push]
