@@ -31,6 +31,7 @@ fi
 echo "Installing packages from arch-packages.txt..."
 
 # Read packages and install them
+packages=()
 while IFS= read -r package; do
     # Skip empty lines and comments
     if [[ -z "$package" || "$package" =~ ^[[:space:]]*# ]]; then
@@ -39,6 +40,7 @@ while IFS= read -r package; do
 
     # Trim whitespace
     package=$(echo "$package" | xargs)
+    packages+=("$package")
 
     if yay -Qi "$package" &> /dev/null; then
         echo "$package is already installed. Skipping..."
@@ -47,6 +49,16 @@ while IFS= read -r package; do
         yay -S --noconfirm "$package"
     fi
 done < "$PACKAGES_FILE"
+
+# A package that was already installed keeps the install reason pacman
+# recorded, and one pulled in by something else is recorded as a dependency.
+# `yay -Yc` below and any later `-Rs` removal treat such a package as an
+# orphan and remove it, even though this file lists it. Marking every listed
+# package as explicit prevents that. `pacman -D` only takes real package names,
+# so `pacman -Qq` first resolves names like procps to procps-ng.
+echo "Marking listed packages as explicitly installed..."
+mapfile -t installed < <(pacman -Qq "${packages[@]}" | sort -u)
+sudo pacman -D -q --asexplicit "${installed[@]}"
 
 echo "Cleaning up..."
 yay -Yc --noconfirm
