@@ -30,6 +30,7 @@ fzf
 gawk
 git
 git-delta
+git-lfs
 github-cli
 gnome-online-accounts
 gnome-shell-extensions
