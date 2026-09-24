@@ -1,7 +1,14 @@
 os:
-  editCommand: 'nvim'
   # Open files in an existing nvim instance via RPC server (see .zshrc for --listen setup)
-  # This allows lazygit to send files to an already-running nvim instead of spawning new instances
-  editCommandTemplate: '{{editor}} --server /tmp/nvim-server.pipe --remote-tab "$(pwd)/{{filename}}"'
+  # This allows lazygit to send files to an already-running nvim instead of spawning new instances.
+  # Inside nvim (Snacks.lazygit) $NVIM is set, so this mirrors lazygit's nvim-remote preset:
+  # close lazygit, then open the file in the parent. With no server listening, nvim opens it locally.
+  edit: >-
+    if [ -z "$NVIM" ]; then nvim --server /tmp/nvim-server.pipe --remote-tab {{filename}};
+    else nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote-tab {{filename}}; fi
+  editAtLine: >-
+    if [ -z "$NVIM" ]; then nvim --server /tmp/nvim-server.pipe --remote-tab {{filename}};
+    else nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote-tab {{filename}}
+    && nvim --server "$NVIM" --remote-send ":{{line}}<CR>"; fi
 
 promptToReturnFromSubprocess: false
