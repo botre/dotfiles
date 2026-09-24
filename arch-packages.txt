@@ -26,7 +26,6 @@ fd
 ffmpeg
 file
 firefox
-flux-bin
 fzf
 gawk
 git
@@ -61,7 +60,6 @@ nmap
 obsidian-bin
 opencode-bin
 pay-respects
-pgvector
 pi
 postgresql-libs
 procps
@@ -93,7 +91,6 @@ watchman-bin
 wget
 whisper-cpp
 wl-clipboard
-worktrunk-bin
 xclip
 yadm
 yamllint
