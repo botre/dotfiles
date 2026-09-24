@@ -2,14 +2,23 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BREWFILE="$SCRIPT_DIR/../Brewfile"
+
+if [ ! -f "$BREWFILE" ]; then
+  echo "Error: $BREWFILE not found!"
+  exit 1
+fi
+
 if ! command -v brew >/dev/null 2>&1; then
   echo "Installing homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # The installer leaves this shell's PATH alone. /opt/homebrew is its only
+  # prefix on macOS, since it no longer supports Intel Macs.
+  eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-if [ -f "$HOME/Brewfile" ]; then
-  echo "Installing homebrew dependencies..."
-  brew bundle
-fi
+echo "Installing homebrew dependencies..."
+brew bundle --file="$BREWFILE"
 
 echo "Done"

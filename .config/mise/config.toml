@@ -3,10 +3,10 @@
 bun = "1"
 go = "latest"
 lua = "5.4"
-node = "22"
+node = "24"
 pnpm = "10"
 ruby = "3.4"
-terraform = "1.11"
+terraform = "1.16"
 yarn = "1.22"
 
 # NPM packages

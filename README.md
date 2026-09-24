@@ -45,7 +45,7 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 
 ## claude
 
-`scripts/claude` registers Claude Code MCP servers. They live in `~/.claude.json`, which also holds machine-local state and is therefore not tracked here. Every server is removed before it is re-added, so re-running converges.
+`scripts/claude` registers Claude Code MCP servers. They live in `~/.claude.json`, which also holds machine-local state and is therefore not tracked here. Every local server is removed before it is re-added, so re-running converges. Remote servers are only added when missing, because removing one also deletes its OAuth login.
 
 ## skills
 

@@ -117,7 +117,6 @@ export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 # Shell tool integrations (order matters, zoxide must be last)
-if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
 eval "$(pay-respects zsh --alias f)"
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
