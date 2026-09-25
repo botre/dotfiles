@@ -19,10 +19,10 @@ set scrolloff=5
 " Enable cursor blink in all modes
 set guicursor+=a:-blinkwait175-blinkoff150-blinkon175
 
-" Ignore case in search patterns
+" Override the 'ignorecase' option if the search pattern contains upper case characters
 set smartcase
 
-" Override the 'ignorecase' option if the search pattern contains upper case characters
+" Ignore case in search patterns
 set ignorecase
 
 " Causes all text matching the current search to be highlighted

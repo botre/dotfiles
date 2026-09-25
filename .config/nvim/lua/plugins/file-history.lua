@@ -91,13 +91,13 @@ return {
                 return files
             end
 
-            -- Remove oldest history files if exceeding max_changes
+            -- Keep at most max_changes history files, removing the oldest
             local function cleanup_old_history(filepath)
                 local history_files = get_history_files(filepath)
 
-                if #history_files >= M.config.max_changes then
+                if #history_files > M.config.max_changes then
                     -- Remove oldest files
-                    for i = M.config.max_changes, #history_files do
+                    for i = M.config.max_changes + 1, #history_files do
                         vim.fn.delete(history_files[i])
                     end
                 end

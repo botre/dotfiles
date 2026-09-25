@@ -4,7 +4,7 @@ Personal dotfiles, managed with [yadm](https://yadm.io/).
 
 ## yadm
 
-yadm is `git` with `$HOME` as the work tree, so the dotfiles here (`.zshrc`, `.config/*` and the rest) live directly in `$HOME`, next to the scripts and package lists. Changes are made in a regular clone of this repo, then `yadm pull` brings them into `$HOME`. `.gitconfig` rebases on pull, and a rebase will not start while any tracked file has local changes, which `.claude/settings.json` always has once herdr adds its hook. After cloning, run `yadm gitconfig pull.rebase false` and `yadm gitconfig pull.ff only` so yadm fast-forwards instead.
+yadm is `git` with `$HOME` as the work tree, so the dotfiles here (`.zshrc`, `.config/*` and the rest) live directly in `$HOME`, next to the scripts and package lists. Changes are made in a regular clone of this repo, then `yadm pull` brings them into `$HOME`. `.gitconfig` rebases on pull, and a rebase will not start while any tracked file has local changes, which `.claude/settings.json` always has once herdr adds its hook. After cloning, run `yadm gitconfig pull.rebase false` and `yadm gitconfig pull.ff only` so yadm fast-forwards instead. A pull whose commits change `.claude/settings.json` still stops while that file has local changes, so stash it first.
 
 ## Scripts
 
@@ -16,6 +16,7 @@ Run them on a fresh machine, in this order:
 - `scripts/gnome` (Arch only): applies GNOME settings
 - `scripts/fonts`: installs Hack Nerd Font
 - `scripts/zsh`: makes zsh the login shell and installs Oh My Zsh
+- `mise install`: installs the tools in `.config/mise/config.toml`, including the `skills` CLI that `scripts/skills` needs
 - `scripts/agents`: registers MCP servers with Claude Code and OpenCode, and installs their herdr integrations
 - `scripts/skills`: installs agent skills from `skills.txt`
 
@@ -45,10 +46,10 @@ Run them on a fresh machine, in this order:
 
 ## agents
 
-`scripts/agents` registers the MCP servers it declares with Claude Code and OpenCode, whichever are installed, and installs herdr's integration for each. It also stops OpenCode from loading Claude Code's skills. Re-running it is safe.
+`scripts/agents` registers the MCP servers it declares with Claude Code and OpenCode, whichever are installed (figma goes to Claude Code only, because Figma rejects OpenCode), and installs herdr's integration for each. It also stops OpenCode from loading Claude Code's skills. Re-running it is safe.
 
-`.agents/AGENTS.md` holds the instructions every agent reads. `.claude/CLAUDE.md` and `.config/opencode/AGENTS.md` are symlinks to it.
+`.agents/AGENTS.md` holds the global instructions Claude Code and OpenCode read. `.claude/CLAUDE.md` and `.config/opencode/AGENTS.md` are symlinks to it.
 
 ## skills
 
-`scripts/skills` installs every source in `skills.txt` with the `skills` CLI, taking every skill each source offers. The skills land in `~/.agents/skills`, outside this repo. Deleting a line does not uninstall its skills.
+`scripts/skills` installs every source in `skills.txt` with the `skills` CLI, taking every skill each source offers. The skills land in `~/.agents/skills`, which yadm leaves untracked. Deleting a line does not uninstall its skills.

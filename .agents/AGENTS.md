@@ -31,7 +31,8 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 
 ## PR descriptions
 
-- Read the diff with `git diff main`. Do not just rely on session context.
+- Read the diff against the PR's base branch with `git diff <base>...HEAD` (often `master` or
+  `development`, rarely `main`). Do not just rely on session context.
 - Sentences: max 20 words. Active voice. Simple tenses only.
   No "-ing" verbs. Do not omit articles or subjects.
 - One topic per paragraph, max 6 sentences. No headers, no bold.

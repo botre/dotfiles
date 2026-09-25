@@ -18,9 +18,9 @@ return {
             picker = {
                 enabled = true,
                 sources = {
-                    -- Carried over from the telescope file_ignore_patterns.
-                    -- fd and rg already skip .gitignore, so these only matter
-                    -- for repositories that track either directory.
+                    -- Carried over from the telescope file_ignore_patterns. Snacks
+                    -- already excludes .git, and fd and rg skip ignored paths,
+                    -- so node_modules only matters where it is not ignored.
                     files = { exclude = { '.git', 'node_modules' } },
                     grep = { exclude = { '.git', 'node_modules' } },
                     -- Show recent files from the current project only

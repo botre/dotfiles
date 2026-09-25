@@ -94,11 +94,12 @@ alias v="nvim"
 alias vi="nvim"
 alias vim="nvim"
 
-# TickTick ships a CLI whose binary is also called `ticktick`, and mise's shim
-# directory comes before /usr/bin on PATH, so installing it shadows the desktop
-# application's launcher. Everything calls the CLI by its `ticktick-cli` alias,
-# so this gives the name back to the app. An alias rather than deleting the
-# shim, because `mise install` recreates that every time.
+# TickTick ships a CLI whose binary is also called `ticktick`, and mise puts both
+# the package's bin directory and its shim directory before /usr/bin on PATH, so
+# installing it shadows the desktop application's launcher. Everything calls the
+# CLI by its `ticktick-cli` alias, so this gives the name back to the app. An
+# alias, because deleting the shim would leave the bin directory's copy, and
+# `mise install` recreates the shim anyway.
 alias ticktick='/usr/bin/ticktick'
 
 # Wrapper that provides the ability to change the current working directory when exiting Yazi
@@ -123,7 +124,7 @@ export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 
-# Shell tool integrations (order matters, zoxide must be last)
+# Shell tool integrations (order matters, zoxide must come after the others)
 eval "$(pay-respects zsh --alias f)"
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
