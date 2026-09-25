@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Registers the same MCP servers with every coding agent installed here, then
+# installs herdr's integration for each of them, so a fresh machine ends up with
+# the same setup in all of them.
+#
+# Neither agent's server list can be tracked in this repo. Claude Code keeps
+# its servers in ~/.claude.json, which also holds machine-local state (account,
+# session history, caches). OpenCode keeps them in opencode.json, which this
+# script writes.
+#
+# Re-running it is safe. For Claude Code, every local server is removed before
+# it is re-added, and remote servers are only added when missing, because
+# removing one also deletes its OAuth login. For OpenCode, every server entry is
+# overwritten in place; OpenCode stores OAuth logins outside its config, so
+# that never logs anything out. Servers are never pruned: deleting a
+# declaration below leaves the server registered until it is removed by hand.
+#
+# To support another agent, add a branch for it to local_server and
+# remote_server, install its herdr integration at the bottom, and symlink its
+# global instructions file to ~/.agents/AGENTS.md in this repo.
+
+if ! command -v mise &> /dev/null; then
+    echo "Error: mise is not installed!"
+    exit 1
+fi
+
+if ! command -v jq &> /dev/null; then
+    echo "Error: jq is not installed!"
+    exit 1
+fi
+
+has_claude=false
+if command -v claude &> /dev/null; then
+    has_claude=true
+fi
+
+has_opencode=false
+if command -v opencode &> /dev/null; then
+    has_opencode=true
+fi
+
+if ! $has_claude && ! $has_opencode; then
+    echo "Error: neither claude nor opencode is installed!"
+    exit 1
+fi
+
+OPENCODE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
+OPENCODE_CONFIG="$OPENCODE_DIR/opencode.json"
+
+if $has_opencode && [ -f "$OPENCODE_DIR/opencode.jsonc" ]; then
+    echo "Error: $OPENCODE_DIR/opencode.jsonc exists, and jq cannot edit JSONC!"
+    echo "Move its settings into $OPENCODE_CONFIG first."
+    exit 1
+fi
+
+# opencode_server <name> <json>
+# Writes one server into OpenCode's global config, creating the file if needed.
+# The result is copied back with cat rather than mv, so the file keeps its mode
+# instead of taking the temporary file's 0600.
+opencode_server() {
+    local name="$1" server="$2" tmp
+
+    mkdir -p "$OPENCODE_DIR"
+    if [ ! -f "$OPENCODE_CONFIG" ]; then
+        echo '{"$schema": "https://opencode.ai/config.json"}' > "$OPENCODE_CONFIG"
+    fi
+
+    tmp=$(mktemp)
+    jq --arg name "$name" --argjson server "$server" \
+        '.mcp.servers[$name] = $server' "$OPENCODE_CONFIG" > "$tmp"
+    cat "$tmp" > "$OPENCODE_CONFIG"
+    rm "$tmp"
+}
+
+# local_server <name> -- <command> [args...]
+local_server() {
+    local name="$1"
+    shift 2
+
+    echo "Registering $name..."
+
+    if $has_claude; then
+        claude mcp remove --scope user "$name" &> /dev/null || true
+        claude mcp add --scope user "$name" -- "$@"
+    fi
+
+    # The -- after --args is required. Without it, jq drops the first -- it
+    # finds among the arguments, which breaks `mise exec node@24 -- npx ...`.
+    if $has_opencode; then
+        opencode_server "$name" \
+            "$(jq -n '{type: "local", command: $ARGS.positional}' --args -- "$@")"
+    fi
+}
+
+# remote_server <name> <url>
+remote_server() {
+    local name="$1" url="$2"
+
+    echo "Registering $name..."
+
+    if $has_claude; then
+        if claude mcp get "$name" &> /dev/null; then
+            echo "$name is already registered with Claude Code. Skipping..."
+        else
+            claude mcp add --scope user --transport http "$name" "$url"
+        fi
+    fi
+
+    if $has_opencode; then
+        opencode_server "$name" \
+            "$(jq -n --arg url "$url" '{type: "remote", url: $url}')"
+    fi
+}
+
+# chrome-devtools
+# --isolated gives every session its own temporary Chrome profile, so
+# concurrent sessions do not fight over a shared one.
+local_server chrome-devtools -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --isolated
+
+# chrome-live
+# --autoConnect attaches to the Chrome already running with your own profile
+# instead. It needs Chrome 144+ with remote debugging turned on at
+# chrome://inspect/#remote-debugging.
+local_server chrome-live -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --autoConnect
+
+# figma
+# Log in once in each agent: /mcp in Claude Code, /mcps in OpenCode.
+remote_server figma https://mcp.figma.com/mcp
+
+# herdr integrations
+# herdr reports each agent's state to its pane through a hook or plugin that it
+# writes itself and overwrites on every update, so those files are not tracked
+# here either. For Claude Code it also adds its own SessionStart entry to
+# ~/.claude/settings.json, with this machine's absolute path in it, so the
+# tracked settings.json leaves that entry out and the live copy carries it as a
+# local change. On a machine that ran OpenCode V1, herdr waits for OpenCode V2
+# to import the old terminal preferences before it registers its V2 plugin, so
+# start opencode once and then run this script again.
+if command -v herdr &> /dev/null; then
+    if $has_claude; then
+        echo "Installing the herdr integration for Claude Code..."
+        herdr integration install claude
+    fi
+
+    if $has_opencode; then
+        echo "Installing the herdr integration for OpenCode..."
+        herdr integration install opencode
+    fi
+fi
+
+echo "Done"
