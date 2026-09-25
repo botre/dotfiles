@@ -51,3 +51,13 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 - Recovering a branch already orphaned this way: full-clone, `git checkout -B <branch>
   origin/<base>`, `git checkout <orphan-ref> -- <files>`, recommit, force-push. Reopening
   the closed PR may be refused; open a fresh one from the corrected branch.
+
+## Browser
+
+- For browsing, use the `chrome-devtools` MCP server. It starts its own Chrome with a
+  throwaway profile, so it always works.
+- Use `chrome-live` only when the task needs the user's own Chrome: their logins, their
+  open tabs, or they say "my Chrome". It attaches to a Chrome already running with remote
+  debugging on (`chrome://inspect/#remote-debugging`). If it cannot attach, ask the user to
+  turn that on. Do not launch Chrome yourself: Chrome blocks remote debugging on the
+  default profile.
