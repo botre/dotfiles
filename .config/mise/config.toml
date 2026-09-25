@@ -9,6 +9,20 @@ ruby = "3.4"
 terraform = "1.16"
 yarn = "1.22"
 
+# Go tools. These were installed by hand into a pinned Go toolchain's bin
+# directory, so they stopped resolving the moment that pin moved. Declared here
+# they follow no Go version at all.
+#
+# golangci-lint is held at the version skipr's tools/go_lint_all.sh was linting
+# with, because a newer linter changes verdicts on unchanged code. gotestfmt is
+# the formatter monorepo-2's Makefile pipes `go test -json` through.
+#
+# mockery, protoc-gen-go, goimports and shfmt are deliberately absent: the first
+# two install themselves, through `go tool` and `go install` in skipr's own
+# Makefile, and nothing under Development references the other two.
+"golangci-lint" = "2.1.6"
+"go:github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt" = "latest"
+
 # NPM packages
 # TickTick's own CLI. mise refuses a package under 1000 weekly downloads, and
 # this one sits near 400, so the check is answered here rather than switched off
