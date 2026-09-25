@@ -30,8 +30,8 @@ yarn = "1.22"
 # account, is MIT licensed, and has shipped fourteen releases since March.
 # Its `ticktick` binary is not used, because /usr/bin/ticktick is the desktop
 # app and a shim of that name shadows it. The `ticktick-cli` alias the package
-# also ships is what everything here calls. `mise reshim` recreates the
-# `ticktick` shim, so delete it again if the desktop launcher stops answering.
+# also ships is what everything here calls. The shim for the other name is
+# shadowed by an alias in .zshrc, because `mise install` recreates it.
 "npm:@ticktick/ticktick-cli" = { version = "latest", allow_low_downloads = true }
 "npm:hunkdiff" = "latest"
 "npm:skills" = "latest"

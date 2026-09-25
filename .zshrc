@@ -94,6 +94,13 @@ alias v="nvim"
 alias vi="nvim"
 alias vim="nvim"
 
+# TickTick ships a CLI whose binary is also called `ticktick`, and mise's shim
+# directory comes before /usr/bin on PATH, so installing it shadows the desktop
+# application's launcher. Everything calls the CLI by its `ticktick-cli` alias,
+# so this gives the name back to the app. An alias rather than deleting the
+# shim, because `mise install` recreates that every time.
+alias ticktick='/usr/bin/ticktick'
+
 # Wrapper that provides the ability to change the current working directory when exiting Yazi
 function yaz() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
