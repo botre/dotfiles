@@ -1,4 +1,5 @@
 # Taps
+tap "anomalyco/tap"
 tap "timescam/tap"
 
 # Binaries
@@ -41,7 +42,9 @@ brew "libpq"
 brew "mise"
 brew "neovim"
 brew "nmap"
-brew "opencode"
+# OpenCode V2. Not in homebrew/core, and it replaces the core opencode formula (V1),
+# which it conflicts with because both install an opencode binary.
+brew "anomalyco/tap/opencode-v2", trusted: true
 # Not in homebrew/core, and Homebrew only loads formulae from other taps once trusted.
 brew "timescam/tap/pay-respects", trusted: true
 brew "render"

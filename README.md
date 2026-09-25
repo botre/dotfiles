@@ -16,7 +16,7 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 - `scripts/gnome` (Arch only) — applies GNOME settings
 - `scripts/fonts` — installs fonts
 - `scripts/zsh` — sets zsh as the default shell and installs plugins
-- `scripts/claude` — registers Claude Code MCP servers
+- `scripts/agents`: registers MCP servers with Claude Code and OpenCode, and installs their herdr integrations
 - `scripts/skills`: installs agent skills with the `skills` CLI using `skills.txt`
 
 ## mac-settings
@@ -43,9 +43,11 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 
 `scripts/zsh` sets zsh as the login shell with `chsh` and installs Oh My Zsh.
 
-## claude
+## agents
 
-`scripts/claude` registers Claude Code MCP servers. They live in `~/.claude.json`, which also holds machine-local state and is therefore not tracked here. Every local server is removed before it is re-added, so re-running converges. Remote servers are only added when missing, because removing one also deletes its OAuth login.
+`scripts/agents` registers the same MCP servers with every coding agent it finds (Claude Code and OpenCode), then installs herdr's integration for each. Neither agent's server list is tracked here, and re-running the script converges.
+
+The global instructions every agent reads live in `.agents/AGENTS.md`. `.claude/CLAUDE.md` and `.config/opencode/AGENTS.md` are symlinks to it, so an edit reaches every agent at once.
 
 ## skills
 

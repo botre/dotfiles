@@ -59,7 +59,7 @@ mpv-full
 neovim
 nmap
 obsidian-bin
-opencode-bin
+opencode-beta
 pay-respects
 pi
 postgresql-libs
