@@ -151,6 +151,13 @@ remote_server() {
 # concurrent sessions do not fight over a shared one.
 local_server chrome-devtools -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --isolated
 
+# Claude Code's settings.json allows every chrome-devtools tool without asking.
+# OpenCode gets the same rule, so browsing there does not stop for approval.
+if $has_opencode; then
+    opencode_edit '.permissions = ((.permissions // []) | if any(.[]; . == $rule) then . else . + [$rule] end)' \
+        --argjson rule '{"action": "chrome-devtools_*", "resource": "*", "effect": "allow"}'
+fi
+
 # chrome-live
 # --autoConnect attaches to the Chrome already running with your own profile
 # instead. It needs Chrome 144+ with remote debugging turned on at
