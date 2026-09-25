@@ -4,55 +4,51 @@ Personal dotfiles, managed with [yadm](https://yadm.io/).
 
 ## yadm
 
-This repo is the underlying repo for [yadm](https://yadm.io/). yadm wraps `git` with `$HOME` as the work tree, so dotfiles (`.zshrc`, `.vimrc`, `.config/*`, etc.) live directly in `$HOME` alongside the bootstrap scripts and package lists in this repo. Sync with `yadm pull`; track new changes with `yadm status` / `yadm add` / `yadm commit` / `yadm push`.
+yadm is `git` with `$HOME` as the work tree, so the dotfiles here (`.zshrc`, `.config/*` and the rest) live directly in `$HOME`, next to the scripts and package lists. Changes are made in a regular clone of this repo, then `yadm pull` brings them into `$HOME`. `.gitconfig` sets `pull.rebase`, so `yadm pull` stops while any tracked file in `$HOME` has local changes: stash them first.
 
 ## Scripts
 
-Bootstrap scripts for a fresh machine. The order of execution matters:
+Run them on a fresh machine, in this order:
 
-- `scripts/mac-settings` (macOS only) — applies macOS system defaults
-- `scripts/mac-applications` (macOS only) — installs apps via Homebrew using `Brewfile`
-- `scripts/arch-applications` (Arch only) — installs apps via `yay` using `arch-packages.txt`
-- `scripts/gnome` (Arch only) — applies GNOME settings
-- `scripts/fonts` — installs fonts
-- `scripts/zsh` — sets zsh as the default shell and installs plugins
+- `scripts/mac-settings` (macOS only): applies macOS system settings
+- `scripts/mac-applications` (macOS only): installs apps with Homebrew from `Brewfile`
+- `scripts/arch-applications` (Arch only): installs packages with `yay` from `arch-packages.txt`
+- `scripts/gnome` (Arch only): applies GNOME settings
+- `scripts/fonts`: installs Hack Nerd Font
+- `scripts/zsh`: makes zsh the login shell and installs Oh My Zsh
 - `scripts/agents`: registers MCP servers with Claude Code and OpenCode, and installs their herdr integrations
-- `scripts/skills`: installs agent skills with the `skills` CLI using `skills.txt`
+- `scripts/skills`: installs agent skills from `skills.txt`
 
 ## mac-settings
 
-`scripts/mac-settings` (macOS only) applies system defaults with `defaults write` and `systemsetup`: automatic updates, automatic time zone, firewall on, and analytics sharing off. It needs `sudo`.
+`scripts/mac-settings` sets macOS defaults: software updates, time zone, firewall, screen lock and privacy, plus Dock, Finder, animation and input preferences. It needs `sudo`, and some settings apply only after logging out.
 
 ## mac-applications
 
-`scripts/mac-applications` (macOS only) installs Homebrew if it is missing, then runs `brew bundle` against `Brewfile`. Add or remove a line in `Brewfile` to change what gets installed.
+`scripts/mac-applications` installs Homebrew if it is missing, then runs `brew bundle` on `Brewfile`. Deleting a line from `Brewfile` does not uninstall anything.
 
 ## arch-applications
 
-`scripts/arch-applications` reads `arch-packages.txt` and installs every listed package with `yay` (installing `yay` itself first if it's missing). Add or remove a line to change what gets installed on the next run.
+`scripts/arch-applications` installs `yay` if it is missing and upgrades the whole system. It then installs every package in `arch-packages.txt`, marks them as explicitly installed, and removes orphaned dependencies. Deleting a line does not uninstall the package.
 
 ## gnome
 
-`scripts/gnome` (Arch only) applies desktop settings with `gsettings`: automatic time zone, usage-data collection off, immediate lock after sleep, permanent scroll bars, and a 24-hour clock.
+`scripts/gnome` sets GNOME defaults with `gsettings`: time zone, privacy, screen lock, clock, input devices, animations, workspaces, sounds and window focus.
 
 ## fonts
 
-`scripts/fonts` downloads Hack Nerd Font and installs it to the right per-OS directory, `~/Library/Fonts` on macOS and `~/.local/share/fonts` on Linux.
+`scripts/fonts` downloads Hack Nerd Font into `~/Library/Fonts` on macOS or `~/.local/share/fonts` on Linux.
 
 ## zsh
 
-`scripts/zsh` sets zsh as the login shell with `chsh` and installs Oh My Zsh.
+`scripts/zsh` makes zsh the login shell with `chsh` and installs Oh My Zsh.
 
 ## agents
 
-`scripts/agents` registers the same MCP servers with every coding agent it finds (Claude Code and OpenCode), skipping any server an agent cannot use, then installs herdr's integration for each. It also stops OpenCode from reading Claude Code's skills. Neither agent's server list is tracked here, and re-running the script converges.
+`scripts/agents` registers the MCP servers it declares with Claude Code and OpenCode, whichever are installed, and installs herdr's integration for each. It also stops OpenCode from loading Claude Code's skills. Re-running it is safe.
 
-The global instructions every agent reads live in `.agents/AGENTS.md`. `.claude/CLAUDE.md` and `.config/opencode/AGENTS.md` are symlinks to it, so an edit reaches every agent at once.
+`.agents/AGENTS.md` holds the instructions every agent reads. `.claude/CLAUDE.md` and `.config/opencode/AGENTS.md` are symlinks to it.
 
 ## skills
 
-`scripts/skills` reads `skills.txt` and installs every listed source with the `skills` CLI, taking every skill that source offers. Add or remove a line to change what gets installed on the next run.
-
-The sources are a list rather than a single repo on purpose. Most skills come from `botre/skills`, but some come from elsewhere, and a reinstall that pulls only the one repo drops the others silently.
-
-Skills install into `~/.agents/skills` as copies, with each agent directory holding symlinks into that tree, so none of them can be tracked in this repo directly.
+`scripts/skills` installs every source in `skills.txt` with the `skills` CLI, taking every skill each source offers. The skills land in `~/.agents/skills`, outside this repo. Deleting a line does not uninstall its skills.
