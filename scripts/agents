@@ -2,14 +2,14 @@
 
 set -e
 
-# Registers the same MCP servers with every coding agent installed here, then
-# installs herdr's integration for each of them, so a fresh machine ends up with
-# the same setup in all of them.
+# Registers MCP servers with Claude Code and OpenCode, whichever are installed,
+# then installs herdr's integration for each of them, so a fresh machine ends up
+# with the same setup in both.
 #
-# Neither agent's server list can be tracked in this repo. Claude Code keeps
-# its servers in ~/.claude.json, which also holds machine-local state (account,
-# session history, caches). OpenCode keeps them in opencode.json, which this
-# script writes.
+# Neither server list is tracked in this repo. Claude Code keeps its servers in
+# ~/.claude.json, which also holds machine-local state (account, session
+# history, caches). OpenCode keeps them in opencode.json, which this script
+# writes, so tracking that file would fight the script.
 #
 # Re-running it is safe. For Claude Code, every local server is removed before
 # it is re-added, and remote servers are only added when missing, because

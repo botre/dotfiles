@@ -99,10 +99,6 @@ defaults write com.apple.dock launchanim -bool false
 defaults write com.apple.dock springboard-show-duration -float 0.1
 defaults write com.apple.dock springboard-hide-duration -float 0.1
 
-# Optimize Dock hiding speed
-defaults write com.apple.dock autohide-delay -float 0
-defaults write com.apple.dock autohide-time-modifier -float 0.5
-
 # Disable Siri
 defaults write com.apple.assistant.support "Assistant Enabled" -bool false
 
@@ -125,7 +121,7 @@ osascript -e 'set volume alert volume 0'
 sudo mdutil -a -i off
 
 # Disable Spotlight shortcut
-sudo defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "<dict><key>enabled</key><false/></dict>"
 
 # Disable Ctrl+Space input method switch
 defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 60 "<dict><key>enabled</key><false/></dict>"

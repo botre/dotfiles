@@ -4,8 +4,9 @@ set -e
 
 echo "Configuring GNOME settings..."
 
-# Set time zone automatically based on location
+# Set time zone automatically based on location, which needs location services
 gsettings set org.gnome.system.location enabled true
+gsettings set org.gnome.desktop.datetime automatic-timezone true
 
 # Disable GNOME usage data collection
 gsettings set org.gnome.desktop.privacy send-software-usage-stats false
@@ -55,7 +56,6 @@ gsettings set org.gnome.desktop.sound event-sounds false
 # the app doesn't implement XDG activation. 'strict' would instead enforce
 # protocol compliance and demote non-compliant windows to a "ready" notification.
 gsettings set org.gnome.desktop.wm.preferences focus-new-windows 'smart'
-gsettings set org.gnome.desktop.wm.preferences auto-raise true
 
 # Disable lock screen notifications
 gsettings set org.gnome.desktop.notifications show-in-lock-screen false

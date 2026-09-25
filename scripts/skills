@@ -3,8 +3,9 @@
 set -e
 
 # Agent skills install into ~/.agents/skills as copies rather than as a
-# checkout, and each agent directory gets a symlink pointing at that copy.
-# Nothing there can be tracked in this repo, so this script declares the
+# checkout. Agents that do not read that directory themselves (Claude Code, pi)
+# get a symlink to each copy in their own skills directory. None of it can be
+# tracked in this repo, so this script declares the
 # sources instead and a fresh machine ends up with the same set. Re-running it
 # is safe: the skills CLI rewrites each skill in place.
 #
@@ -36,8 +37,9 @@ while IFS= read -r source; do
 
     source=$(echo "$source" | xargs)
 
-    # --skill '*' takes every skill in the repo, which is what the
-    # single-skill upstreams want too. --yes keeps it non-interactive.
+    # --skill '*' takes every skill in the repo, including repo-internal ones:
+    # ogulcancelik/herdr also brings triage, herdr-pre-release-audit and
+    # herdr-throwaway-repro. --yes keeps it non-interactive.
     #
     # stdin is redirected because the CLI reads it. Without this it swallows
     # the rest of the sources file and only the first line ever installs.

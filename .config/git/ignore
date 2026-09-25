@@ -1,7 +1,8 @@
 **/.claude/settings.local.json
 
 # Claude Code state that must never reach a repo (the dotfiles remote is public).
-# Only settings.json, hooks/, skills/ and commands/ are meant to be tracked.
+# Only settings.json, CLAUDE.md, rules/, hooks/, skills/ and commands/ are meant
+# to be tracked; this repo tracks settings.json and CLAUDE.md.
 **/.claude/*.json
 !**/.claude/settings.json
 **/.claude/.credentials.json
