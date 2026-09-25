@@ -18,6 +18,10 @@ set -e
 # that never logs anything out. Servers are never pruned: deleting a
 # declaration below leaves the server registered until it is removed by hand.
 #
+# A remote server can be limited to named agents, for services that only accept
+# some clients. The script also stops OpenCode from reading Claude Code's
+# skills; the section near the bottom explains why.
+#
 # To support another agent, add a branch for it to local_server and
 # remote_server, install its herdr integration at the bottom, and symlink its
 # global instructions file to ~/.agents/AGENTS.md in this repo.
@@ -56,12 +60,13 @@ if $has_opencode && [ -f "$OPENCODE_DIR/opencode.jsonc" ]; then
     exit 1
 fi
 
-# opencode_server <name> <json>
-# Writes one server into OpenCode's global config, creating the file if needed.
+# opencode_edit <jq filter> [jq options...]
+# Applies a jq filter to OpenCode's global config, creating the file if needed.
 # The result is copied back with cat rather than mv, so the file keeps its mode
 # instead of taking the temporary file's 0600.
-opencode_server() {
-    local name="$1" server="$2" tmp
+opencode_edit() {
+    local filter="$1" tmp
+    shift
 
     mkdir -p "$OPENCODE_DIR"
     if [ ! -f "$OPENCODE_CONFIG" ]; then
@@ -69,10 +74,34 @@ opencode_server() {
     fi
 
     tmp=$(mktemp)
-    jq --arg name "$name" --argjson server "$server" \
-        '.mcp.servers[$name] = $server' "$OPENCODE_CONFIG" > "$tmp"
+    jq "$@" "$filter" "$OPENCODE_CONFIG" > "$tmp"
     cat "$tmp" > "$OPENCODE_CONFIG"
     rm "$tmp"
+}
+
+# opencode_server <name> <json>
+# Writes one server into OpenCode's global config.
+opencode_server() {
+    opencode_edit '.mcp.servers[$name] = $server' --arg name "$1" --argjson server "$2"
+}
+
+# wants <agent> [agent...]
+# True when no agents are listed, or when <agent> is one of them.
+wants() {
+    local agent="$1" listed
+    shift
+
+    if [ $# -eq 0 ]; then
+        return 0
+    fi
+
+    for listed in "$@"; do
+        if [ "$listed" = "$agent" ]; then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # local_server <name> -- <command> [args...]
@@ -95,13 +124,15 @@ local_server() {
     fi
 }
 
-# remote_server <name> <url>
+# remote_server <name> <url> [agent...]
+# With agents listed, only those agents get the server.
 remote_server() {
     local name="$1" url="$2"
+    shift 2
 
     echo "Registering $name..."
 
-    if $has_claude; then
+    if $has_claude && wants claude "$@"; then
         if claude mcp get "$name" &> /dev/null; then
             echo "$name is already registered with Claude Code. Skipping..."
         else
@@ -109,7 +140,7 @@ remote_server() {
         fi
     fi
 
-    if $has_opencode; then
+    if $has_opencode && wants opencode "$@"; then
         opencode_server "$name" \
             "$(jq -n --arg url "$url" '{type: "remote", url: $url}')"
     fi
@@ -127,8 +158,30 @@ local_server chrome-devtools -- mise exec node@24 -- npx -y chrome-devtools-mcp@
 local_server chrome-live -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --autoConnect
 
 # figma
-# Log in once in each agent: /mcp in Claude Code, /mcps in OpenCode.
-remote_server figma https://mcp.figma.com/mcp
+# Figma's remote server only accepts clients listed in its MCP catalog and
+# rejects the rest with a 403 at client registration. Claude Code is listed and
+# OpenCode is not, so check the catalog before adding an agent here. Log in once
+# with /mcp in Claude Code.
+remote_server figma https://mcp.figma.com/mcp claude
+
+# OpenCode's Claude compatibility
+# OpenCode V2 reads Claude Code's files through one built-in plugin,
+# opencode.config.compatibility, which loads every skill under ~/.claude/skills.
+# That includes the skills Claude Code syncs from claude.ai, which drive tools
+# only Claude has (its browser extension, desktop control, artifacts), and
+# OpenCode follows them into dead ends. The plugin is switched off here. It also
+# loaded ~/.agents/skills and each project's .agents/skills, so both are listed
+# again explicitly. The project entry resolves from the directory OpenCode
+# starts in, so a project's skills load only when OpenCode starts in the
+# directory that holds its .agents/skills, not in a subdirectory of it.
+if $has_opencode; then
+    echo "Switching off OpenCode's Claude compatibility..."
+    opencode_edit '
+        .plugins = ((.plugins // []) | if any(.[]; . == $plugin) then . else . + [$plugin] end)
+        | .skills = ((.skills // []) as $have | $have + ($skills - $have))
+    ' --arg plugin "-opencode.config.compatibility" \
+        --argjson skills '["~/.agents/skills", ".agents/skills"]'
+fi
 
 # herdr integrations
 # herdr reports each agent's state to its pane through a hook or plugin that it

@@ -45,7 +45,7 @@ Bootstrap scripts for a fresh machine. The order of execution matters:
 
 ## agents
 
-`scripts/agents` registers the same MCP servers with every coding agent it finds (Claude Code and OpenCode), then installs herdr's integration for each. Neither agent's server list is tracked here, and re-running the script converges.
+`scripts/agents` registers the same MCP servers with every coding agent it finds (Claude Code and OpenCode), skipping any server an agent cannot use, then installs herdr's integration for each. It also stops OpenCode from reading Claude Code's skills. Neither agent's server list is tracked here, and re-running the script converges.
 
 The global instructions every agent reads live in `.agents/AGENTS.md`. `.claude/CLAUDE.md` and `.config/opencode/AGENTS.md` are symlinks to it, so an edit reaches every agent at once.
 
