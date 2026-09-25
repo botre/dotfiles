@@ -4,7 +4,7 @@ Personal dotfiles, managed with [yadm](https://yadm.io/).
 
 ## yadm
 
-yadm is `git` with `$HOME` as the work tree, so the dotfiles here (`.zshrc`, `.config/*` and the rest) live directly in `$HOME`, next to the scripts and package lists. Changes are made in a regular clone of this repo, then `yadm pull` brings them into `$HOME`. `.gitconfig` sets `pull.rebase`, so `yadm pull` stops while any tracked file in `$HOME` has local changes: stash them first.
+yadm is `git` with `$HOME` as the work tree, so the dotfiles here (`.zshrc`, `.config/*` and the rest) live directly in `$HOME`, next to the scripts and package lists. Changes are made in a regular clone of this repo, then `yadm pull` brings them into `$HOME`. `.gitconfig` rebases on pull, and a rebase will not start while any tracked file has local changes, which `.claude/settings.json` always has once herdr adds its hook. After cloning, run `yadm gitconfig pull.rebase false` and `yadm gitconfig pull.ff only` so yadm fast-forwards instead.
 
 ## Scripts
 
