@@ -106,9 +106,9 @@
 
       "Bash(make test:*)",
 
-      "Bash(ticktick task:*)",
-      "Bash(ticktick project:*)",
-      "Bash(ticktick auth status)"
+      "Bash(ticktick-cli task:*)",
+      "Bash(ticktick-cli project:*)",
+      "Bash(ticktick-cli auth status)"
     ]
   },
   "hooks": {

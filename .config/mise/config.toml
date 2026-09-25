@@ -10,6 +10,14 @@ terraform = "1.16"
 yarn = "1.22"
 
 # NPM packages
-"npm:@ticktick/ticktick-cli" = "latest"
+# TickTick's own CLI. mise refuses a package under 1000 weekly downloads, and
+# this one sits near 400, so the check is answered here rather than switched off
+# globally: the package is published under TickTick's own npm scope by their
+# account, is MIT licensed, and has shipped fourteen releases since March.
+# Its `ticktick` binary is not used, because /usr/bin/ticktick is the desktop
+# app and a shim of that name shadows it. The `ticktick-cli` alias the package
+# also ships is what everything here calls. `mise reshim` recreates the
+# `ticktick` shim, so delete it again if the desktop launcher stops answering.
+"npm:@ticktick/ticktick-cli" = { version = "latest", allow_low_downloads = true }
 "npm:hunkdiff" = "latest"
 "npm:skills" = "latest"
