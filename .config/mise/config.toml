@@ -10,5 +10,6 @@ terraform = "1.16"
 yarn = "1.22"
 
 # NPM packages
+"npm:@ticktick/ticktick-cli" = "latest"
 "npm:hunkdiff" = "latest"
 "npm:skills" = "latest"
