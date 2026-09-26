@@ -14,6 +14,7 @@ Run them on a fresh machine, in this order:
 - `scripts/mac-applications` (macOS only): installs apps with Homebrew from `Brewfile`
 - `scripts/arch-applications` (Arch only): installs packages with `yay` from `arch-packages.txt`
 - `scripts/gnome` (Arch only): applies GNOME settings
+- `scripts/openwhispr` (Arch only): sets up what OpenWhispr needs on GNOME to paste and to offer Hold mode
 - `scripts/fonts`: installs Hack Nerd Font
 - `scripts/zsh`: makes zsh the login shell and installs Oh My Zsh
 - `mise install`: installs the tools in `.config/mise/config.toml`, including the `skills` CLI that `scripts/skills` needs
@@ -35,6 +36,10 @@ Run them on a fresh machine, in this order:
 ## gnome
 
 `scripts/gnome` sets GNOME defaults with `gsettings`: time zone, privacy, screen lock, clock, input devices, animations, workspaces, sounds and window focus.
+
+## openwhispr
+
+`scripts/openwhispr` adds the user to the `input` group with `sudo` and enables the `ydotool` user service. The service starts at once if `/dev/uinput` is writable, and otherwise at the next login. The script also writes a hidden `open-whispr.desktop` to `~/.local/share/applications`, unless the package ships one.
 
 ## fonts
 
