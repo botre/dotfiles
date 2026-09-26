@@ -60,6 +60,7 @@ neovim
 nmap
 obsidian-bin
 opencode-beta
+openwhispr-bin
 pay-respects
 pi
 postgresql-libs
@@ -88,14 +89,17 @@ unzip
 uv
 vhs
 virt-manager
+vulkan-radeon
 watchman-bin
 wget
 whisper-cpp
 wl-clipboard
+wtype
 xclip
 yadm
 yamllint
 yazi
+ydotool
 yq
 yt-dlp
 zoxide

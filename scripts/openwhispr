@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Sets up what OpenWhispr needs on GNOME to paste dictated text and to offer
+# Hold mode, after scripts/arch-applications has installed openwhispr-bin and
+# ydotool.
+#
+# OpenWhispr pastes by simulating a keystroke. GNOME's compositor drops
+# keystrokes from a virtual keyboard that only exists for one paste, so on GNOME
+# OpenWhispr sends them through a running ydotoold instead, which keeps one
+# device open. ydotoold writes to /dev/uinput, and the ydotool package's udev
+# rule only lets the input group do that. Membership in input also allows
+# reading every keyboard and mouse event, which is the cost of this setup.
+#
+# Hold mode needs key releases, and on GNOME OpenWhispr only gets them from the
+# Global Shortcuts portal. OpenWhispr registers with the portal as open-whispr,
+# and the portal refuses any app ID without a matching .desktop file. The AUR
+# package ships openwhispr.desktop instead, so the script adds a hidden
+# open-whispr.desktop to ~/.local/share/applications. It skips that once the
+# package ships the file itself.
+#
+# Hyprland needs none of this: OpenWhispr pastes there with wtype, through a
+# Wayland protocol that needs no extra permissions, and binds Hold with hyprctl.
+# The service runs there too and goes unused.
+#
+# Re-running it is safe.
+
+if ! command -v ydotoold &> /dev/null; then
+    echo "Error: ydotool is not installed!"
+    exit 1
+fi
+
+if id -nG "$USER" | grep -qw input; then
+    echo "$USER is already in the input group. Skipping..."
+else
+    echo "Adding $USER to the input group..."
+    sudo usermod -aG input "$USER"
+fi
+
+# A new group only applies to processes started after the next login, so
+# ydotoold is started now only when it can already open /dev/uinput.
+if [ -w /dev/uinput ]; then
+    echo "Enabling and starting the ydotool service..."
+    systemctl --user enable --now ydotool.service
+else
+    echo "Enabling the ydotool service..."
+    systemctl --user enable ydotool.service
+    echo "Log out and back in to start it."
+fi
+
+desktop_file="$HOME/.local/share/applications/open-whispr.desktop"
+if [ -f /usr/share/applications/open-whispr.desktop ]; then
+    echo "The package ships open-whispr.desktop. Skipping..."
+else
+    echo "Writing $desktop_file..."
+    mkdir -p "$(dirname "$desktop_file")"
+    cat > "$desktop_file" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=OpenWhispr
+Exec=openwhispr %U
+Icon=openwhispr
+NoDisplay=true
+EOF
+fi
+
+echo "Done"
