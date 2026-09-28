@@ -42,6 +42,16 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 - Do not describe what the reviewer can see in the diff.
 - Max 150 words.
 
+## GitHub media
+
+- To show a screenshot or video in an issue, PR, or comment, pass `--attach <file>` to
+  `gh issue|pr create|edit|comment` (gh 2.99.0+). Do not commit the file to the repo.
+- Unreferenced files go at the end of the body. To place one inline, write
+  `![](./demo.mp4)` in the body and pass the same path to `--attach`. Image alt text
+  follows `#`: `--attach './login.png#Login error state'`.
+- If an upload fails, gh still creates the PR, issue, or comment and prints its URL, then
+  exits non-zero. Check for that URL before retrying, or you create a duplicate.
+
 ## Git
 
 - Never `git commit --amend` in a `--depth 1` shallow clone. The tip commit's parent is
