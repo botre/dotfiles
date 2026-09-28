@@ -42,6 +42,20 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 - Do not describe what the reviewer can see in the diff.
 - Max 150 words.
 
+## PR review tone
+
+- Be concise: one point per comment, with a short reason ("since…", "so that…").
+- Be polite and collaborative: phrase changes as "Let's…" rather than imperatives.
+  - ✅ "Let's move this check before the DB call, so we fail fast."
+  - ❌ "Move this check before the DB call."
+- When unsure, ask instead: "Could `user` be null here?"
+- Only label comments when it matters: prefix `blocking:` for must-fix items and `nit:` for
+  trivial ones. Everything else needs no label.
+- Comment on the code, never the author. Avoid "you should", "just", "simply", "obviously",
+  "why didn't you".
+- Include a code suggestion when the fix is a few lines.
+- No filler praise or apologies. A single genuine compliment is fine when earned.
+
 ## GitHub media
 
 - To show a screenshot or video in an issue, PR, or comment, pass `--attach <file>` to
