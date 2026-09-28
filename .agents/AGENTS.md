@@ -56,9 +56,10 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 ## Browser
 
 - For browsing, use the `chrome-devtools` MCP server. It starts its own Chrome with a
-  throwaway profile, so it always works.
-- Use `chrome-live` only when the task needs the user's own Chrome: their logins, their
-  open tabs, or they say "my Chrome". It attaches to a Chrome already running with remote
-  debugging on (`chrome://inspect/#remote-debugging`). If it cannot attach, ask the user to
-  turn that on. Do not launch Chrome yourself: Chrome blocks remote debugging on the
-  default profile.
+  throwaway profile, so it always works. That includes apps behind a login you can
+  complete yourself, such as a local app with a seeded account or a simulated auth provider.
+- Use `chrome-live` only when the task needs the user's own Chrome: a session you cannot
+  create yourself (their accounts on real sites), their open tabs, or they say "my Chrome".
+  It attaches to a Chrome already running with remote debugging on
+  (`chrome://inspect/#remote-debugging`). If it cannot attach, ask the user to turn that
+  on. Do not launch Chrome yourself: Chrome blocks remote debugging on the default profile.
