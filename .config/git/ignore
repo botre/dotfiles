@@ -27,3 +27,7 @@
 **/.claude/plugins/
 **/.claude/memory/
 **/.claude/cache/
+
+# Cloudflare Tunnel login cert (cert.pem) and tunnel credential JSON. Both are
+# per-machine secrets that `cloudflared tunnel login` and `tunnel create` write.
+**/.cloudflared/

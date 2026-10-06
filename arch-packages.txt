@@ -12,6 +12,7 @@ bitwig-studio
 clamav
 claude-code
 cloud-sql-proxy
+cloudflared
 coreutils
 curl
 dnsmasq
