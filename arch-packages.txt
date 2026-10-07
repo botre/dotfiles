@@ -60,6 +60,7 @@ mpv-full
 neovim
 nmap
 obsidian-bin
+openai-codex
 opencode-beta
 openwhispr-bin
 pay-respects

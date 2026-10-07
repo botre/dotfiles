@@ -15,10 +15,10 @@ Applies to every repository. Repo-specific conventions belong in that repo's
 
 ## Commits & PRs
 
-- Never attribute anything to an AI agent (Claude, OpenCode, or any other) in a commit or a
-  PR. That covers, at minimum: a `Co-Authored-By:` trailer naming an agent, a session trailer
-  such as `Claude-Session:`, a "Generated with <agent>" footer, and a bare session link such
-  as `https://claude.ai/code/session_…` in a PR body, and any future variant of the same
+- Never attribute anything to an AI agent (Claude, OpenCode, Codex, or any other) in a commit
+  or a PR. That covers, at minimum: a `Co-Authored-By:` trailer naming an agent, a session
+  trailer such as `Claude-Session:`, a "Generated with <agent>" footer, and a bare session link
+  such as `https://claude.ai/code/session_…` in a PR body, and any future variant of the same
   idea. Commit messages and PR bodies end with their own content.
 - In Claude Code, `"attribution": {"commit": "", "pr": "", "sessionUrl": false}` together with
   `includeCoAuthoredBy: false` in `~/.claude/settings.json` enforces this. `commit` and `pr`
@@ -26,6 +26,9 @@ Applies to every repository. Repo-specific conventions belong in that repo's
   `Claude-Session:` trailer and the session link in PR bodies, and it defaults to on for
   Remote Control and web sessions. `includeCoAuthoredBy` is deprecated but still load-bearing:
   one PR-body path treats an empty `pr` as unset and only that key silences it there.
+- In Codex, `~/.codex/config.toml` has no key for this. Its `Co-authored-by: Codex` trailer
+  and "Generated with Codex" PR footer come from a setting on the ChatGPT account
+  (`commit_attribution_enabled`), so that setting must be off.
 - The preference stands on its own: keep this rule even where those settings are absent, and
   do not treat their presence as a reason to drop it.
 
