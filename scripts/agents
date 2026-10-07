@@ -169,10 +169,15 @@ local_server() {
         fi
     fi
 
+    # Codex starts a server with only a short allowlist of environment
+    # variables (HOME, PATH, USER and a few more), where Claude Code and
+    # OpenCode pass everything. Chrome then finds no desktop session and fails
+    # with "Missing X server", so env_vars forwards the display variables.
     if $has_codex; then
         local lines=(
             "command = $(jq -n --arg command "$1" '$command')"
             "args = $(jq -cn '$ARGS.positional' --args -- "${@:2}")"
+            'env_vars = ["DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR"]'
         )
         if $approve; then
             lines+=('default_tools_approval_mode = "approve"')
