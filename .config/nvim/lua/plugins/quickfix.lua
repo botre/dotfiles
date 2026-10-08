@@ -3,18 +3,15 @@ return {
         'stevearc/quicker.nvim',
         opts = {},
         config = function()
-            -- Navigation keymaps
             vim.keymap.set('n', '[q', ':cprevious<CR>', { desc = 'Previous quickfix item' })
             vim.keymap.set('n', ']q', ':cnext<CR>', { desc = 'Next quickfix item' })
 
-            -- Toggle keymaps
             vim.keymap.set('n', '<leader>q', function()
                 require('quicker').toggle()
             end, {
                 desc = 'Toggle quickfix',
             })
 
-            -- Setup with expand/collapse keys
             require('quicker').setup({
                 keys = {
                     {

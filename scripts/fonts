@@ -7,7 +7,6 @@ install_nerd_font() {
     local FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/${FONT_NAME}.zip"
     local TEMP_DIR=$(mktemp -d)
 
-    # Determine the operating system and set the appropriate font directory
     if [[ "$OSTYPE" == "darwin"* ]]; then
         local FONT_DIR="$HOME/Library/Fonts/${FONT_NAME}"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -40,7 +39,6 @@ install_nerd_font() {
     echo "Installing the font..."
     cp "${TEMP_DIR}"/*.ttf "$FONT_DIR"
 
-    # Update font cache for Linux systems
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "Updating font cache..."
         if command -v fc-cache &> /dev/null; then

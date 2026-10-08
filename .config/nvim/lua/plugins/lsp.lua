@@ -32,12 +32,10 @@ return {
                 automatic_enable = true,
             })
 
-            -- Default capabilities for every LSP server
             vim.lsp.config('*', {
                 capabilities = require('blink.cmp').get_lsp_capabilities(),
             })
 
-            -- LSP Keymaps (set on attach)
             vim.api.nvim_create_autocmd('LspAttach', {
                 callback = function(args)
                     local bufnr = args.buf
@@ -45,7 +43,6 @@ return {
                         return { buffer = bufnr, remap = false, desc = desc }
                     end
 
-                    -- Core LSP Functions
                     vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts('Code action'))
                     vim.keymap.set('n', '<leader>gd', vim.lsp.buf.definition, opts('Go to definition'))
                     vim.keymap.set('n', '<leader>gi', vim.lsp.buf.implementation, opts('Go to implementation'))
@@ -56,18 +53,15 @@ return {
                     vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts('Hover documentation'))
                     vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts('Go to definition'))
 
-                    -- Inlay hints toggle
                     vim.keymap.set('n', '<leader>ih', function()
                         vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }),
                             { bufnr = bufnr })
                     end, opts('Toggle inlay hints'))
 
-                    -- Diagnostics
                     vim.keymap.set('n', '<leader>e', function()
                         vim.diagnostic.open_float(0, { scope = 'line' })
                     end, opts('Show error'))
 
-                    -- Error Navigation
                     vim.keymap.set('n', '<leader>[e', function()
                         vim.diagnostic.jump({ count = -1, severity = vim.diagnostic.severity.ERROR })
                     end, opts('Previous error'))

@@ -9,30 +9,16 @@ ruby = "3.4"
 terraform = "1.16"
 yarn = "1.22"
 
-# Go tools. These were installed by hand into a pinned Go toolchain's bin
-# directory, so they stopped resolving the moment that pin moved. Declared here
-# they follow no Go version at all.
-#
-# golangci-lint is held at the version skipr's tools/go_lint_all.sh was linting
-# with, because a newer linter changes verdicts on unchanged code. gotestfmt is
-# the formatter monorepo-2's Makefile pipes `go test -json` through.
-#
-# goimports is what skipr's tools/openapi_models runs (`make openapi-web`), and
-# shfmt formats the shell scripts in the skills repo. mockery and protoc-gen-go
-# are deliberately absent: they install themselves, through `go tool` and
-# `go install` in skipr's own Makefile.
+# Match Skipr's tools/go_lint_all.sh pin to avoid different lint verdicts.
+# Skipr's Makefile installs mockery and protoc-gen-go itself.
 "golangci-lint" = "2.1.6"
 "go:github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt" = "latest"
 "go:golang.org/x/tools/cmd/goimports" = "latest"
 shfmt = "latest"
 
 # NPM packages
-# TickTick's own CLI. mise refuses a package under 1000 weekly downloads, and
-# this one sits near 400, so the check is answered here rather than switched off
-# globally: the package is published under TickTick's own npm scope by their
-# account, is MIT licensed, and has shipped fourteen releases since March.
-# Everything here calls its `ticktick-cli` binary; .zshrc explains why its
-# `ticktick` binary is aliased back to the desktop app.
+# Allow low downloads for TickTick's official package only.
+# Use ticktick-cli; .zshrc reserves ticktick for the desktop app.
 "npm:@ticktick/ticktick-cli" = { version = "latest", allow_low_downloads = true }
 "npm:hunkdiff" = "latest"
 "npm:skills" = "latest"

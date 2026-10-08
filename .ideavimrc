@@ -1,4 +1,3 @@
-" Source .vimrc
 source ~/.vimrc
 
 " Keep the mode that was enabled before starting a refactoring

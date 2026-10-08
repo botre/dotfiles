@@ -50,7 +50,6 @@ alias brewup='brew update; brew upgrade; brew cleanup; brew doctor'
 
 alias cat="bat"
 
-# Clipboard copy, detecting the platform
 if [[ "$(uname)" == "Darwin" ]]; then
     alias copy='pbcopy'
 elif [[ -n "$WAYLAND_DISPLAY" ]]; then
@@ -70,7 +69,6 @@ alias j='jj'
 
 alias ip='curl ipv4.icanhazip.com'
 
-# Auto-detect package manager from lockfile
 p() {
   if   [[ -f bun.lockb || -f bun.lock ]]; then cmd=bun
   elif [[ -f pnpm-lock.yaml ]]; then cmd=pnpm
@@ -94,15 +92,11 @@ alias v="nvim"
 alias vi="nvim"
 alias vim="nvim"
 
-# TickTick ships a CLI whose binary is also called `ticktick`, and mise puts both
-# the package's bin directory and its shim directory before /usr/bin on PATH, so
-# installing it shadows the desktop application's launcher. Everything calls the
-# CLI by its `ticktick-cli` alias, so this gives the name back to the app. An
-# alias, because deleting the shim would leave the bin directory's copy, and
-# `mise install` recreates the shim anyway.
+# mise's TickTick CLI shadows the desktop launcher. Use ticktick-cli for the CLI.
+# Keep an alias: mise recreates deleted shims, and the package bin also shadows the app.
 alias ticktick='/usr/bin/ticktick'
 
-# Wrapper that provides the ability to change the current working directory when exiting Yazi
+# Apply Yazi's final directory to the parent shell.
 function yaz() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
 	yazi "$@" --cwd-file="$tmp"
@@ -111,15 +105,12 @@ function yaz() {
 	rm -f -- "$tmp"
 }
 
-# Go development
 export GOPATH=$(go env GOPATH)
 export PATH=$PATH:$(go env GOPATH)/bin
 
-# Java development
 export JAVA_HOME=/usr/lib/jvm/default
 export PATH=$JAVA_HOME/bin:$PATH
 
-# Android development
 export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
@@ -129,11 +120,9 @@ eval "$(pay-respects zsh --alias f)"
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
 
-# Coding agents (Claude Code) snapshot this file's aliases and replay them for every tool
-# call. Shadowing coreutils with prettifiers makes the agent fall back to `/bin/ls`, which
-# the permission engine cannot match against its bare-name read-only allowlist, so every
-# listing costs an approval prompt. Give agent shells the real tools; interactive is unchanged.
-# Must stay last: it has to run after every alias definition above.
+# Claude Code replays aliases in tool calls. Prettifier aliases force /bin/ls,
+# which misses its bare-name permission rules and triggers approval prompts.
+# Keep this after all alias definitions.
 if [[ -n "$CLAUDECODE" ]]; then
   unalias ls lsa cat 2>/dev/null
 fi

@@ -19,7 +19,6 @@ return {
                 },
             })
 
-            -- Register key groups
             wk.add({
                 { '<leader>f',   group = 'Find' },
                 { '<leader>g',   group = 'Go' },

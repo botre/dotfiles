@@ -18,16 +18,11 @@ return {
             picker = {
                 enabled = true,
                 sources = {
-                    -- Carried over from the telescope file_ignore_patterns. Snacks
-                    -- already excludes .git, and fd and rg skip ignored paths,
-                    -- so node_modules only matters where it is not ignored.
+                    -- Exclude node_modules even in projects without a gitignore.
                     files = { exclude = { '.git', 'node_modules' } },
                     grep = { exclude = { '.git', 'node_modules' } },
-                    -- Show recent files from the current project only
                     recent = { filter = { cwd = true } },
                     explorer = {
-                        -- nvim-tree was configured to hide neither dotfiles
-                        -- nor git-ignored files
                         hidden = true,
                         ignored = true,
                     },

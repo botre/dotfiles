@@ -15,7 +15,6 @@ return {
                 },
             })
 
-            -- Super tab mapping: accept Copilot suggestion with Tab, fallback to normal Tab
             vim.keymap.set('i', '<Tab>', function()
                 if require('copilot.suggestion').is_visible() then
                     require('copilot.suggestion').accept()

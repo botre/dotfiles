@@ -1,13 +1,10 @@
-" Enable true colors support
 set termguicolors
 
 " Faster updates
 set updatetime=750
 
-" Show mode
 set showmode
 
-" Precede each line with its line number
 set number
 
 " Show the line number relative to the line with the cursor in front of each line
@@ -22,7 +19,6 @@ set guicursor+=a:-blinkwait175-blinkoff150-blinkon175
 " Override the 'ignorecase' option if the search pattern contains upper case characters
 set smartcase
 
-" Ignore case in search patterns
 set ignorecase
 
 " Causes all text matching the current search to be highlighted
@@ -37,25 +33,19 @@ set spelllang=en
 " Yank to system clipboard
 set clipboard=unnamedplus
 
-" Remove <Space> functionality
 noremap <Space> <NOP>
 
-" Use <Space> as <Leader>
 let mapleader = " "
 
-" Map <Esc> to <C-c>
 inoremap <Esc> <C-c>
 
-" Map jj to escape from insert mode
 inoremap jj <Esc>
 
-" Disable arrow keys
 noremap <Up> <Nop>
 noremap <Down> <Nop>
 noremap <Left> <Nop>
 noremap <Right> <Nop>
 
-" Disable backspace and carriage return keys
 noremap <Backspace> <Nop>
 noremap <CR> <Nop>
 
@@ -82,7 +72,6 @@ map Y y$
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
 
-" Toggle search highlights
 nmap <silent> <leader>h :set hlsearch!<cr>
 
 " Improved window splitting

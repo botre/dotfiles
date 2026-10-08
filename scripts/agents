@@ -2,34 +2,11 @@
 
 set -e
 
-# Registers MCP servers with Claude Code, OpenCode and Codex, whichever are
-# installed, then installs herdr's integration for each of them, so a fresh
-# machine ends up with the same setup in all of them.
-#
-# None of the server lists is tracked in this repo. Claude Code keeps its
-# servers in ~/.claude.json, which also holds machine-local state (account,
-# session history, caches). OpenCode keeps them in opencode.json, which this
-# script writes, so tracking that file would fight the script. Codex keeps them
-# in ~/.codex/config.toml, which this script, herdr and Codex itself all write
-# (Codex records project trust, notices and model choices there).
-#
-# Re-running it is safe. For Claude Code and Codex, every local server is
-# removed before it is re-added, and remote servers are only added when missing.
-# Removing a remote server from Claude Code also deletes its OAuth login. Codex
-# keeps the login, but adding a remote server with `codex mcp add` starts a
-# browser login, so the script writes the entry itself and leaves the login to
-# `codex mcp login`. For OpenCode, every server entry is overwritten in place;
-# OpenCode stores OAuth logins outside its config, so that never logs anything
-# out. Servers are never pruned: deleting a declaration below leaves the server
-# registered until it is removed by hand.
-#
-# A remote server can be limited to named agents, for services that only accept
-# some clients. The script also stops OpenCode from reading Claude Code's
-# skills; the section near the bottom explains why.
-#
-# To support another agent, add a branch for it to local_server and
-# remote_server, install its herdr integration at the bottom, and symlink its
-# global instructions file to ~/.agents/AGENTS.md in this repo.
+# MCP configs stay untracked: they contain machine-local state or are written
+# by this script and the agents themselves.
+# Remote entries are added only when missing to preserve OAuth logins and avoid
+# browser login prompts. For new Codex entries, run `codex mcp login` separately.
+# Removed declarations are not pruned; unregister those servers by hand.
 
 if ! command -v mise &> /dev/null; then
     echo "Error: mise is not installed!"
@@ -71,9 +48,7 @@ if $has_opencode && [ -f "$OPENCODE_DIR/opencode.jsonc" ]; then
 fi
 
 # opencode_edit <jq filter> [jq options...]
-# Applies a jq filter to OpenCode's global config, creating the file if needed.
-# The result is copied back with cat rather than mv, so the file keeps its mode
-# instead of taking the temporary file's 0600.
+# Copy back with cat to preserve the config's mode; mktemp files are 0600.
 opencode_edit() {
     local filter="$1" tmp
     shift
@@ -90,7 +65,6 @@ opencode_edit() {
 }
 
 # opencode_server <name> <json>
-# Writes one server into OpenCode's global config.
 opencode_server() {
     opencode_edit '.mcp.servers[$name] = $server' --arg name "$1" --argjson server "$2"
 }
@@ -99,10 +73,8 @@ CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 CODEX_CONFIG="$CODEX_DIR/config.toml"
 
 # codex_server <name> <toml line>...
-# Writes one server into Codex's global config. `codex mcp add` rewrites the
-# whole entry and has no option for tool approval, so Codex's own command
-# removes the old entry and the new one is appended as a TOML table. jq prints
-# the values, because a JSON string, or an array of them, is also valid TOML.
+# `codex mcp add` has no tool approval option, so append the table ourselves.
+# jq emits strings and arrays that are also valid TOML.
 codex_server() {
     local name="$1"
     shift
@@ -216,36 +188,23 @@ remote_server() {
     fi
 }
 
-# chrome-devtools
-# --isolated gives every session its own temporary Chrome profile, so
-# concurrent sessions do not fight over a shared one. Claude Code's
-# settings.json allows every chrome-devtools tool without asking, and approve
-# gives OpenCode and Codex the same rule, so browsing does not stop for approval.
+# Isolated profiles prevent concurrent browser sessions from conflicting.
 local_server chrome-devtools approve -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --isolated
 
-# chrome-live
 # --autoConnect attaches to the Chrome already running with your own profile
 # instead. It needs Chrome 144+ with remote debugging turned on at
 # chrome://inspect/#remote-debugging.
 local_server chrome-live -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --autoConnect
 
-# figma
 # Figma's remote server only accepts clients listed in its MCP catalog and
 # rejects the rest with a 403 at client registration. Claude Code and Codex are
 # listed and OpenCode is not, so check the catalog before adding an agent here.
 # Log in once with /mcp in Claude Code and with `codex mcp login figma`.
 remote_server figma https://mcp.figma.com/mcp claude codex
 
-# OpenCode's Claude compatibility
-# OpenCode V2 reads Claude Code's files through one built-in plugin,
-# opencode.config.compatibility, which loads every skill under ~/.claude/skills.
-# That includes the skills Claude Code syncs from claude.ai, which drive tools
-# only Claude has (its browser extension, desktop control, artifacts), and
-# OpenCode follows them into dead ends. The plugin is switched off here. It also
-# loaded ~/.agents/skills and each project's .agents/skills, so both are listed
-# again explicitly. The project entry resolves from the directory OpenCode
-# starts in, so a project's skills load only when OpenCode starts in the
-# directory that holds its .agents/skills, not in a subdirectory of it.
+# Claude-synced skills reference tools OpenCode lacks. Disable the compatibility
+# plugin and restore the shared skill paths it also provided.
+# The project path resolves from OpenCode's startup directory, not the repo root.
 if $has_opencode; then
     echo "Switching off OpenCode's Claude compatibility..."
     opencode_edit '
@@ -255,17 +214,10 @@ if $has_opencode; then
         --argjson skills '["~/.agents/skills", ".agents/skills"]'
 fi
 
-# herdr integrations
-# herdr reports each agent's state to its pane through a hook or plugin that it
-# writes itself and overwrites on every update, so those files are not tracked
-# here either. For Claude Code it also adds its own SessionStart entry to
-# ~/.claude/settings.json, with this machine's absolute path in it, so the
-# tracked settings.json leaves that entry out and the live copy carries it as a
-# local change. On a machine that ran OpenCode V1, herdr waits for OpenCode V2
-# to import the old terminal preferences before it registers its V2 plugin, so
-# start opencode once and then run this script again. For Codex, herdr needs
-# ~/.codex to exist, which codex_server has made sure of by now, and it turns
-# on Codex's hooks feature in config.toml.
+# herdr overwrites its hooks and plugins on updates, so they stay untracked.
+# Its Claude SessionStart hook adds a machine-specific path to the live settings.
+# After OpenCode V1, start V2 once to import preferences, then rerun this script.
+# Codex needs ~/.codex to exist before the integration installs its hooks.
 if command -v herdr &> /dev/null; then
     if $has_claude; then
         echo "Installing the herdr integration for Claude Code..."
