@@ -18,7 +18,7 @@ Run them on a fresh machine, in this order:
 - `scripts/fonts`: installs Hack Nerd Font
 - `scripts/zsh`: makes zsh the login shell and installs Oh My Zsh
 - `mise install`: installs the tools in `.config/mise/config.toml`, including the `skills` CLI that `scripts/skills` needs
-- `scripts/agents`: registers MCP servers with Claude Code, OpenCode and Codex, and installs their herdr integrations
+- `scripts/agents`: registers MCP servers with Claude Code, OpenCode and Codex, copies the Claude Code allow list to the other two, and installs their herdr integrations
 - `scripts/skills`: installs agent skills from `skills.txt`
 
 ## mac-settings
@@ -51,7 +51,7 @@ Run them on a fresh machine, in this order:
 
 ## agents
 
-`scripts/agents` registers the MCP servers it declares with Claude Code, OpenCode and Codex, whichever are installed (figma skips OpenCode, because Figma rejects it), and installs herdr's integration for each. It also stops OpenCode from loading Claude Code's skills. Re-running it is safe.
+`scripts/agents` registers the MCP servers it declares with Claude Code, OpenCode and Codex, whichever are installed (figma skips OpenCode, because Figma rejects it), and installs herdr's integration for each. It copies the allow list in `.claude/settings.json` to OpenCode's permissions and to `~/.codex/rules/claude-allow.rules`, so the same commands and MCP tools run without a prompt in all three. It also stops OpenCode from loading Claude Code's skills. Re-running it is safe.
 
 `.agents/AGENTS.md` holds the global instructions Claude Code, OpenCode and Codex read. `.claude/CLAUDE.md`, `.config/opencode/AGENTS.md` and `.codex/AGENTS.md` are symlinks to it.
 

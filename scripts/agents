@@ -6,7 +6,8 @@ set -e
 # by this script and the agents themselves.
 # Remote entries are added only when missing to preserve OAuth logins and avoid
 # browser login prompts. For new Codex entries, run `codex mcp login` separately.
-# Removed declarations are not pruned; unregister those servers by hand.
+# Removed declarations are not pruned; unregister those servers by hand. The
+# same goes for OpenCode rules whose Claude Code allow entry was removed.
 
 if ! command -v mise &> /dev/null; then
     echo "Error: mise is not installed!"
@@ -37,6 +38,21 @@ if ! $has_claude && ! $has_opencode && ! $has_codex; then
     echo "Error: none of claude, opencode and codex is installed!"
     exit 1
 fi
+
+# The allow list in Claude Code's tracked settings.json is the only list of
+# commands and MCP tools that run without asking. OpenCode and Codex get rules
+# derived from it.
+CLAUDE_SETTINGS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+
+if [ ! -f "$CLAUDE_SETTINGS" ]; then
+    echo "Error: $CLAUDE_SETTINGS does not exist!"
+    exit 1
+fi
+
+# claude_allows <entry>
+claude_allows() {
+    jq -e --arg entry "$1" 'any(.permissions.allow[]?; . == $entry)' "$CLAUDE_SETTINGS" > /dev/null
+}
 
 OPENCODE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
 OPENCODE_CONFIG="$OPENCODE_DIR/opencode.json"
@@ -106,19 +122,10 @@ wants() {
     return 1
 }
 
-# local_server <name> [approve] -- <command> [args...]
-# With approve, OpenCode and Codex run every tool of the server without asking.
-# Claude Code takes the same rule from an mcp__<name>__* entry in the allow list
-# of its tracked settings.json, so add one there as well.
+# local_server <name> -- <command> [args...]
 local_server() {
-    local name="$1" approve=false
-    shift
-
-    if [ "$1" = approve ]; then
-        approve=true
-        shift
-    fi
-    shift
+    local name="$1"
+    shift 2
 
     echo "Registering $name..."
 
@@ -132,26 +139,21 @@ local_server() {
     if $has_opencode; then
         opencode_server "$name" \
             "$(jq -n '{type: "local", command: $ARGS.positional}' --args -- "$@")"
-
-        if $approve; then
-            opencode_edit '
-                {action: $action, resource: "*", effect: "allow"} as $rule
-                | .permissions = ((.permissions // []) | if any(.[]; . == $rule) then . else . + [$rule] end)
-            ' --arg action "${name}_*"
-        fi
     fi
 
     # Codex starts a server with only a short allowlist of environment
     # variables (HOME, PATH, USER and a few more), where Claude Code and
     # OpenCode pass everything. Chrome then finds no desktop session and fails
     # with "Missing X server", so env_vars forwards the display variables.
+    # Codex has no rule for a whole server, so an mcp__<name>__* allow entry
+    # becomes the server's approval mode here.
     if $has_codex; then
         local lines=(
             "command = $(jq -n --arg command "$1" '$command')"
             "args = $(jq -cn '$ARGS.positional' --args -- "${@:2}")"
             'env_vars = ["DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR"]'
         )
-        if $approve; then
+        if claude_allows "mcp__${name}__*"; then
             lines+=('default_tools_approval_mode = "approve"')
         fi
         codex_server "$name" "${lines[@]}"
@@ -189,7 +191,7 @@ remote_server() {
 }
 
 # Isolated profiles prevent concurrent browser sessions from conflicting.
-local_server chrome-devtools approve -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --isolated
+local_server chrome-devtools -- mise exec node@24 -- npx -y chrome-devtools-mcp@latest --isolated
 
 # --autoConnect attaches to the Chrome already running with your own profile
 # instead. It needs Chrome 144+ with remote debugging turned on at
@@ -201,6 +203,46 @@ local_server chrome-live -- mise exec node@24 -- npx -y chrome-devtools-mcp@late
 # listed and OpenCode is not, so check the catalog before adding an agent here.
 # Log in once with /mcp in Claude Code and with `codex mcp login figma`.
 remote_server figma https://mcp.figma.com/mcp claude codex
+
+# Bash(<command>:*) and Bash(<command> *) allow <command> with any arguments,
+# Bash(<command>) allows it exactly, and mcp__<server>__<tool> allows one tool,
+# or every tool of the server with *. Other entries have no counterpart here.
+# OpenCode uses the last rule that matches, so these follow its ask rules.
+if $has_opencode; then
+    echo "Copying Claude Code's allow list to OpenCode..."
+    opencode_edit '
+        .permissions = ((.permissions // []) as $have | $have + ($rules - $have))
+    ' --argjson rules "$(jq -c '[
+        .permissions.allow[]?
+        | if test("^Bash\\(.+\\)$") then
+            {action: "shell", resource: (.[5:-1] | sub(":\\*$"; " *"))}
+        elif startswith("mcp__") then
+            {action: (ltrimstr("mcp__") | sub("__"; "_")), resource: "*"}
+        else
+            empty
+        end
+        | . + {effect: "allow"}
+    ]' "$CLAUDE_SETTINGS")"
+fi
+
+# Codex rules match command prefixes only, so an exact Bash entry also allows
+# extra arguments there, and an entry with * anywhere else is skipped.
+# The file is rewritten on every run, so removed entries disappear.
+# An allowed command runs outside Codex's sandbox, as it does in Claude Code.
+if $has_codex; then
+    echo "Copying Claude Code's allow list to Codex..."
+    mkdir -p "$CODEX_DIR/rules"
+    {
+        echo "# Written by scripts/agents from $CLAUDE_SETTINGS. Edits are overwritten."
+        jq -r '
+            .permissions.allow[]?
+            | select(test("^Bash\\(.+\\)$"))
+            | .[5:-1] | sub("(:| )\\*$"; "") | split(" ") | map(select(. != ""))
+            | select(all(.[]; contains("*") | not))
+            | "prefix_rule(pattern = \(tojson), decision = \"allow\")"
+        ' "$CLAUDE_SETTINGS"
+    } > "$CODEX_DIR/rules/claude-allow.rules"
+fi
 
 # Claude-synced skills reference tools OpenCode lacks. Disable the compatibility
 # plugin and restore the shared skill paths it also provided.
