@@ -29,6 +29,7 @@
       "Read(//tmp/**)",
 
       "mcp__chrome-devtools__*",
+      "mcp__chrome-live__*",
 
       "mcp__linear-server__get_issue",
       "mcp__linear-server__get_issue_status",
