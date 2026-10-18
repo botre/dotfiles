@@ -51,7 +51,7 @@ Run them on a fresh machine, in this order:
 
 ## agents
 
-`scripts/agents` registers the MCP servers it declares with Claude Code, OpenCode and Codex, whichever are installed (figma skips OpenCode, because Figma rejects it), and installs herdr's integration for each. It copies the allow list in `.claude/settings.json` to OpenCode's permissions and to `~/.codex/rules/claude-allow.rules`, so the same commands and MCP tools run without a prompt in all three. It also stops OpenCode from loading Claude Code's skills. Re-running it is safe.
+`scripts/agents` registers the MCP servers it declares with Claude Code, OpenCode and Codex, whichever are installed (figma skips OpenCode, because Figma rejects it), and installs herdr's integration for each. It copies the allow list in `.claude/settings.json` to OpenCode's permissions and to `~/.codex/rules/claude-allow.rules`, so the same shell commands run without a prompt in all three. Codex approves only whole MCP servers, so a single-tool allow entry has no Codex counterpart. It also stops OpenCode from loading Claude Code's skills. Re-running it is safe.
 
 `.agents/AGENTS.md` holds the global instructions Claude Code, OpenCode and Codex read. `.claude/CLAUDE.md`, `.config/opencode/AGENTS.md` and `.codex/AGENTS.md` are symlinks to it.
 

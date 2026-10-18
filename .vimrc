@@ -65,7 +65,7 @@ vnoremap <leader>d "_d
 vnoremap <leader>s "_s
 vnoremap <leader>x "_x
 
-" Make Y to work from the cursor to the end of line
+" Make Y yank from the cursor to the end of the line, like D and C
 map Y y$
 
 " Move lines of text vertically, in visual mode
