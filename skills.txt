@@ -1,3 +1,4 @@
 botre/skills
+cloudflare/security-audit-skill
 ogulcancelik/herdr
 pbakaus/impeccable
