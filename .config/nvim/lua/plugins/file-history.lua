@@ -51,8 +51,30 @@ return {
 
             local function ensure_dir_exists(dir)
                 if vim.fn.isdirectory(dir) == 0 then
-                    vim.fn.mkdir(dir, 'p')
+                    vim.fn.mkdir(dir, 'p', 448)
                 end
+            end
+
+            -- History is a second copy of a file, so credential stores and
+            -- secret-bearing filenames must be excluded before any read.
+            local function is_sensitive(filepath)
+                local path = filepath:lower():gsub('\\', '/')
+                local name = vim.fn.fnamemodify(path, ':t')
+                if name == '.env' or name:match('^%.env%.') or
+                    name:match('%.env$') or name:match('%.env%.') or
+                    name == 'auth.json' or name == '.credentials.json' or
+                    name == 'credentials' or name == 'kubeconfig' or
+                    name:match('^id_') or name:match('%.pem$') or
+                    name:match('%.key$') or name:match('%.p12$') or
+                    name:match('%.pfx$') or name:match('^secrets?[%.%-]') then
+                    return true
+                end
+                for _, directory in ipairs({ '/.aws/', '/.ssh/', '/.kube/',
+                    '/.config/gcloud/', '/.config/op/', '/.config/gh/',
+                    '/.codex/', '/.claude/' }) do
+                    if path:find(directory, 1, true) then return true end
+                end
+                return false
             end
 
             local function calculate_hash(lines)
@@ -94,6 +116,7 @@ return {
                 -- Escape special pattern characters in history_dir for matching
                 local history_dir_pattern = M.config.history_dir:gsub('([^%w])', '%%%1')
                 if filepath == '' or
+                    is_sensitive(filepath) or
                     vim.bo.buftype ~= '' or
                     vim.fn.filereadable(filepath) == 0 or
                     filepath:match(history_dir_pattern) then
@@ -118,9 +141,12 @@ return {
                 local history_filename = get_history_filename(filepath)
                 local history_path = history_dir .. '/' .. history_filename
 
+                ensure_dir_exists(M.config.history_dir)
+                vim.fn.setfperm(M.config.history_dir, 'rwx------')
                 ensure_dir_exists(history_dir)
 
                 vim.fn.writefile(current_lines, history_path)
+                vim.fn.setfperm(history_path, 'rw-------')
 
                 cleanup_old_history(filepath)
             end

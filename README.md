@@ -58,3 +58,11 @@ Run them on a fresh machine, in this order:
 ## skills
 
 `scripts/skills` installs every source in `skills.txt` with the `skills` CLI, taking every skill each source offers. The skills land in `~/.agents/skills`, which yadm leaves untracked. Deleting a line does not uninstall its skills.
+
+## Sensitive local history
+
+The Neovim file-history plugin excludes credential directories and common
+secret-bearing filenames before reading a saved file. Its history directory
+and new snapshots use private permissions. Existing snapshots are not purged;
+review them separately after rotating or removing a credential. Keep secrets
+out of command arguments, shell history, terminal captures and diagnostic output.
