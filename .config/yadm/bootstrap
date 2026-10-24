@@ -19,10 +19,6 @@ fi
 
 if command -v gnome-shell &> /dev/null; then
     scripts/gnome
-    # scripts/openwhispr needs ydotool, which scripts/arch-applications installs.
-    if [ -f /etc/arch-release ]; then
-        scripts/openwhispr
-    fi
 fi
 
 scripts/fonts
