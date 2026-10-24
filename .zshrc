@@ -65,8 +65,6 @@ alias dcupd='docker compose up -d'
 
 alias g='git'
 
-alias j='jj'
-
 alias ip='curl ipv4.icanhazip.com'
 
 p() {

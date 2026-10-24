@@ -46,7 +46,6 @@ herdr-bin
 imagemagick
 jetbrains-toolbox
 jq
-jujutsu
 k9s
 keybase-bin
 kubectl
