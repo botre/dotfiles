@@ -43,13 +43,31 @@ fi
 DOTFILES_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CLAUDE_SETTINGS="$DOTFILES_DIR/.config/claude/settings.json"
 
-if $has_claude; then
-    "$DOTFILES_DIR/scripts/claude-settings"
-fi
-
 if [ ! -f "$CLAUDE_SETTINGS" ]; then
     echo "Error: $CLAUDE_SETTINGS does not exist!"
     exit 1
+fi
+
+# Merge shared preferences over local state without removing hooks or plugins.
+if $has_claude; then
+    echo "Merging Claude Code settings..."
+    settings_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+    settings="$settings_dir/settings.json"
+
+    mkdir -p "$settings_dir"
+    tmp=$(mktemp "$settings_dir/settings.json.XXXXXX")
+    trap 'rm -f "$tmp"' EXIT
+
+    if [ -f "$settings" ]; then
+        jq -s '.[0] * .[1]' "$settings" "$CLAUDE_SETTINGS" > "$tmp"
+    else
+        jq . "$CLAUDE_SETTINGS" > "$tmp"
+    fi
+
+    chmod 600 "$tmp"
+    if ! cmp -s "$tmp" "$settings"; then
+        mv "$tmp" "$settings"
+    fi
 fi
 
 # claude_allows <entry>

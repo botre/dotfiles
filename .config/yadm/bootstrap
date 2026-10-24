@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -e
+
+# yadm clone offers to run this, and `yadm bootstrap` runs it again later.
+
+cd "$HOME"
+
+if [ "$(uname)" = "Darwin" ]; then
+    scripts/mac-settings
+    scripts/mac-applications
+    # The Homebrew installer leaves this shell's PATH alone.
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+if [ -f /etc/arch-release ]; then
+    scripts/arch-applications
+fi
+
+if command -v gnome-shell &> /dev/null; then
+    scripts/gnome
+    # scripts/openwhispr needs ydotool, which scripts/arch-applications installs.
+    if [ -f /etc/arch-release ]; then
+        scripts/openwhispr
+    fi
+fi
+
+scripts/fonts
+scripts/zsh
+
+mise install
+# scripts/skills needs the skills CLI that mise just installed.
+eval "$(mise activate bash --shims)"
+
+scripts/agents
+scripts/skills

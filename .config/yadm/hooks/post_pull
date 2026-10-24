@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-set -e
-
-if [ "${YADM_HOOK_EXIT:-0}" -ne 0 ] || ! command -v jq >/dev/null; then
-    exit 0
-fi
-
-exec "${YADM_HOOK_WORK:-$HOME}/scripts/claude-settings"
