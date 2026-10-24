@@ -65,9 +65,7 @@ alias dcupd='docker compose up -d'
 
 alias g='git'
 
-alias j='jj'
-
-alias ip='curl ipv4.icanhazip.com'
+alias myip='curl -fsS https://ipv4.icanhazip.com'
 
 p() {
   if   [[ -f bun.lockb || -f bun.lock ]]; then cmd=bun

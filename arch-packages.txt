@@ -46,7 +46,6 @@ herdr-bin
 imagemagick
 jetbrains-toolbox
 jq
-jujutsu
 k9s
 keybase-bin
 kubectl
@@ -62,7 +61,6 @@ nmap
 obsidian-bin
 openai-codex
 opencode-beta
-openwhispr-bin
 pay-respects
 pi
 postgresql-libs
@@ -96,12 +94,10 @@ watchman-bin
 wget
 whisper-cpp
 wl-clipboard
-wtype
 xclip
 yadm
 yamllint
 yazi
-ydotool
 yq
 yt-dlp
 zoxide
