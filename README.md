@@ -16,6 +16,3 @@ From your home directory, run the setup steps for your machine in this order:
 - `mise install`: development tools
 - `scripts/agents`: MCP servers, permissions and Herdr integrations
 - `scripts/skills`: skills from `skills.txt`
-
-Shared Claude preferences live in `.config/claude/settings.json`. yadm applies
-them after clone and pull; local hooks and plugins stay on the machine.
