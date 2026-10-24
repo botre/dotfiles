@@ -39,10 +39,13 @@ if ! $has_claude && ! $has_opencode && ! $has_codex; then
     exit 1
 fi
 
-# The allow list in Claude Code's tracked settings.json is the only list of
-# commands and MCP tools that run without asking. OpenCode and Codex get rules
-# derived from it.
-CLAUDE_SETTINGS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+# All three clients derive their allow lists from the shared preferences.
+DOTFILES_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+CLAUDE_SETTINGS="$DOTFILES_DIR/.config/claude/settings.json"
+
+if $has_claude; then
+    "$DOTFILES_DIR/scripts/claude-settings"
+fi
 
 if [ ! -f "$CLAUDE_SETTINGS" ]; then
     echo "Error: $CLAUDE_SETTINGS does not exist!"
@@ -256,8 +259,7 @@ if $has_opencode; then
         --argjson skills '["~/.agents/skills", ".agents/skills"]'
 fi
 
-# herdr overwrites its hooks and plugins on updates, so they stay untracked.
-# Its Claude SessionStart hook adds a machine-specific path to the live settings.
+# herdr's hooks and plugins stay in the untracked client settings.
 # After OpenCode V1, start V2 once to import preferences, then rerun this script.
 # Codex needs ~/.codex to exist before the integration installs its hooks.
 if command -v herdr &> /dev/null; then
