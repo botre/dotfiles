@@ -66,3 +66,6 @@ secret-bearing filenames before reading a saved file. Its history directory
 and new snapshots use private permissions. Existing snapshots are not purged;
 review them separately after rotating or removing a credential. Keep secrets
 out of command arguments, shell history, terminal captures and diagnostic output.
+
+Run `lua tests/file-history.lua` from the repository root to check the exclusions
+and private permissions. The suite uses a stubbed Neovim API and needs Lua 5.4.
