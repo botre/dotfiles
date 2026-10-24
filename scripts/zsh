@@ -2,8 +2,17 @@
 
 set -e
 
-chsh -s $(which zsh)
+# chsh asks for a password, so skip it once zsh is the login shell.
+if [ "$(basename "$SHELL")" != "zsh" ]; then
+    chsh -s "$(which zsh)"
+fi
 
-sh -c "$(wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"
+# --keep-zshrc leaves the tracked .zshrc in place, and --unattended stops the
+# installer from starting zsh, which would end a running bootstrap.
+if [ -d "$HOME/.oh-my-zsh" ]; then
+    echo "Oh My Zsh is already installed. Skipping..."
+else
+    sh -c "$(wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)" "" --unattended --keep-zshrc
+fi
 
 echo "Done"
