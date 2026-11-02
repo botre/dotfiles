@@ -5,15 +5,15 @@ ansible
 aws-cli-bin
 bash
 bat
-beeper
+beeper-v4-bin
 clamav
 claude-code
 cloud-sql-proxy
 cloudflared
 coreutils
 curl
-dnsmasq
 discord
+dnsmasq
 docker
 docker-buildx
 docker-compose
@@ -26,6 +26,7 @@ file
 firefox
 fzf
 gawk
+ghostty
 git
 git-delta
 git-lfs
