@@ -68,7 +68,6 @@ brew "zoxide"
 # Casks
 cask "1password"
 cask "1password-cli"
-cask "ableton-live-suite"
 cask "alt-tab"
 cask "claude-code"
 cask "docker-desktop"
