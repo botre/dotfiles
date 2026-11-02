@@ -6,8 +6,6 @@ return {
         build = ':TSUpdate',
         config = function()
             require('nvim-treesitter').install({
-                'arduino',
-                'astro',
                 'bash',
                 'c',
                 'cpp',
