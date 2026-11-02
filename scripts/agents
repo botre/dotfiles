@@ -277,24 +277,4 @@ if $has_opencode; then
         --argjson skills '["~/.agents/skills", ".agents/skills"]'
 fi
 
-# herdr's hooks and plugins stay in the untracked client settings.
-# After OpenCode V1, start V2 once to import preferences, then rerun this script.
-# Codex needs ~/.codex to exist before the integration installs its hooks.
-if command -v herdr &> /dev/null; then
-    if $has_claude; then
-        echo "Installing the herdr integration for Claude Code..."
-        herdr integration install claude
-    fi
-
-    if $has_opencode; then
-        echo "Installing the herdr integration for OpenCode..."
-        herdr integration install opencode
-    fi
-
-    if $has_codex; then
-        echo "Installing the herdr integration for Codex..."
-        herdr integration install codex
-    fi
-fi
-
 echo "Done"

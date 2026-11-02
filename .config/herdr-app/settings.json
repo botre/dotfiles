@@ -1,5 +1,7 @@
 {
   "theme": "catppuccin-latte",
-  "sounds": { "enabled": false },
+  "sounds": {
+    "enabled": false
+  },
   "telemetry": false
 }

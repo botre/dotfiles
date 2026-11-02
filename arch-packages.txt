@@ -41,7 +41,6 @@ google-cloud-cli-gke-gcloud-auth-plugin
 hcloud
 helm
 herdr-app-bin
-herdr-bin
 herdr-core-bin
 imagemagick
 jetbrains-toolbox

@@ -1,4 +1,3 @@
 botre/skills
 cloudflare/security-audit-skill
-ogulcancelik/herdr
 herdrdev/herdr-core
