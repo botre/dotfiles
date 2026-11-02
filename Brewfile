@@ -31,13 +31,13 @@ brew "hcloud"
 brew "helm"
 brew "imagemagick"
 brew "jq"
-brew "k3d"
 brew "kubectl"
 brew "lazygit"
 brew "libpq"
 brew "mise"
 brew "neovim"
 brew "nmap"
+brew "pi-coding-agent"
 # OpenCode V2. Not in homebrew/core, and it replaces the core opencode formula (V1),
 # which it conflicts with because both install an opencode binary.
 brew "anomalyco/tap/opencode-v2", trusted: true
@@ -69,6 +69,7 @@ cask "1password"
 cask "1password-cli"
 cask "alt-tab"
 cask "claude-code"
+cask "codex"
 cask "docker-desktop"
 cask "firefox"
 # gke-gcloud-auth-plugin has no formula or cask. It ships as a gcloud component.
