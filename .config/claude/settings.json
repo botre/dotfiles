@@ -23,6 +23,7 @@
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "permissions": {
+    "defaultMode": "auto",
     "allow": [
       "WebSearch",
 
