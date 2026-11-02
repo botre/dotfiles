@@ -265,6 +265,46 @@ if $has_codex; then
     } > "$CODEX_DIR/rules/claude-allow.rules"
 fi
 
+# Run every agent in its auto mode, the counterpart of Claude Code's
+# "defaultMode": "auto" in the shared preferences.
+
+# Codex: these keys match `codex --approve-for-me`. A reviewer agent approves
+# requests to leave the workspace-write sandbox instead of asking. Top-level
+# TOML keys must precede every table, so old copies are dropped from the top
+# section and the keys are written first.
+if $has_codex; then
+    echo "Switching Codex to auto mode..."
+    mkdir -p "$CODEX_DIR"
+    touch "$CODEX_CONFIG"
+    tmp=$(mktemp)
+    {
+        echo 'approval_policy = "on-request"'
+        echo 'sandbox_mode = "workspace-write"'
+        echo 'approvals_reviewer = "auto_review"'
+        awk '
+            /^[[:space:]]*\[/ { in_table = 1 }
+            !in_table && /^[[:space:]]*(approval_policy|sandbox_mode|approvals_reviewer)[[:space:]]*=/ { next }
+            { print }
+        ' "$CODEX_CONFIG"
+    } > "$tmp"
+    cat "$tmp" > "$CODEX_CONFIG"
+    rm "$tmp"
+fi
+
+# OpenCode: allowing these actions everywhere matches `opencode --auto`.
+# The rules go first, because the last matching rule wins, so a later deny
+# rule still applies.
+if $has_opencode; then
+    echo "Switching OpenCode to auto mode..."
+    opencode_edit '
+        ($actions | map({action: ., resource: "*", effect: "allow"})) as $auto
+        | .permissions = $auto + [
+            (.permissions // [])[]
+            | select((.resource == "*" and (.action as $a | $actions | index($a)) and .effect != "deny") | not)
+        ]
+    ' --argjson actions '["edit", "shell", "webfetch", "external_directory"]'
+fi
+
 # Claude-synced skills reference tools OpenCode lacks. Disable the compatibility
 # plugin and restore the shared skill paths it also provided.
 # The project path resolves from OpenCode's startup directory, not the repo root.
