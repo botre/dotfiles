@@ -4,7 +4,7 @@ set -e
 
 install_nerd_font() {
     local FONT_NAME="$1"
-    local FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/${FONT_NAME}.zip"
+    local FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/${FONT_NAME}.zip"
     # Global, so the EXIT trap can still see it after the function returns.
     TEMP_DIR=$(mktemp -d)
 

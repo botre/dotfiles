@@ -20,5 +20,4 @@ shfmt = "latest"
 # Allow low downloads for TickTick's official package only.
 # Use ticktick-cli; .zshrc reserves ticktick for the desktop app.
 "npm:@ticktick/ticktick-cli" = { version = "latest", allow_low_downloads = true }
-"npm:hunkdiff" = "latest"
 "npm:skills" = "latest"

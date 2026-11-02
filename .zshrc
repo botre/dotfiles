@@ -24,15 +24,12 @@ plugins=(
   gcloud
   gh
   git
-  git-lfs
   golang
   mise
   node
   npm
-  react-native
   ssh
   systemd
-  terraform
   vi-mode
   fzf # must be after vi-mode
   yarn
@@ -52,10 +49,8 @@ alias cat="bat"
 
 if [[ "$(uname)" == "Darwin" ]]; then
     alias copy='pbcopy'
-elif [[ -n "$WAYLAND_DISPLAY" ]]; then
-    alias copy='wl-copy'
 else
-    alias copy='xclip -sel clip'
+    alias copy='wl-copy'
 fi
 
 alias d='docker'
@@ -80,7 +75,6 @@ p() {
 alias ls='eza --icons'
 alias lsa="ls -a"
 
-alias lzd="lazydocker"
 alias lzg="lazygit"
 
 # Start nvim with RPC server enabled. This allows external tools (like lazygit)
@@ -94,17 +88,8 @@ alias vim="nvim"
 # Keep an alias: mise recreates deleted shims, and the package bin also shadows the app.
 alias ticktick='/usr/bin/ticktick'
 
-# Apply Yazi's final directory to the parent shell.
-function yaz() {
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-	yazi "$@" --cwd-file="$tmp"
-	IFS= read -r -d '' cwd < "$tmp"
-	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
-	rm -f -- "$tmp"
-}
-
 export GOPATH=$(go env GOPATH)
-export PATH=$PATH:$(go env GOPATH)/bin
+export PATH=$PATH:$GOPATH/bin
 
 export JAVA_HOME=/usr/lib/jvm/default
 export PATH=$JAVA_HOME/bin:$PATH
