@@ -77,5 +77,6 @@ cask "gcloud-cli", postinstall: "${HOMEBREW_PREFIX}/bin/gcloud components instal
 cask "ghostty"
 cask "google-chrome"
 cask "google-drive"
+cask "herdr-app"
 cask "rectangle"
 cask "the-unarchiver"
