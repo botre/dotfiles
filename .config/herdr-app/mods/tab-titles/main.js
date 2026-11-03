@@ -3,18 +3,22 @@
 // renaming it to an empty name hands it back. Draws nothing.
 
 import { View, div } from "gpui-kit";
-import { spaces, panes, run, home } from "herdr";
+import { spaces, panes, terminals, run, home } from "herdr";
 
 const STORE = "tab-titles.set";
 const MAX = 40;
+const AGENTS = { claude: "Claude Code", codex: "Codex" };
+const SHELLS = new Set(["zsh", "bash", "fish", "sh", "dash", "nu"]);
+
+const base = (path) => (path ?? "").split("/").pop().replace(/^-/, "");
 
 // Agents set their terminal title: Claude Code to the conversation's title
 // ("Claude Code" before it has one), Codex to "<thread> | <folder>".
-function agentTitle(p) {
+function agentTitle(p, prog) {
   let t = (p.title ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
   t = t.replace(/^[^\p{L}\p{N}]+/u, "").trim();
-  if (p.app === "codex" || p.program?.key === "codex") t = t.split(" | ")[0].trim();
-  const names = [p.program?.name, p.program?.key, p.app, "claude code", "codex"].filter(Boolean).map((n) => n.toLowerCase());
+  if (prog === "codex") t = t.split(" | ")[0].trim();
+  const names = [prog, "claude code", "codex"];
   return t && !names.includes(t.toLowerCase()) ? t : null;
 }
 
@@ -24,11 +28,13 @@ function folderName(cwd) {
   return cwd.replace(/\/+$/, "").split("/").pop() || "/";
 }
 
-function nameFor(p) {
-  const agent = p.program?.agent || p.app;
-  if (agent) return agentTitle(p) ?? p.program?.name ?? null;
-  if (p.program && !p.program.shell) return p.program.name;
-  return folderName(p.cwd);
+// Decided by the terminal's foreground process: Herdr keeps reporting an
+// agent for a while after it quits, with the shell's title already back.
+function nameFor(p, fg) {
+  const prog = base(fg?.argv?.[0]) || fg?.name;
+  if (!prog || SHELLS.has(prog)) return folderName(fg?.cwd ?? p.cwd);
+  if (prog in AGENTS) return agentTitle(p, prog) ?? AGENTS[prog];
+  return p.program && !p.program.shell && !p.program.agent ? p.program.name : prog;
 }
 
 const clip = (s) => (s.length > MAX ? `${s.slice(0, MAX - 1).trimEnd()}…` : s);
@@ -44,13 +50,15 @@ export default class TabTitles extends View {
     try { ours = JSON.parse(localStorage.getItem(STORE) ?? "{}"); } catch { ours = {}; }
     const next = {};
     const all = panes().filter((p) => p.terminal);
+    const fg = new Map(terminals().map((t) => [t.address, t.foreground]));
+    const isAgent = (p) => base(fg.get(p.terminal)?.argv?.[0]) in AGENTS;
     for (const space of spaces()) {
       for (const tab of space.tabs) {
         // The person named it, not us: leave it alone.
         if (tab.named && tab.name !== ours[tab.id]) continue;
         const here = all.filter((p) => p.tab === tab.id);
-        const pane = here.find((p) => p.program?.agent || p.app) ?? here.find((p) => p.focused) ?? here[0];
-        const raw = pane && nameFor(pane);
+        const pane = here.find(isAgent) ?? here.find((p) => p.focused) ?? here[0];
+        const raw = pane && nameFor(pane, fg.get(pane.terminal));
         if (!raw) {
           if (tab.named) next[tab.id] = tab.name;
           continue;
