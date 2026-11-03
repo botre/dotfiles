@@ -7,11 +7,13 @@
 // Draws nothing.
 
 import { View, div } from "gpui-kit";
-import { terminals, hc, exec, home, readTextFile, notify, nextCommand, shared } from "herdr";
+import { terminals, spaces, hc, exec, home, readTextFile, notify, nextCommand, shared } from "herdr";
 
 const NAME = "resume";
 const LABEL = "resume";
 const EVERY = 20 * 1000;
+const DAY = 24 * 60 * 60 * 1000;
+const SEEN = "resume.lost"; // when each lost session was first seen
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Flags worth carrying over. Nothing that loads code or config (no
 // --settings, --mcp-config, --plugin-dir, -c, --profile).
@@ -73,6 +75,30 @@ function valid(rec) {
     && typeof rec.cwd === "string" && rec.cwd.startsWith("/") && !/['\u0000-\u001f]/.test(rec.cwd);
 }
 
+// Lost: herdr-core replaced the process the agent ran in, and the new
+// shell sits idle at its prompt.
+function lost(t) {
+  const rec = parse(t.labels?.[LABEL] ?? "");
+  return valid(rec) && t.state === "live" && t.pid !== rec.shell && idle(t) ? rec : null;
+}
+
+// Claude writes its session file before the first message, its transcript
+// only after; without a transcript there is nothing to resume.
+async function transcript(rec) {
+  if (rec.agent !== "claude") return true;
+  const dir = rec.cwd.replace(/[^A-Za-z0-9]/g, "-");
+  const r = await exec("test", ["-f", `${home()}/.claude/projects/${dir}/${rec.session}.jsonl`]).catch(() => ({ code: 1 }));
+  return r.code === 0;
+}
+
+// "daily · Formspark": the space and tab the terminal shows in.
+function place(t) {
+  const space = spaces().find((s) => s.id === t.labels?.["herdr.space"]);
+  const tab = space?.tabs.find((tab) => tab.id === t.labels?.["herdr.tab"]);
+  if (space && tab) return `${space.name} · ${tab.name}`;
+  return space?.name ?? "a terminal outside your tabs";
+}
+
 function command(rec) {
   const flags = carry(rec.agent, rec.flags ?? []);
   const words = rec.agent === "claude"
@@ -97,6 +123,11 @@ export default class Resume extends View {
     if (this.busy || off()) return;
     this.busy = true;
     try {
+      const seen = parse(localStorage.getItem(SEEN) ?? "") ?? {};
+      const now = Date.now();
+      this.kept = new Set();
+      const resumable = [];
+      const busy = new Map();
       for (const t of terminals()) {
         if (!t.keep || t.state !== "live" || !t.foreground) continue;
         const saved = t.labels?.[LABEL];
@@ -116,27 +147,60 @@ export default class Resume extends View {
           if (valid(rec) && saved !== text) await hc(["label", t.address, `${LABEL}=${text}`]);
         } else if (saved) {
           const rec = parse(saved);
-          // The same terminal process, back at a shell: the agent was quit on purpose.
-          if (!valid(rec) || (idle(t) && t.pid === rec.shell)) await hc(["label", t.address, `${LABEL}=`]);
+          if (await this.forget(t, rec, seen, now, busy)) await hc(["label", t.address, `${LABEL}=`]);
+          else if (lost(t)) resumable.push(`${t.address}:${rec.session}`);
         }
       }
+      this.lastBusy = busy;
+      localStorage.setItem(SEEN, JSON.stringify(Object.fromEntries(Object.entries(seen).filter(([k]) => this.kept.has(k)))));
+      this.nudge(resumable);
     } finally {
       this.busy = false;
     }
   }
 
+  // Whether a saved session should go. Kept only while it is truly lost:
+  // its process was replaced, the new shell is unused, the transcript is
+  // there, and it was lost less than a day ago.
+  async forget(t, rec, seen, now, busy) {
+    if (!valid(rec)) return true;
+    if (t.pid === rec.shell) return idle(t); // the agent was quit on purpose
+    if (!idle(t)) {
+      // The recovered shell runs something else; twice in a row, so that a
+      // prompt helper caught mid-draw does not count.
+      const prog = program(t);
+      busy.set(t.address, prog);
+      return this.lastBusy?.get(t.address) === prog;
+    }
+    if (!(await transcript(rec))) return true;
+    const key = `${t.address}:${rec.session}`;
+    seen[key] ??= now;
+    this.kept.add(key);
+    return now - seen[key] > DAY;
+  }
+
+  // Says once per set of lost sessions that they can come back.
+  nudge(resumable) {
+    const key = [...resumable].sort().join(" ");
+    if (key === this.told) return;
+    this.told = key;
+    if (!resumable.length) return;
+    const n = resumable.length;
+    notify({
+      title: `${n} agent${n === 1 ? "" : "s"} can be resumed`,
+      body: "Press Ctrl+Shift+R, or click here",
+      level: "info",
+      action: { name: "resume.run" },
+    });
+  }
+
   async resume() {
     const done = [], skipped = [];
     for (const t of terminals()) {
-      const rec = parse(t.labels?.[LABEL] ?? "");
-      if (!valid(rec) || t.state !== "live") continue;
-      if (t.pid === rec.shell || !idle(t)) continue; // nothing was lost, or something runs there
-      const where = t.labels.where ?? t.address;
-      if (rec.agent === "claude") {
-        const dir = rec.cwd.replace(/[^A-Za-z0-9]/g, "-");
-        const r = await exec("test", ["-f", `${home()}/.claude/projects/${dir}/${rec.session}.jsonl`]).catch(() => ({ code: 1 }));
-        if (r.code !== 0) { skipped.push(`${where}: transcript gone`); continue; }
-      }
+      const rec = lost(t);
+      if (!rec) continue;
+      const where = place(t);
+      if (!(await transcript(rec))) { skipped.push(`${where}: transcript gone`); continue; }
       const r = await hc(["send", t.address, command(rec)]);
       if (r.code !== 0) { skipped.push(`${where}: ${r.stderr.trim() || "send failed"}`); continue; }
       done.push(where);
