@@ -9,6 +9,12 @@
 import { View, div } from "gpui-kit";
 import { terminals, spaces, hc, exec, home, readTextFile, notify, nextCommand, shared } from "herdr";
 
+const FLAG_VALUE_RE = /=(.*)/s;
+const UNSAFE_SHELL_QUOTE_RE = /['\u0000-\u001f]/;
+const NON_ALPHANUMERIC_RE = /[^A-Za-z0-9]/g;
+
+const LEADING_HYPHEN_RE = /^-/;
+
 const NAME = "resume";
 const LABEL = "resume";
 const EVERY = 20 * 1000;
@@ -24,7 +30,7 @@ const CARRY = {
 const VALUE = /^[A-Za-z0-9._:\[\]-]+$/;
 const SHELLS = new Set(["zsh", "bash", "fish", "sh", "dash", "nu"]);
 
-const base = (path) => (path ?? "").split("/").pop().replace(/^-/, "");
+const base = (path) => (path ?? "").split("/").pop().replace(LEADING_HYPHEN_RE, "");
 const program = (t) => base(t.foreground?.argv?.[0]) || t.foreground?.name;
 // A shell at its prompt, not a program running in it.
 const idle = (t) => SHELLS.has(program(t));
@@ -41,7 +47,7 @@ function carry(agent, argv) {
   const allowed = CARRY[agent] ?? {};
   const out = [];
   for (let i = 0; i < argv.length; i++) {
-    const [flag, inline] = argv[i].split(/=(.*)/s);
+    const [flag, inline] = argv[i].split(FLAG_VALUE_RE);
     if (!(flag in allowed)) continue;
     if (allowed[flag] === 0) { out.push(flag); continue; }
     const value = inline ?? argv[++i];
@@ -58,10 +64,12 @@ async function claudeSession(pid) {
 
 // Codex titles its terminal "<thread name> | <folder>"; the index maps
 // thread names to ids. A name used twice is ambiguous, so it is skipped.
-async function codexSession(title) {
+const readCodexIndex = () => readTextFile(`${home()}/.codex/session_index.jsonl`);
+
+async function codexSession(title, readIndex = readCodexIndex) {
   const name = (title ?? "").split(" | ")[0].trim();
   if (!name) return null;
-  const text = (await readTextFile(`${home()}/.codex/session_index.jsonl`)) ?? "";
+  const text = (await readIndex()) ?? "";
   const ids = new Set();
   for (const line of text.split("\n")) {
     const e = parse(line);
@@ -72,7 +80,7 @@ async function codexSession(title) {
 
 function valid(rec) {
   return rec && (rec.agent === "claude" || rec.agent === "codex") && ID.test(rec.session ?? "")
-    && typeof rec.cwd === "string" && rec.cwd.startsWith("/") && !/['\u0000-\u001f]/.test(rec.cwd);
+    && typeof rec.cwd === "string" && rec.cwd.startsWith("/") && !UNSAFE_SHELL_QUOTE_RE.test(rec.cwd);
 }
 
 // Lost: herdr-core replaced the process the agent ran in, and the new
@@ -86,7 +94,7 @@ function lost(t) {
 // only after; without a transcript there is nothing to resume.
 async function transcript(rec) {
   if (rec.agent !== "claude") return true;
-  const dir = rec.cwd.replace(/[^A-Za-z0-9]/g, "-");
+  const dir = rec.cwd.replace(NON_ALPHANUMERIC_RE, "-");
   const r = await exec("test", ["-f", `${home()}/.claude/projects/${dir}/${rec.session}.jsonl`]).catch(() => ({ code: 1 }));
   return r.code === 0;
 }
@@ -128,14 +136,16 @@ export default class Resume extends View {
       this.kept = new Set();
       const resumable = [];
       const busy = new Map();
-      for (const t of terminals()) {
-        if (!t.keep || t.state !== "live" || !t.foreground) continue;
+      let codexIndex;
+      const readIndex = () => codexIndex ??= readCodexIndex();
+      const results = await Promise.allSettled(terminals().map(async (t) => {
+        if (!t.keep || t.state !== "live" || !t.foreground) return;
         const saved = t.labels?.[LABEL];
         const prog = program(t);
         const agent = prog === "claude" ? "claude" : prog === "codex" ? "codex" : null;
         if (agent) {
-          const found = agent === "claude" ? await claudeSession(t.foreground.pid) : await codexSession(t.title);
-          if (!found) continue;
+          const found = agent === "claude" ? await claudeSession(t.foreground.pid) : await codexSession(t.title, readIndex);
+          if (!found) return;
           const rec = {
             agent,
             session: found.session,
@@ -150,7 +160,9 @@ export default class Resume extends View {
           if (await this.forget(t, rec, seen, now, busy)) await hc(["label", t.address, `${LABEL}=`]);
           else if (lost(t)) resumable.push(`${t.address}:${rec.session}`);
         }
-      }
+      }));
+      const failure = results.find((result) => result.status === "rejected");
+      if (failure) throw failure.reason;
       this.lastBusy = busy;
       localStorage.setItem(SEEN, JSON.stringify(Object.fromEntries(Object.entries(seen).filter(([k]) => this.kept.has(k)))));
       this.nudge(resumable);

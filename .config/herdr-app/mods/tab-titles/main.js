@@ -5,19 +5,25 @@
 import { View, div } from "gpui-kit";
 import { spaces, panes, terminals, run, home, shared } from "herdr";
 
+const CONTROL_CHARACTERS_RE = /[\u0000-\u001f\u007f]/g;
+const TITLE_PREFIX_RE = /^[^\p{L}\p{N}]+/u;
+
+const LEADING_HYPHEN_RE = /^-/;
+const TRAILING_SLASHES_RE = /\/+$/;
+
 const NAME = "tab-titles";
 const STORE = "tab-titles.set";
 const MAX = 40;
 const AGENTS = { claude: "Claude Code", codex: "Codex" };
 const SHELLS = new Set(["zsh", "bash", "fish", "sh", "dash", "nu"]);
 
-const base = (path) => (path ?? "").split("/").pop().replace(/^-/, "");
+const base = (path) => (path ?? "").split("/").pop().replace(LEADING_HYPHEN_RE, "");
 
 // Agents set their terminal title: Claude Code to the conversation's title
 // ("Claude Code" before it has one), Codex to "<thread> | <folder>".
 function agentTitle(p, prog) {
-  let t = (p.title ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
-  t = t.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+  let t = (p.title ?? "").replace(CONTROL_CHARACTERS_RE, " ").trim();
+  t = t.replace(TITLE_PREFIX_RE, "").trim();
   if (prog === "codex") t = t.split(" | ")[0].trim();
   const names = [prog, "claude code", "codex"];
   return t && !names.includes(t.toLowerCase()) ? t : null;
@@ -26,7 +32,7 @@ function agentTitle(p, prog) {
 function folderName(cwd) {
   if (!cwd) return null;
   if (cwd === home()) return "~";
-  return cwd.replace(/\/+$/, "").split("/").pop() || "/";
+  return cwd.replace(TRAILING_SLASHES_RE, "").split("/").pop() || "/";
 }
 
 // Decided by the terminal's foreground process: Herdr keeps reporting an
