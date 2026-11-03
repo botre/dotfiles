@@ -1,1 +1,5 @@
 /.claude/settings.json
+
+# Written by herdr-app check and the app itself
+/.config/herdr-app/mods/*/jsconfig.json
+/.config/herdr-app/mods/*/gpui-kit.d.ts
