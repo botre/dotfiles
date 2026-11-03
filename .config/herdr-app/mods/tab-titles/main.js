@@ -3,8 +3,9 @@
 // renaming it to an empty name hands it back. Draws nothing.
 
 import { View, div } from "gpui-kit";
-import { spaces, panes, terminals, run, home } from "herdr";
+import { spaces, panes, terminals, run, home, shared } from "herdr";
 
+const NAME = "tab-titles";
 const STORE = "tab-titles.set";
 const MAX = 40;
 const AGENTS = { claude: "Claude Code", codex: "Codex" };
@@ -37,6 +38,9 @@ function nameFor(p, fg) {
   return p.program && !p.program.shell && !p.program.agent ? p.program.name : prog;
 }
 
+// Turned off in the Mods popup (ctrl-shift-m).
+const off = () => (shared("mods.off") ?? []).includes(NAME);
+
 const clip = (s) => (s.length > MAX ? `${s.slice(0, MAX - 1).trimEnd()}…` : s);
 
 export default class TabTitles extends View {
@@ -46,6 +50,7 @@ export default class TabTitles extends View {
   }
 
   sync() {
+    if (off()) return;
     let ours;
     try { ours = JSON.parse(localStorage.getItem(STORE) ?? "{}"); } catch { ours = {}; }
     const next = {};

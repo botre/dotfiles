@@ -9,7 +9,11 @@ import { theme, home, readTextFile, shared, setShared, openOverlay, closeOverlay
 
 const EVERY = 5 * 60 * 1000;
 const STALE = 15 * 60 * 1000;
+const NAME = "quota";
 const KEY = "quota.data";
+
+// Turned off in the Mods popup (ctrl-shift-m).
+const off = () => (shared("mods.off") ?? []).includes(NAME);
 
 async function json(path) {
   try { return JSON.parse((await readTextFile(path)) ?? "null"); } catch { return null; }
@@ -86,7 +90,10 @@ function bar(t, w, width, height) {
 export default class Quota extends View {
   init(_props, cx) {
     if (props()?.popup) return;
-    cx.timer.every(EVERY, (cx) => this.refresh(cx));
+    // Checked often so that turning it back on refreshes stale data soon.
+    cx.timer.every(30 * 1000, (cx) => {
+      if (Date.now() - (this.tried ?? 0) >= EVERY) this.refresh(cx);
+    });
     this.refresh(cx);
     cx.spawn(async (cx) => {
       for (;;) {
@@ -97,6 +104,8 @@ export default class Quota extends View {
   }
 
   refresh(cx) {
+    if (off()) return;
+    this.tried = Date.now();
     cx.spawn(async (cx) => {
       const providers = await Promise.all([claude().catch(failed("Claude")), codex().catch(failed("Codex"))]);
       // Keep the last good windows of a provider that failed this time.
