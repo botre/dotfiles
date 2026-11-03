@@ -73,6 +73,13 @@ function valid(rec) {
     && typeof rec.cwd === "string" && rec.cwd.startsWith("/") && !/['\u0000-\u001f]/.test(rec.cwd);
 }
 
+// Lost: herdr-core replaced the process the agent ran in, and the new
+// shell sits idle at its prompt.
+function lost(t) {
+  const rec = parse(t.labels?.[LABEL] ?? "");
+  return valid(rec) && t.state === "live" && t.pid !== rec.shell && idle(t) ? rec : null;
+}
+
 function command(rec) {
   const flags = carry(rec.agent, rec.flags ?? []);
   const words = rec.agent === "claude"
@@ -120,17 +127,33 @@ export default class Resume extends View {
           if (!valid(rec) || (idle(t) && t.pid === rec.shell)) await hc(["label", t.address, `${LABEL}=`]);
         }
       }
+      this.nudge();
     } finally {
       this.busy = false;
     }
   }
 
+  // Says once per set of lost sessions that they can come back.
+  nudge() {
+    const found = terminals().map((t) => [t.address, lost(t)]).filter(([, rec]) => rec);
+    const key = found.map(([a, rec]) => `${a}:${rec.session}`).sort().join(" ");
+    if (key === this.told) return;
+    this.told = key;
+    if (!found.length) return;
+    const n = found.length;
+    notify({
+      title: `${n} agent${n === 1 ? "" : "s"} can be resumed`,
+      body: "Press Ctrl+Shift+R, or click here",
+      level: "info",
+      action: { name: "resume.run" },
+    });
+  }
+
   async resume() {
     const done = [], skipped = [];
     for (const t of terminals()) {
-      const rec = parse(t.labels?.[LABEL] ?? "");
-      if (!valid(rec) || t.state !== "live") continue;
-      if (t.pid === rec.shell || !idle(t)) continue; // nothing was lost, or something runs there
+      const rec = lost(t);
+      if (!rec) continue;
       const where = t.labels.where ?? t.address;
       if (rec.agent === "claude") {
         const dir = rec.cwd.replace(/[^A-Za-z0-9]/g, "-");
