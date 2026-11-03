@@ -7,8 +7,9 @@
 // Draws nothing.
 
 import { View, div } from "gpui-kit";
-import { terminals, hc, exec, home, readTextFile, notify, nextCommand } from "herdr";
+import { terminals, hc, exec, home, readTextFile, notify, nextCommand, shared } from "herdr";
 
+const NAME = "resume";
 const LABEL = "resume";
 const EVERY = 20 * 1000;
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -25,6 +26,9 @@ const base = (path) => (path ?? "").split("/").pop().replace(/^-/, "");
 const program = (t) => base(t.foreground?.argv?.[0]) || t.foreground?.name;
 // A shell at its prompt, not a program running in it.
 const idle = (t) => SHELLS.has(program(t));
+
+// Turned off in the Mods popup (ctrl-shift-m).
+const off = () => (shared("mods.off") ?? []).includes(NAME);
 
 function parse(text) {
   try { return JSON.parse(text); } catch { return null; }
@@ -83,14 +87,14 @@ export default class Resume extends View {
     cx.spawn(async () => this.watch());
     cx.spawn(async () => {
       for (;;) {
-        if ((await nextCommand()) === "run") await this.resume();
+        if ((await nextCommand()) === "run" && !off()) await this.resume();
       }
     });
   }
 
   // Record running agents; forget ones whose terminal is back at its own shell.
   async watch() {
-    if (this.busy) return;
+    if (this.busy || off()) return;
     this.busy = true;
     try {
       for (const t of terminals()) {

@@ -159,9 +159,6 @@
         {
           "id": "status-row",
           "type": "row",
-          "size": {
-            "px": 28
-          },
           "children": [
             {
               "id": "status",
@@ -203,7 +200,10 @@
                 "px": 0
               }
             }
-          ]
+          ],
+          "size": {
+            "px": 28
+          }
         }
       ],
       "resizable": false
