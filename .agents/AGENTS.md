@@ -3,6 +3,17 @@
 Applies to every repository. Repo-specific conventions belong in that repo's
 `AGENTS.md`, not here.
 
+## Herdr
+
+When `HC_TERMINAL_ID` is set, read the enabled Herdr plugins' context at the
+start of each turn and follow their instructions within the user's task scope:
+
+```sh
+hc get --json "$HC_TERMINAL_ID" | jq -r '.labels["herdr.context"] // empty'
+```
+
+An empty result means no plugin context is available. Continue the task normally.
+
 ## Writing
 
 - No em dashes in prose written for the user: UI copy, page titles and meta

@@ -7,7 +7,7 @@ set showmode
 
 set number
 
-" Show the line number relative to the line with the cursor in front of each line
+" Relative line numbers
 set relativenumber
 
 " Show a few lines of context around the cursor
@@ -16,15 +16,15 @@ set scrolloff=5
 " Enable cursor blink in all modes
 set guicursor+=a:-blinkwait175-blinkoff150-blinkon175
 
-" Override the 'ignorecase' option if the search pattern contains upper case characters
+" Match case when the search pattern contains uppercase characters
 set smartcase
 
 set ignorecase
 
-" Causes all text matching the current search to be highlighted
+" Highlight search matches
 set hlsearch
 
-" While typing a search command, show where the pattern, as it was typed so far, matches
+" Preview search matches as the pattern changes
 set incsearch
 
 " Spelling
@@ -74,7 +74,7 @@ vnoremap K :m '<-2<CR>gv=gv
 
 nmap <silent> <leader>h :set hlsearch!<cr>
 
-" Improved window splitting
+" Window splits
 noremap <leader>w- <C-w>s
 noremap <leader>w\ <C-w>v
 
@@ -88,5 +88,5 @@ nnoremap <leader>n :call NumberToggle()<cr>
      endif
    endfunction
 
-" Trigger a quick-scope highlight in the appropriate direction when pressing f, F, t and T keys
+" Trigger quick-scope highlights with f, F, t, and T
 let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']

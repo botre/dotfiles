@@ -1,11 +1,11 @@
 // Plan usage for Claude Code and Codex in the status bar: a small bar per
 // limit window, coloured by use, with a tick for how far the window has run.
-// A click opens the details. Reads each CLI's own OAuth token and asks that
+// A hover opens the details. Reads each CLI's own OAuth token and asks that
 // vendor's usage endpoint; never refreshes or writes a token.
 
 import { View, div } from "gpui-kit";
-import { h_flex, v_flex } from "gpui-base";
-import { theme, home, readTextFile, shared, setShared, openOverlay, closeOverlay, props, nextCommand } from "herdr";
+import { h_flex, v_flex, HoverCard } from "gpui-base";
+import { theme, home, readTextFile, shared, setShared, props, nextCommand } from "herdr";
 
 const EVERY = 5 * 60 * 1000;
 const STALE = 15 * 60 * 1000;
@@ -122,7 +122,7 @@ export default class Quota extends View {
   strip(t, data) {
     const items = (data?.providers ?? []).map((p) => {
       const stale = !p.at || Date.now() - p.at > STALE;
-      return h_flex().gap(7).items_center().opacity(stale ? 0.6 : 1)
+      const trigger = h_flex().gap(7).items_center().opacity(stale ? 0.6 : 1)
         .child(div().text_color(t.foreground).child(p.name))
         .children(p.windows?.length
           ? p.windows.map((w) =>
@@ -131,20 +131,17 @@ export default class Quota extends View {
                 .child(bar(t, w, 34, 4))
                 .child(div().child(`${Math.round(w.pct)}%`)))
           : [div().text_color(t.dim).child(p.error ?? "no limits")]);
+      return HoverCard.new(`quota-hover-${p.name}`).open_delay(400).close_delay(200)
+        .anchor("bottom_right").trigger(trigger)
+        .content(this.popup(t, { providers: [p] }).w(390).rounded(8).border(1).border_color(t.border).shadow_md());
     });
     return h_flex().id("quota").size_full().px(14).gap(16).items_center().justify_end()
-      .bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted).cursor_pointer()
-      .on_click(() => openOverlay({ mod: "quota", props: { popup: true }, kind: "popup", width: 340, height: 70 + 30 * this.rows(data) }))
+      .bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .children(data ? items : [div().text_color(t.dim).child("quota…")]);
   }
 
-  rows(data) {
-    return (data?.providers ?? []).reduce((n, p) => n + 1 + Math.max(1, p.windows?.length ?? 0), 0);
-  }
-
   popup(t, data) {
-    return v_flex().id("quota-popup").size_full().p(12).gap(10).bg(t.popover).text_size(12.5)
-      .on_click(() => closeOverlay(props()?.overlay))
+    return v_flex().id("quota-popup").p(12).gap(10).bg(t.popover).text_size(12.5)
       .children((data?.providers ?? []).map((p) =>
         v_flex().gap(6)
           .child(h_flex().gap(6)

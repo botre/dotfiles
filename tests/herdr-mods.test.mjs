@@ -20,6 +20,31 @@ describe("Herdr mods", () => {
       for (let i = 0; i < 3; i++) assert.equal(evaluate('clean("✦ Café project")'), "Café project");
       assert.equal(evaluate('clean(undefined)'), "");
     });
+
+    it("opens one overview at the left, focuses it on repeat, and allows reopening after close", () => {
+      const commands = [], timers = [];
+      let panes = [];
+      const evaluate = loadMod("agent-list", {
+        panes: () => panes,
+        spaces: () => [{ id: "sp1", active: true }],
+        run: (command, args) => commands.push({ command, args }),
+      });
+      const agentList = evaluate("new Agents()");
+      const cx = { timer: { after: (_ms, callback) => timers.push(callback) } };
+      agentList.overview(cx);
+      agentList.overview(cx);
+      assert.equal(commands.length, 1);
+      assert.equal(commands[0].command, "tab.new");
+      panes = [{ pane: "p1", tab: "tb1", mod: "agent-list" }];
+      timers.shift()(cx);
+      assert.equal(commands[1].command, "tab.move");
+      assert.equal(commands[1].args.index, 1);
+      agentList.overview(cx);
+      assert.equal(commands[2].command, "pane.focus");
+      panes = [];
+      agentList.overview(cx);
+      assert.equal(commands[3].command, "tab.new");
+    });
   });
 
   describe("resume", () => {
@@ -70,6 +95,52 @@ describe("Herdr mods", () => {
         assert.equal(evaluate('agentTitle({title:"✦ Café\\nproject | /tmp"}, "codex")'), "Café project");
       }
       assert.equal(evaluate('agentTitle({title:"Codex"}, "codex")'), null);
+    });
+
+    it("rejects temporary status titles and stale titles from a previous process", () => {
+      for (const title of ["Action Required", "✦ Action Required | /tmp", "Waiting for approval", "Working", "Done"]) {
+        assert.equal(evaluate(`agentTitle({title:${JSON.stringify(title)}}, "codex")`), null);
+      }
+      assert.equal(evaluate('publishedTitle({labels:{"session.title":"Review card reversal limits","session.title.updated":"100"}}, {startedAt:200000})'), null);
+      assert.equal(evaluate('publishedTitle({labels:{"session.title":"Review card reversal limits","session.title.updated":"300"}}, {startedAt:200000})'), "Review card reversal limits");
+    });
+
+    it("prefers published titles and leaves manual tab names alone", () => {
+      const tabs = [{ id: "tb1", name: "1", named: false }, { id: "tb2", name: "My manual name", named: true }];
+      const commands = [], store = {};
+      const evaluate = loadMod("tab-titles", {
+        spaces: () => [{ tabs }],
+        panes: () => tabs.map((tab, i) => ({ tab: tab.id, terminal: `remote/t${i}`, program: { agent: true, key: "codex" }, title: "Action Required" })),
+        terminals: () => tabs.map((_, i) => ({ address: `remote/t${i}`, foreground: { argv: ["codex"] }, labels: { "session.title": "Review card reversal limits", "session.title.updated": "300" } })),
+        shared: (key) => key === "mods.off" ? [] : {},
+        run: (command, args) => commands.push({ command, args }),
+        localStorage: { getItem: (key) => store[key] ?? null, setItem: (key, value) => { store[key] = value; } },
+      });
+      evaluate("new TabTitles().sync()");
+      assert.equal(commands.length, 1);
+      assert.equal(commands[0].args.id, "tb1");
+      assert.equal(commands[0].args.name, "Review card reversal limits");
+      assert.equal(tabs[1].name, "My manual name");
+    });
+
+    it("retains automatic title ownership while spaces load or remote machines are offline", () => {
+      let spaces = [];
+      const store = { "tab-titles.set": JSON.stringify({ tb1: "Old title", "remote/tb2": "Remote title" }) };
+      const commands = [];
+      const evaluate = loadMod("tab-titles", {
+        spaces: () => spaces,
+        panes: () => [{ tab: "tb1", terminal: "t1", program: { agent: true, key: "codex" }, title: "Better title | /tmp" }],
+        terminals: () => [{ address: "t1", foreground: { argv: ["codex"] } }],
+        shared: (key) => key === "mods.off" ? [] : {},
+        run: (_command, args) => commands.push(args),
+        localStorage: { getItem: (key) => store[key], setItem: (key, value) => { store[key] = value; } },
+      });
+      evaluate("new TabTitles().sync()");
+      assert.equal(JSON.parse(store["tab-titles.set"]).tb1, "Old title");
+      spaces = [{ tabs: [{ id: "tb1", named: true, name: "Old title" }] }];
+      evaluate("new TabTitles().sync()");
+      assert.equal(commands[0].name, "Better title");
+      assert.equal(JSON.parse(store["tab-titles.set"])["remote/tb2"], "Remote title");
     });
 
     it("retains home, root and trailing-slash folder names", () => {

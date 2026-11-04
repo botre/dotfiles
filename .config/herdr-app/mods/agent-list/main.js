@@ -4,6 +4,9 @@
 import { View, div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout } from "herdr";
+import { SessionTracker, rows as sessionRows } from "./sessions.js";
+import { hoverDetails, ICON } from "./ui.js";
+import { overview } from "./overview.js";
 
 const TITLE_PREFIX_RE = /^[^\p{L}\p{N}]+/u;
 const PATH_TITLE_RE = /^[~/]|^[A-Za-z]:\\/;
@@ -45,8 +48,8 @@ function title(tab, l) {
   return tab.name === prog && telling ? live : tab.name;
 }
 const RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
-// A sub-agent without a pane isn't in agents(): its raw word, error counting as
-// blocked. It's never done: it reports to its parent, and the parent's done is the news.
+// Pane-less sub-agents are absent from agents(). Treat errors as blocked.
+// Their parent reports completion, so display their done state as idle.
 const kidStatus = (k, listed) => {
   const s = listed.get(k.address) ?? k.status;
   return s === "error" ? "blocked" : s === "done" ? "idle" : s;
@@ -67,7 +70,6 @@ function duration(ms) {
   return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
 
-// The agent's icon from the app's program table: a one-color glyph or a picture.
 function icon(p, size, color) {
   if (!p?.icon) return null;
   return p.tint ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
@@ -76,15 +78,36 @@ function icon(p, size, color) {
 export default class Agents extends View {
   init(_props, cx) {
     if (props()?.sortMenu) return;
+    if (props()?.overview) { cx.timer.every(10000, (cx) => cx.notify()); return; }
     this.folded = new Set();
     // Each agent's last state and when it changed (ms), kept across restarts.
     this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
     this.pins = JSON.parse(localStorage.getItem("pins") ?? "[]");
+    this.sessions = new SessionTracker();
+    cx.spawn(async (cx) => this.sessions.sync(cx));
+    cx.timer.every(5000, (cx) => cx.spawn(async (cx) => this.sessions.sync(cx)));
     cx.timer.every(30000, (cx) => cx.notify());
   }
 
-  // Stamps agents whose state changed. Done and idle count as one: looking at a
-  // finished agent turns done into idle, and looking isn't the agent doing anything.
+  overview(cx) {
+    const existing = panes().find((p) => p.mod === "agent-list");
+    if (existing) { run("pane.focus", { pane: existing.pane }); return; }
+    if (this.opening) return;
+    const space = spaces().find((s) => s.active);
+    if (!space) return;
+    this.opening = true;
+    run("tab.new", { name: "Agents", space: space.id, mod: "agent-list", props: { overview: true } });
+    let attempts = 0;
+    const check = (cx) => {
+      const pane = panes().find((p) => p.mod === "agent-list");
+      if (pane) { run("tab.move", { id: pane.tab, index: 1 }); this.opening = false; return; }
+      if (++attempts < 20) cx.timer.after(100, check);
+      else this.opening = false;
+    };
+    cx.timer.after(100, check);
+  }
+
+  // Viewing a done agent makes it idle; that must not reset its status timer.
   track(list, now) {
     let dirty = false;
     for (const a of list) {
@@ -94,7 +117,7 @@ export default class Agents extends View {
       dirty = true;
     }
     if (!dirty) return;
-    // Gone and old: the list alone is empty right after a start.
+    // The agent list can be empty during startup, so retain recent timestamps.
     const listed = new Set(list.map((a) => a.address));
     for (const [k, c] of Object.entries(this.changed)) if (!listed.has(k) && now - c.at > 30 * 86400000) delete this.changed[k];
     localStorage.setItem("changed", JSON.stringify(this.changed));
@@ -119,8 +142,7 @@ export default class Agents extends View {
     return this.changed[a.address]?.at ?? 0;
   }
 
-  // Looking at a done agent makes it idle; it stays with Done until you leave
-  // it rather than drop away under you. Any other change moves it at once.
+  // Keep completed agents in Done until focus leaves, so rows do not move mid-click.
   hold(list) {
     const cur = list.find((a) => a.focused);
     const same = cur && cur.address === this.held?.address;
@@ -180,7 +202,7 @@ export default class Agents extends View {
     const st = kidStatus(k, this.listed);
     const pic = icon(k.program, 14, t.foreground);
     const on = k.address === shown;
-    return h_flex()
+    return hoverDetails(h_flex()
       .id(`sub-${k.address}`)
       .pl(39)
       .pr(8)
@@ -198,7 +220,7 @@ export default class Agents extends View {
         .when(l === "└" || l === "├", el => el.border_b(1.5).rounded_bl(6))))
       .when(Boolean(pic), el => el.child(div().mr(8).child(pic)))
       .child(div().flex_1().truncate().text_color(on ? t.foreground : t.muted).child(k.name || k.template || k.program?.name || k.address))
-      .child(this.status(t, { status: st }, compact));
+      .child(this.status(t, { status: st }, compact)), this.sessionByAddress?.get(k.address), Date.now());
   }
 
   // compact: a ! for blocked where a header already says "Needs you".
@@ -214,6 +236,7 @@ export default class Agents extends View {
 
   render(cx) {
     const t = theme();
+    if (props()?.overview) return overview();
     if (props()?.sortMenu) return this.sortMenu(t);
     const collapsed = narrow();
     const sort = sortOf();
@@ -222,21 +245,19 @@ export default class Agents extends View {
     const all = terminals();
     const shown = focused()?.agent;
     const now = Date.now();
+    this.sessionByAddress = new Map(sessionRows().map((s) => [s.address, s]));
     this.track(list, now);
     this.hold(list);
     const byPriority = sort.id === "priority";
     const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a), ...this.tree(all, a.address).map((s) => RANK[kidStatus(s.t, this.listed)] ?? 0))]));
     const rankOf = (a) => urgency.get(a.address);
-    // A row reads "space \u00b7 detail": the detail is a tab someone named or the
-    // agent's own title, never an automatic tab number unless two rows would
-    // otherwise read the same.
+    // Use tab numbers only when space and title would otherwise be ambiguous.
     const tabs = spaces().flatMap(s => s.tabs);
     const label = (a) => {
       const tab = tabs.find(tab => tab.id === a.tab);
       return tab ? title(tab, lead(tab)) : a.title || a.program?.name || "";
     };
-    // Inside each group (a status section, or a space in sidebar order) rows
-    // go alphabetically by space, then by tab.
+    // Sort within groups by space and tab names.
     const spaceAt = new Map(spaces().map((s, i) => [s.id, i]));
     const byName = (x, y) => `${x.space_name ?? ""} ${label(x)}`.localeCompare(`${y.space_name ?? ""} ${label(y)}`, undefined, { numeric: true, sensitivity: "base" });
     list = [...list].sort(byPriority
@@ -255,7 +276,7 @@ export default class Agents extends View {
       return [r, ...subs.map((s) => this.subRow(t, s, shown, byPriority))];
     };
 
-    // The fold chevron; folded, the count too, colored by the most urgent one.
+    // Closed groups show the descendant count and highest-priority status.
     const fold = (a, subs) => {
       const sts = subs.map((s) => kidStatus(s.t, this.listed));
       const top = sts.reduce((m, s) => ((RANK[s] ?? 0) > (RANK[m] ?? 0) ? s : m), null);
@@ -294,7 +315,7 @@ export default class Agents extends View {
       // An agent on another machine (`vps/t7`) says which.
       const machine = a.address.includes("/") ? a.address.split("/")[0] : null;
       if (collapsed) {
-        return h_flex()
+        return hoverDetails(h_flex()
           .id(`ag-${a.address}`)
           .h(26)
           .px(8)
@@ -304,7 +325,7 @@ export default class Agents extends View {
           .hover((s) => s.bg(t.hover))
           .on_click(() => run("pane.focus", { pane: a.pane }))
           .child(div().flex_1().min_w(0).whitespace_nowrap().text_right().text_color(t.muted).child(String(i + 1)))
-          .child(h_flex().w(14).flex_none().items_center().justify_center().child(this.status(t, a, true)));
+          .child(h_flex().w(14).flex_none().items_center().justify_center().child(this.status(t, a, true))), this.sessionByAddress.get(a.address), now);
       }
       const when = this.since(a);
       const idle = a.status === "idle" && !a.focused;
@@ -330,7 +351,7 @@ export default class Agents extends View {
       // Without a space header above (priority, pinned) the row names its space.
       const full = byPriority || isPinned;
       const name = full ? a.space_name || label(a) : more ?? (DIGITS_RE.test(label(a)) ? a.program?.name || label(a) : label(a));
-      return h_flex()
+      return hoverDetails(h_flex()
         .id(`ag-${a.address}`)
         .px(8)
         .h(30)
@@ -360,7 +381,7 @@ export default class Agents extends View {
         .when(subs.length > 0, el => el.child(fold(a, subs)))
         .when(this.hovered === a.address, el => el.child(pin))
         .when(this.hovered !== a.address && Boolean(when), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child(duration(now - when))))
-        .child(this.status(t, a, byPriority && !isPinned));
+        .child(this.status(t, a, byPriority && !isPinned)), this.sessionByAddress.get(a.address), now);
     };
 
     // Groups in list order: spaces (grouped) or priority sections. Agents of a
@@ -373,7 +394,6 @@ export default class Agents extends View {
       else groups.push({ id, label: byPriority ? SECTION[r] : a.space_name || "", status: byPriority ? SECTION_STATUS[r] : null, members: [a] });
     }
 
-    // A group's header; it folds the group. Folded, it says how many and the most urgent state.
     const header = (g) => {
       const open = !this.folded.has(g.id);
       const top = g.members.reduce((m, a) => ((RANK[a.status] ?? 0) > (RANK[m] ?? 0) ? a.status : m), null);
@@ -423,6 +443,12 @@ export default class Agents extends View {
             .justify_between()
             .child(div().text_size(11.5).font_medium().text_color(t.dim).child("Agents"))
             .child(
+              h_flex().gap(10).items_center()
+                .child(div().id("agents-overview").text_color(t.dim).cursor_pointer()
+                  .hover((s) => s.text_color(t.foreground))
+                  .tooltip("Open all agent sessions").accessibility_label("Open all agent sessions")
+                  .on_click((_e, cx) => this.overview(cx)).child(svg(ICON).size(14)))
+                .child(
               div()
                 .id("ag-sort")
                 .text_size(11)
@@ -430,7 +456,7 @@ export default class Agents extends View {
                 .hover((s) => s.text_color(t.foreground))
                 .on_click(() => openOverlay({ mod: "agent-list", kind: "popup", width: 200, height: 140, props: { sortMenu: true } }))
                 .tooltip(`Sort agents: ${sort.label}`)
-                .child(svg(`mods/workspace-chrome/${sort.icon}.svg`).size(14)),
+                .child(svg(`mods/workspace-chrome/${sort.icon}.svg`).size(14))),
             ),
         ),
       )
