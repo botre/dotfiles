@@ -1,4 +1,4 @@
-// Session data shared by the sidebar hover cards and overview.
+// Session data for the Agents overview.
 const PREFIX = /^[^\p{L}\p{N}]+/u;
 const CONTROL = /[\u0000-\u001f\u007f]/g;
 

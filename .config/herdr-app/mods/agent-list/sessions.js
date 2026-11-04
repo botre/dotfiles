@@ -1,8 +1,6 @@
-import { agents, terminals, spaces, panes, shared, setShared, exec } from "herdr";
-import { isAgent, machineOf, observe, parseElapsed, sessionRows } from "./model.js";
+import { terminals, shared, setShared, exec } from "herdr";
+import { isAgent, machineOf, observe, parseElapsed } from "./model.js";
 import { STORE } from "./ui.js";
-
-export const rows = () => sessionRows(terminals(), agents(), spaces(), shared(STORE) ?? {}, panes());
 
 // Measure the foreground process so a kept shell's age does not inflate sessions.
 export class SessionTracker {

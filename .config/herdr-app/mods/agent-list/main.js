@@ -4,8 +4,8 @@
 import { View, div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout } from "herdr";
-import { SessionTracker, rows as sessionRows } from "./sessions.js";
-import { hoverDetails, ICON } from "./ui.js";
+import { SessionTracker } from "./sessions.js";
+import { ICON } from "./ui.js";
 import { overview } from "./overview.js";
 
 const TITLE_PREFIX_RE = /^[^\p{L}\p{N}]+/u;
@@ -202,7 +202,7 @@ export default class Agents extends View {
     const st = kidStatus(k, this.listed);
     const pic = icon(k.program, 14, t.foreground);
     const on = k.address === shown;
-    return hoverDetails(h_flex()
+    return h_flex()
       .id(`sub-${k.address}`)
       .pl(39)
       .pr(8)
@@ -220,7 +220,7 @@ export default class Agents extends View {
         .when(l === "└" || l === "├", el => el.border_b(1.5).rounded_bl(6))))
       .when(Boolean(pic), el => el.child(div().mr(8).child(pic)))
       .child(div().flex_1().truncate().text_color(on ? t.foreground : t.muted).child(k.name || k.template || k.program?.name || k.address))
-      .child(this.status(t, { status: st }, compact)), this.sessionByAddress?.get(k.address), Date.now());
+      .child(this.status(t, { status: st }, compact));
   }
 
   // compact: a ! for blocked where a header already says "Needs you".
@@ -245,7 +245,6 @@ export default class Agents extends View {
     const all = terminals();
     const shown = focused()?.agent;
     const now = Date.now();
-    this.sessionByAddress = new Map(sessionRows().map((s) => [s.address, s]));
     this.track(list, now);
     this.hold(list);
     const byPriority = sort.id === "priority";
@@ -315,7 +314,7 @@ export default class Agents extends View {
       // An agent on another machine (`vps/t7`) says which.
       const machine = a.address.includes("/") ? a.address.split("/")[0] : null;
       if (collapsed) {
-        return hoverDetails(h_flex()
+        return h_flex()
           .id(`ag-${a.address}`)
           .h(26)
           .px(8)
@@ -325,7 +324,7 @@ export default class Agents extends View {
           .hover((s) => s.bg(t.hover))
           .on_click(() => run("pane.focus", { pane: a.pane }))
           .child(div().flex_1().min_w(0).whitespace_nowrap().text_right().text_color(t.muted).child(String(i + 1)))
-          .child(h_flex().w(14).flex_none().items_center().justify_center().child(this.status(t, a, true))), this.sessionByAddress.get(a.address), now);
+          .child(h_flex().w(14).flex_none().items_center().justify_center().child(this.status(t, a, true)));
       }
       const when = this.since(a);
       const idle = a.status === "idle" && !a.focused;
@@ -351,7 +350,7 @@ export default class Agents extends View {
       // Without a space header above (priority, pinned) the row names its space.
       const full = byPriority || isPinned;
       const name = full ? a.space_name || label(a) : more ?? (DIGITS_RE.test(label(a)) ? a.program?.name || label(a) : label(a));
-      return hoverDetails(h_flex()
+      return h_flex()
         .id(`ag-${a.address}`)
         .px(8)
         .h(30)
@@ -381,7 +380,7 @@ export default class Agents extends View {
         .when(subs.length > 0, el => el.child(fold(a, subs)))
         .when(this.hovered === a.address, el => el.child(pin))
         .when(this.hovered !== a.address && Boolean(when), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child(duration(now - when))))
-        .child(this.status(t, a, byPriority && !isPinned)), this.sessionByAddress.get(a.address), now);
+        .child(this.status(t, a, byPriority && !isPinned));
     };
 
     // Groups in list order: spaces (grouped) or priority sections. Agents of a

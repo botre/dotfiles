@@ -35,8 +35,8 @@ to read context, not a local Herdr window.
 The agent list contributes the session summary convention. Agents publish
 `summary.goal`, `summary.activity`, and `summary.updated` (Unix seconds) with
 `hc label`. Keep activity text unchanged on refresh to retain its start time.
-Hover over an agent for details, or use the overview icon beside the sort button
-to open the closable Agents tab. It covers all live agent sessions exposed by
+Use the overview icon beside the sort button to open the closable Agents tab.
+It covers all live agent sessions exposed by
 the connected cores, including agents outside tabs. Rows open their sessions.
 Each session shows its directory and, when its pane provides one, its branch.
 Hover over the directory line to see the full path and branch.
@@ -44,7 +44,7 @@ Hover over the directory line to see the full path and branch.
 Activity timers use explicit summary updates. Session length measures the current
 foreground process through `ps`, includes idle time, and resets after a resume
 that starts a new process. Unavailable session lengths appear as a dash in the
-overview and "Not available" in hover cards. Old summaries are discarded when a
+overview. Old summaries are discarded when a
 new process starts. Summary timelines persist in Herdr shared state.
 Quota indicators also show their details on hover.
 
