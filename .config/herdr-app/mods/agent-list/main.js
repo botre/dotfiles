@@ -78,7 +78,11 @@ function icon(p, size, color) {
 export default class Agents extends View {
   init(_props, cx) {
     if (props()?.sortMenu) return;
-    if (props()?.overview) { cx.timer.every(10000, (cx) => cx.notify()); return; }
+    if (props()?.overview) {
+      this.expanded = new Set();
+      cx.timer.every(10000, (cx) => cx.notify());
+      return;
+    }
     this.folded = new Set();
     // Each agent's last state and when it changed (ms), kept across restarts.
     this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
@@ -236,7 +240,7 @@ export default class Agents extends View {
 
   render(cx) {
     const t = theme();
-    if (props()?.overview) return overview();
+    if (props()?.overview) return overview(this.expanded);
     if (props()?.sortMenu) return this.sortMenu(t);
     const collapsed = narrow();
     const sort = sortOf();

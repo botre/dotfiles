@@ -24,6 +24,8 @@ each turn. Each machine needs `hc`, `jq`, and those shared instructions.
 The sidebar overview icon opens the closable Agents tab across connected
 machines. Click a row to open its session. Hover over its directory for the full
 path and branch.
+Helpers stay collapsed under their parent. Agents with their own tabs remain
+separate sessions, and the header counts those primary sessions.
 
 Agents set these terminal labels with `hc label`:
 
