@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+"""Print enabled Herdr plugins' context from this terminal's metadata."""
+
+import json
+import os
+import subprocess
+import sys
+
+
+def main():
+    terminal = os.environ.get("HC_TERMINAL_ID")
+    if not terminal:
+        return 0
+    result = subprocess.run(
+        ["hc", "get", "--json", terminal], capture_output=True, text=True, timeout=15
+    )
+    if result.returncode:
+        print(result.stderr.strip(), file=sys.stderr)
+        return result.returncode
+    context = json.loads(result.stdout).get("labels", {}).get("herdr.context", "")
+    if context:
+        print(context.rstrip())
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        print(f"herdr-context: {error}", file=sys.stderr)
+        sys.exit(1)

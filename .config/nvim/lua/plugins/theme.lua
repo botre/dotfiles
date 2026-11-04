@@ -6,8 +6,7 @@ return {
         config = function()
             require('catppuccin').setup({
                 flavour = 'latte',
-                -- Detects which plugins are installed and enables their
-                -- integrations, so this file never drifts from plugins/.
+                -- Enable integrations for installed plugins.
                 auto_integrations = true,
             })
             vim.cmd.colorscheme('catppuccin')

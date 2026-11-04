@@ -79,7 +79,7 @@
           "id": "tabs",
           "type": "block",
           "content": {
-            "mod": "tabs"
+            "mod": "agent-tabs"
           },
           "size": {
             "px": 42
@@ -98,7 +98,7 @@
                 "pane": {
                   "header": {
                     "content": {
-                      "mod": "pane"
+                      "mod": "agent-pane"
                     },
                     "reveal": "always",
                     "height": 30,
@@ -160,6 +160,12 @@
           "id": "status-row",
           "type": "row",
           "children": [
+            {
+              "id": "agent-context",
+              "type": "block",
+              "content": { "mod": "agent-context" },
+              "size": { "px": 0 }
+            },
             {
               "id": "status",
               "type": "block",
