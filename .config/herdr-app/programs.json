@@ -1,0 +1,12 @@
+{
+  "programs": {
+    "codex": {
+      "run": [
+        "sh",
+        "-c",
+        "exec \"$HOME/scripts/herdr-codex\" \"$@\"",
+        "herdr-codex"
+      ]
+    }
+  }
+}

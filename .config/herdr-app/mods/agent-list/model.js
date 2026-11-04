@@ -42,7 +42,8 @@ export function observe(terminal, previous, now, startedAt) {
   const observedAt = before.observedAt ?? now;
   const raw = Number(terminal.labels?.["summary.updated"]);
   const updatedAt = Number.isFinite(raw) && raw > 0 && raw * 1000 <= now + 5000 ? raw * 1000 : null;
-  const valid = updatedAt && updatedAt >= (started ?? observedAt) - 2000;
+  const author = terminal.labels?.["summary.pid"];
+  const valid = updatedAt && (!author || author === String(pid)) && updatedAt >= (started ?? observedAt) - 2000;
   const goal = valid ? text(terminal.labels?.["summary.goal"]) : "";
   const activity = valid ? text(terminal.labels?.["summary.activity"]) : "";
   const sameActivity = before.activity === activity && before.goal === goal;
@@ -53,7 +54,42 @@ export function observe(terminal, previous, now, startedAt) {
   };
 }
 
-export function sessionRows(all, listed, spaces, history, panes = []) {
+export function activityState(terminal, record, observation, now = Date.now()) {
+  if (record.pid !== undefined && record.pid !== terminal.foreground?.pid) record = {};
+  const candidates = [];
+  if (record.activity && record.updatedAt) candidates.push({ text: record.activity, at: record.updatedAt, coverage: record.updatedAt, source: "agent" });
+  const message = text(terminal.report?.msg);
+  if (message) candidates.push({ text: message, at: terminal.status_ms || null, coverage: terminal.status_ms || 0, source: "status" });
+  const recap = observation?.recap;
+  if (recap?.activity) candidates.push({ text: text(recap.activity), at: recap.at, coverage: recap.conversationAt || 0, source: "recap", stamp: recap.stamp });
+  candidates.sort((a, b) => b.coverage - a.coverage);
+  const selected = candidates[0];
+  const inspected = observation?.session && !observation.error && now - observation.checkedAt < 90000;
+  let freshness = "unknown";
+  if (selected && inspected) {
+    freshness = selected.source === "recap"
+      ? (selected.stamp === observation.stamp ? "current" : "outdated")
+      : (observation.conversationAt > selected.coverage + 10000 ? "outdated" : "current");
+  }
+  return {
+    activity: selected?.text || "No activity report yet", source: selected?.source || null,
+    updatedAt: selected?.at || null, freshness,
+    activityAt: selected?.source === "agent" && freshness === "current" ? record.activityAt : null,
+    recapError: recap?.error || null,
+  };
+}
+
+export function needsRecap(terminal, record, observation, now = Date.now()) {
+  if (!observation?.session || observation.error || !observation.stamp) return false;
+  if (now - observation.checkedAt >= 90000) return false;
+  const recap = observation.recap || {};
+  if (recap.pendingAt && now - recap.pendingAt < 180000) return false;
+  if (recap.at && now - recap.at < 600000) return false;
+  const state = activityState(terminal, record, observation, now);
+  return state.freshness !== "current" && (!state.updatedAt || now - state.updatedAt >= 120000);
+}
+
+export function sessionRows(all, listed, spaces, history, panes = [], observations = {}, now = Date.now()) {
   const byAddress = new Map(listed.map((a) => [a.address, a]));
   const paneByAddress = new Map(panes.filter((p) => p.terminal).map((p) => [p.terminal, p]));
   return all.filter(isAgent).map((terminal) => {
@@ -63,7 +99,10 @@ export function sessionRows(all, listed, spaces, history, panes = []) {
     const qualify = (id) => id && machine ? `${machine}/${id}` : id;
     const space = spaces.find((s) => s.id === (agent?.space ?? qualify(terminal.labels?.["herdr.space"])));
     const tab = space?.tabs.find((t) => t.id === (agent?.tab ?? qualify(terminal.labels?.["herdr.tab"])));
-    const record = history[terminal.address] ?? {};
+    const saved = history[terminal.address];
+    const record = saved?.pid === terminal.foreground?.pid && saved?.createdAt === terminal.created_ms ? saved : {};
+    const observation = observations[terminal.address]?.pid === terminal.foreground?.pid ? observations[terminal.address] : null;
+    const state = activityState(terminal, record, observation, now);
     return {
       address: terminal.address, parent: terminal.parent, machine,
       pane: pane?.pane ?? agent?.pane ?? null,
@@ -75,9 +114,12 @@ export function sessionRows(all, listed, spaces, history, panes = []) {
       status: agent?.status ?? terminal.status ?? "idle",
       program: terminal.program,
       goal: record.goal || goalTitle(terminal.title) || "No goal update yet",
-      activity: record.activity || text(terminal.report?.msg) || "No activity update yet",
-      activityAt: record.activityAt, updatedAt: record.updatedAt,
-      startedAt: record.startedAt, reported: Boolean(record.activity),
+      activity: state.activity, activityAt: state.activityAt, updatedAt: state.updatedAt,
+      source: state.source, freshness: state.freshness, recapError: state.recapError,
+      recapPending: observation?.recap?.pendingAt && now - observation.recap.pendingAt < 180000,
+      conversationAt: observation?.conversationAt, inspectionError: observation?.error,
+      routingLegacy: terminal.program?.key === "codex" && !(terminal.foreground?.argv || []).includes("--no-daemon"),
+      startedAt: record.startedAt, reported: Boolean(state.source),
     };
   }).sort((a, b) => `${a.machine ?? ""}|${a.space}|${a.name}`.localeCompare(`${b.machine ?? ""}|${b.space}|${b.name}`));
 }

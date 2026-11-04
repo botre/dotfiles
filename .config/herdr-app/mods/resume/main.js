@@ -108,10 +108,10 @@ function place(t) {
 }
 
 function command(rec) {
-  const flags = carry(rec.agent, rec.flags ?? []);
+  const flags = carry(rec.agent, rec.flags ?? []).filter((flag) => flag !== "--no-daemon");
   const words = rec.agent === "claude"
     ? ["claude", ...flags, "--resume", rec.session]
-    : ["codex", "resume", ...flags, rec.session];
+    : ['"$HOME/scripts/herdr-codex"', "resume", ...flags, rec.session];
   return `cd '${rec.cwd}' && ${words.join(" ")}`;
 }
 
