@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER = runpy.run_path(str(ROOT / 'scripts/herdr-codex'))['main'].__globals__
 
 
-class PaletteTests(unittest.TestCase):
+class HerdrCodexTests(unittest.TestCase):
     def test_seeds_only_valid_colors_inside_an_interactive_herdr_terminal(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = Path(directory) / 'herdr-terminal-palette.json'

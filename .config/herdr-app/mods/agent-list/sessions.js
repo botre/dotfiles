@@ -1,5 +1,5 @@
 import { terminals, shared, setShared, exec } from "herdr";
-import { isAgent, machineOf, observe, parseElapsed } from "./model.js";
+import { isAgent, machineOf, observe, parseElapsed, sameProcess } from "./model.js";
 import { STORE } from "./ui.js";
 import { Conversations } from "./conversations.js";
 
@@ -21,7 +21,7 @@ export class SessionTracker {
         if (!start || (!start.at && now - start.tried > 60000)) {
           start = { at: null, tried: now };
           const saved = previous[terminal.address];
-          if (saved?.pid === pid && saved?.createdAt === terminal.created_ms && saved.startedAt) start.at = saved.startedAt;
+          if (sameProcess(saved, terminal) && saved.startedAt) start.at = saved.startedAt;
           else if (Number.isInteger(pid) && pid > 0) {
             const r = await exec("ps", ["-p", String(pid), "-o", "etime="], { on: machineOf(terminal.address) }).catch(() => null);
             const age = r?.code === 0 ? parseElapsed(r.stdout) : null;

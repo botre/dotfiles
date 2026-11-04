@@ -1,13 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import vm from "node:vm";
+import { loadMods } from "./mod-source.mjs";
 
-const source = readFileSync(new URL("../.config/herdr-app/mods/agent-list/model.js", import.meta.url), "utf8")
-  .replace(/^export /gm, "");
-const context = vm.createContext({});
-vm.runInContext(source, context);
-const evaluate = (expression) => vm.runInContext(expression, context);
+const evaluate = loadMods(["agent-list/model.js"]);
 const terminal = {
   address: "vps/t7", state: "live", created_ms: 1000,
   foreground: { pid: 42, argv: ["codex"] },
