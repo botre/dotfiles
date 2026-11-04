@@ -1,11 +1,15 @@
 // Session data for the Agents overview.
 const PREFIX = /^[^\p{L}\p{N}]+/u;
 const CONTROL = /[\u0000-\u001f\u007f]/g;
+const INSPECTION_TTL = 90000;
+const RECAP_PENDING = 180000;
 
 export const text = (value) => typeof value === "string" ? value.replace(CONTROL, " ").trim().slice(0, 240) : "";
 export const goalTitle = (value) => text(value).replace(PREFIX, "").split(" | ")[0].trim();
 export const machineOf = (address) => address.includes("/") ? address.slice(0, address.lastIndexOf("/")) : null;
 export const directoryName = (cwd) => text(cwd).replace(/[\\/]+$/, "").split(/[\\/]/).pop() || cwd;
+
+export const sameProcess = (record, terminal) => record?.pid === terminal.foreground?.pid && record?.createdAt === terminal.created_ms;
 
 export function isAgent(terminal) {
   return terminal.state === "live" && Boolean(terminal.program?.agent || terminal.report?.app);
@@ -36,8 +40,7 @@ export function parseElapsed(value) {
 // Status changes do not mark activity changes. Only explicit summary updates do.
 export function observe(terminal, previous, now, startedAt) {
   const pid = terminal.foreground?.pid;
-  const sameProcess = previous?.pid === pid && previous?.createdAt === terminal.created_ms;
-  const before = sameProcess ? previous : {};
+  const before = sameProcess(previous, terminal) ? previous : {};
   const started = startedAt ?? before.startedAt ?? null;
   const observedAt = before.observedAt ?? now;
   const raw = Number(terminal.labels?.["summary.updated"]);
@@ -64,7 +67,7 @@ export function activityState(terminal, record, observation, now = Date.now()) {
   if (recap?.activity) candidates.push({ text: text(recap.activity), at: recap.at, coverage: recap.conversationAt || 0, source: "recap", stamp: recap.stamp });
   candidates.sort((a, b) => b.coverage - a.coverage);
   const selected = candidates[0];
-  const inspected = observation?.session && !observation.error && now - observation.checkedAt < 90000;
+  const inspected = observation?.session && !observation.error && now - observation.checkedAt < INSPECTION_TTL;
   let freshness = "unknown";
   if (selected && inspected) {
     freshness = selected.source === "recap"
@@ -81,9 +84,9 @@ export function activityState(terminal, record, observation, now = Date.now()) {
 
 export function needsRecap(terminal, record, observation, now = Date.now()) {
   if (!observation?.session || observation.error || !observation.stamp) return false;
-  if (now - observation.checkedAt >= 90000) return false;
+  if (now - observation.checkedAt >= INSPECTION_TTL) return false;
   const recap = observation.recap || {};
-  if (recap.pendingAt && now - recap.pendingAt < 180000) return false;
+  if (recap.pendingAt && now - recap.pendingAt < RECAP_PENDING) return false;
   if (recap.at && now - recap.at < 600000) return false;
   const state = activityState(terminal, record, observation, now);
   return state.freshness !== "current" && (!state.updatedAt || now - state.updatedAt >= 120000);
@@ -100,7 +103,7 @@ export function sessionRows(all, listed, spaces, history, panes = [], observatio
     const space = spaces.find((s) => s.id === (agent?.space ?? qualify(terminal.labels?.["herdr.space"])));
     const tab = space?.tabs.find((t) => t.id === (agent?.tab ?? qualify(terminal.labels?.["herdr.tab"])));
     const saved = history[terminal.address];
-    const record = saved?.pid === terminal.foreground?.pid && saved?.createdAt === terminal.created_ms ? saved : {};
+    const record = sameProcess(saved, terminal) ? saved : {};
     const observation = observations[terminal.address]?.pid === terminal.foreground?.pid ? observations[terminal.address] : null;
     const state = activityState(terminal, record, observation, now);
     return {
@@ -116,7 +119,7 @@ export function sessionRows(all, listed, spaces, history, panes = [], observatio
       goal: record.goal || goalTitle(terminal.title) || "No goal update yet",
       activity: state.activity, activityAt: state.activityAt, updatedAt: state.updatedAt,
       source: state.source, freshness: state.freshness, recapError: state.recapError,
-      recapPending: observation?.recap?.pendingAt && now - observation.recap.pendingAt < 180000,
+      recapPending: observation?.recap?.pendingAt && now - observation.recap.pendingAt < RECAP_PENDING,
       conversationAt: observation?.conversationAt, inspectionError: observation?.error,
       routingLegacy: terminal.program?.key === "codex" && !(terminal.foreground?.argv || []).includes("--no-daemon"),
       startedAt: record.startedAt, reported: Boolean(state.source),

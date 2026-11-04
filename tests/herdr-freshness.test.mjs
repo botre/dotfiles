@@ -1,17 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import vm from "node:vm";
+import { loadMods } from "./mod-source.mjs";
 
-const model = readFileSync(new URL("../.config/herdr-app/mods/agent-list/model.js", import.meta.url), "utf8").replace(/^export /gm, "");
-const scheduler = readFileSync(new URL("../.config/herdr-app/mods/agent-list/conversations.js", import.meta.url), "utf8").replace(/^import .*;\n/gm, "").replace(/^export /gm, "");
 const now = 2000000;
 const terminal = { address: "t1", foreground: { pid: 42 }, program: { key: "codex" }, labels: {} };
 const report = { activity: "Prepare worktree", updatedAt: now - 600000, activityAt: now - 700000 };
 const observed = { pid: 42, session: "session", stamp: "100:200", conversationAt: now - 10000, checkedAt: now };
-const context = vm.createContext({});
-vm.runInContext(model, context);
-const call = (name, ...args) => vm.runInContext(`${name}(${args.map((value) => JSON.stringify(value)).join(",")})`, context);
+const evaluate = loadMods(["agent-list/model.js"]);
+const call = (name, ...args) => evaluate(`${name}(${args.map((value) => JSON.stringify(value)).join(",")})`);
 const state = (t = terminal, r = report, o = observed) => call("activityState", t, r, o, now);
 const needed = (t = terminal, r = report, o = observed) => call("needsRecap", t, r, o, now);
 
@@ -70,7 +66,7 @@ describe("Herdr conversation freshness", () => {
 function harness({ shown = true, enabled = true, all = [terminal], probe, fail = false } = {}) {
   let clock = now;
   const values = { "agents.recaps.enabled": enabled }, commands = [], probes = [];
-  const cx = vm.createContext({
+  const evaluate = loadMods(["agent-list/model.js", "agent-list/conversations.js"], {
     Date: { now: () => clock }, appHome: () => "/home/test/.config/herdr-app",
     readTextFile: async () => "python backend", shared: (key) => values[key], setShared: (key, value) => { values[key] = value; },
     terminals: () => all, spaces: () => [{ active: true, tabs: [{ active: true, id: "overview" }] }],
@@ -84,9 +80,9 @@ function harness({ shown = true, enabled = true, all = [terminal], probe, fail =
       return { code: 0, stdout: JSON.stringify(result) };
     },
   });
-  vm.runInContext(model + "\n" + scheduler + "\nconst watcher = new Conversations();", cx);
+  evaluate("const watcher = new Conversations();");
   return { values, commands, probes, advance: (ms) => { clock += ms; },
-    sync: (records = {}) => { cx.input = all; cx.records = records; return vm.runInContext("watcher.sync(input, records)", cx); } };
+    sync: (records = {}) => evaluate("watcher.sync(input, records)", { input: all, records }) };
 }
 
 describe("Herdr recap scheduling", () => {

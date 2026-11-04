@@ -1,16 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import vm from "node:vm";
+import { loadMods } from "./mod-source.mjs";
 
-function loadMod(name, globals = {}) {
-  const source = readFileSync(new URL(`../.config/herdr-app/mods/${name}/main.js`, import.meta.url), "utf8")
-    .replace(/^import .*;\n/gm, "")
-    .replace("export default class", "class");
-  const context = vm.createContext({ View: class {}, home: () => "/home/test", ...globals });
-  vm.runInContext(source, context);
-  return (expression) => vm.runInContext(expression, context);
-}
+const loadMod = (name, globals = {}) => loadMods([`${name}/main.js`], { home: () => "/home/test", ...globals });
 
 describe("Herdr mods", () => {
   describe("agent-list", () => {

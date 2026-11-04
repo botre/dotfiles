@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import vm from "node:vm";
+import { loadMods } from "./mod-source.mjs";
 
 function fixture() {
   const files = {
@@ -12,18 +11,14 @@ function fixture() {
   };
   const state = { "mods.off": [] }, writes = [];
   const terminal = { address: "remote/t7", state: "live", program: { agent: true }, labels: {} };
-  const context = vm.createContext({
-    View: class {},
+  const evaluate = loadMods(["agent-context/main.js"], {
     layout: () => ({ children: [{ content: { mod: "summary" } }] }),
     panes: () => [], terminals: () => [terminal],
     shared: (key) => state[key], setShared: (key, value) => { state[key] = value; },
     appHome: () => "/app", readTextFile: async (path) => files[path] ?? null,
     hc: async (args) => { writes.push(args); terminal.labels["herdr.context"] = args[2].slice("herdr.context=".length); return { code: 0 }; },
   });
-  const source = readFileSync(new URL("../.config/herdr-app/mods/agent-context/main.js", import.meta.url), "utf8")
-    .replace(/^import .*;\n/gm, "").replace("export default class", "class");
-  vm.runInContext(source, context);
-  const mod = vm.runInContext("new AgentContext()", context);
+  const mod = evaluate("new AgentContext()");
   return { files, state, writes, sync: () => mod.sync({ notify() {} }) };
 }
 
