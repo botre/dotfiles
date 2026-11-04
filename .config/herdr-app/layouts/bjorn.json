@@ -205,6 +205,16 @@
               "size": {
                 "px": 0
               }
+            },
+            {
+              "id": "terminal-palette",
+              "type": "block",
+              "content": {
+                "mod": "terminal-palette"
+              },
+              "size": {
+                "px": 0
+              }
             }
           ],
           "size": {

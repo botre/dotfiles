@@ -1,10 +1,11 @@
 import { terminals, shared, setShared, exec } from "herdr";
 import { isAgent, machineOf, observe, parseElapsed } from "./model.js";
 import { STORE } from "./ui.js";
+import { Conversations } from "./conversations.js";
 
 // Measure the foreground process so a kept shell's age does not inflate sessions.
 export class SessionTracker {
-  constructor() { this.starts = new Map(); }
+  constructor() { this.starts = new Map(); this.conversations = new Conversations(); }
 
   async sync(cx) {
     if (this.busy) return;
@@ -36,6 +37,7 @@ export class SessionTracker {
         if (!live.has(address) && now - (record.updatedAt ?? record.startedAt ?? 0) > 30 * 86400000) delete records[address];
       }
       if (JSON.stringify(records) !== JSON.stringify(previous)) setShared(STORE, records);
+      await this.conversations.sync(all, records);
       const keys = new Set(all.map((t) => `${t.address}:${t.created_ms}:${t.foreground?.pid}`));
       for (const key of this.starts.keys()) if (!keys.has(key)) this.starts.delete(key);
     } finally { this.busy = false; cx.notify(); }

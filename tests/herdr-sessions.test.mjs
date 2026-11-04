@@ -72,7 +72,7 @@ describe("Herdr session timing", () => {
     assert.equal(rows[0].machine, "vps");
     assert.equal(rows[0].space, "API");
     assert.equal(rows[0].name, "Login");
-    assert.equal(rows[0].activityAt, undefined);
+    assert.equal(rows[0].activityAt, null);
   });
 
   it("uses each session's directory and branch without borrowing another repository's space branch", () => {

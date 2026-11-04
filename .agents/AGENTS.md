@@ -9,7 +9,7 @@ When `HC_TERMINAL_ID` is set, read the enabled Herdr plugins' context at the
 start of each turn and follow their instructions within the user's task scope:
 
 ```sh
-hc get --json "$HC_TERMINAL_ID" | jq -r '.labels["herdr.context"] // empty'
+python3 "$HOME/scripts/herdr-context"
 ```
 
 An empty result means no plugin context is available. Continue the task normally.

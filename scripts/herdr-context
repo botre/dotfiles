@@ -1,31 +1,90 @@
 #!/usr/bin/env python3
-"""Print enabled Herdr plugins' context from this terminal's metadata."""
+"""Read plugin context or publish labels to the caller's verified terminal."""
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import subprocess
 import sys
 
 
-def main():
-    terminal = os.environ.get("HC_TERMINAL_ID")
-    if not terminal:
-        return 0
-    result = subprocess.run(
-        ["hc", "get", "--json", terminal], capture_output=True, text=True, timeout=15
-    )
+def core(*args):
+    result = subprocess.run(["hc", *args], capture_output=True, text=True, timeout=15)
     if result.returncode:
-        print(result.stderr.strip(), file=sys.stderr)
-        return result.returncode
-    context = json.loads(result.stdout).get("labels", {}).get("herdr.context", "")
-    if context:
-        print(context.rstrip())
+        raise RuntimeError(result.stderr.strip() or "Herdr command failed")
+    return json.loads(result.stdout)
+
+
+def session_id(terminal):
+    labels = terminal.get("labels") or {}
+    if str((terminal.get("foreground") or {}).get("pid")) == labels.get("herdr.session.pid"):
+        return labels.get("herdr.session")
+    try:
+        return json.loads(labels.get("resume", "{}")).get("session")
+    except (ValueError, AttributeError):
+        return None
+
+
+def resolve(environ, get=core):
+    hint = environ.get("HC_TERMINAL_ID")
+    if not hint:
+        return None
+    thread = environ.get("CODEX_THREAD_ID") or environ.get("CODEX_SESSION_ID")
+    if environ.get("CLAUDECODE"):
+        thread = None
+    try:
+        hinted = get("get", "--json", hint)
+    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
+        if not thread:
+            raise
+        hinted = {}
+    if not thread:
+        if hinted.get("state") != "live":
+            raise RuntimeError("Herdr terminal has ended")
+        return hinted
+    if session_id(hinted) == thread and hinted.get("state") == "live" and "--no-daemon" in (hinted.get("foreground") or {}).get("argv", []):
+        return hinted
+    candidates = get("ls", "--json").get("terminals", [])
+    addresses = [t["address"] for t in candidates if t.get("state") == "live" and t.get("agent") == "codex"]
+    def inspect(address):
+        try:
+            return get("get", "--json", address)
+        except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
+            return None
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        matches = [t for t in pool.map(inspect, addresses) if t and session_id(t) == thread]
+    if len(matches) != 1:
+        raise RuntimeError("Cannot uniquely identify this Codex session; no terminal was changed")
+    return matches[0]
+
+
+def main():
+    terminal = resolve(os.environ)
+    if terminal is None:
+        return 0
+    if len(sys.argv) > 1:
+        if sys.argv[1] != "label" or len(sys.argv) < 3:
+            raise RuntimeError("Usage: herdr-context [label key=value ...]")
+        labels = sys.argv[2:]
+        allowed = {"summary.goal", "summary.activity", "summary.updated", "session.title", "session.title.updated"}
+        if any(arg.split("=", 1)[0] not in allowed or "=" not in arg for arg in labels):
+            raise RuntimeError("Only session summary and title labels are supported")
+        pid = (terminal.get("foreground") or {}).get("pid")
+        if any(arg.startswith("summary.") for arg in labels):
+            labels.append(f"summary.pid={pid}")
+        if any(arg.startswith("session.title") for arg in labels):
+            labels.append(f"session.title.pid={pid}")
+        core("label", terminal["address"], *labels)
+    else:
+        context = (terminal.get("labels") or {}).get("herdr.context", "")
+        if context:
+            print(context.rstrip())
     return 0
 
 
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
         print(f"herdr-context: {error}", file=sys.stderr)
         sys.exit(1)

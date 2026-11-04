@@ -7,7 +7,7 @@ progress. Do not use transient status labels such as "Action Required",
 Publish the title at the start of a task and when a better title becomes clear:
 
 ```sh
-hc label "$HC_TERMINAL_ID" \
+python3 "$HOME/scripts/herdr-context" label \
   'session.title=Review card reversal limits' \
   "session.title.updated=$(date +%s)"
 ```

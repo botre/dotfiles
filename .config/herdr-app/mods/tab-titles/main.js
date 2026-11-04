@@ -38,7 +38,9 @@ function agentTitle(p, prog) {
 
 function publishedTitle(terminal, record = {}) {
   const updated = Number(terminal?.labels?.["session.title.updated"]) * 1000;
-  const current = updated > 0 && updated <= Date.now() + 5000 && (!record.startedAt || updated >= record.startedAt - 2000);
+  const author = terminal?.labels?.["session.title.pid"];
+  const current = (!author || author === String(terminal?.foreground?.pid)) && updated > 0
+    && updated <= Date.now() + 5000 && (!record.startedAt || updated >= record.startedAt - 2000);
   return current ? cleanTitle(terminal.labels["session.title"]) : null;
 }
 

@@ -54,6 +54,11 @@ describe("Herdr mods", () => {
       assert.equal(evaluate('carry("codex", ["--model=gpt-6", "--no-daemon", "--profile=unsafe"]).join(" ")'), "--model gpt-6 --no-daemon");
     });
 
+    it("forces isolated Codex routing on resume, including records saved without the flag", () => {
+      assert.equal(evaluate('command({agent:"codex",session:"session-id",cwd:"/tmp/project",flags:[]})'), "cd '/tmp/project' && \"$HOME/scripts/herdr-codex\" resume session-id");
+      assert.equal(evaluate('command({agent:"codex",session:"session-id",cwd:"/tmp/project",flags:["--no-daemon"]})'), "cd '/tmp/project' && \"$HOME/scripts/herdr-codex\" resume session-id");
+    });
+
     it("rejects unsafe resume directories on every call", () => {
       for (const cwd of ["/tmp/qa'bad", "/tmp/qa\n"]) {
         const record = { agent: "codex", session: "12345678-1234-1234-1234-123456789abc", cwd };
@@ -103,6 +108,7 @@ describe("Herdr mods", () => {
       }
       assert.equal(evaluate('publishedTitle({labels:{"session.title":"Review card reversal limits","session.title.updated":"100"}}, {startedAt:200000})'), null);
       assert.equal(evaluate('publishedTitle({labels:{"session.title":"Review card reversal limits","session.title.updated":"300"}}, {startedAt:200000})'), "Review card reversal limits");
+      assert.equal(evaluate('publishedTitle({foreground:{pid:43},labels:{"session.title":"Old process title","session.title.updated":"300","session.title.pid":"42"}})'), null);
     });
 
     it("prefers published titles and leaves manual tab names alone", () => {
