@@ -86,3 +86,69 @@ describe("Herdr session timing", () => {
     assert.equal(evaluate('directoryName("/srv/api/")'), "api");
   });
 });
+
+describe("Herdr session groups", () => {
+  const group = (rows, terminals = rows) => JSON.parse(JSON.stringify(evaluate(`groupSessions(${JSON.stringify(rows)}, ${JSON.stringify(terminals)})`)));
+
+  it("collapses live helpers under their primary session, including completed turns", () => {
+    const rows = [
+      { address: "t1", pane: "p1" },
+      { address: "t2", parent: "t1", status: "done" },
+      { address: "t3", parent: "t1", status: "working" },
+    ];
+    const groups = group(rows);
+    assert.equal(groups.length, 1);
+    assert.equal(groups[0].helpers, 2);
+    assert.deepEqual(groups[0].children.map((row) => row.address), ["t2", "t3"]);
+  });
+
+  it("keeps promoted helpers as primary sessions with their own descendants", () => {
+    const groups = group([
+      { address: "t1", pane: "p1" },
+      { address: "t2", parent: "t1", pane: "p2" },
+      { address: "t3", parent: "t2" },
+    ]);
+    assert.equal(groups.length, 2);
+    assert.equal(groups[0].helpers, 0);
+    assert.equal(groups[1].helpers, 1);
+    assert.equal(groups[1].children[0].address, "t3");
+  });
+
+  it("finds the parent session through a non-agent terminal", () => {
+    const rows = [{ address: "t1", tab: "tab1" }, { address: "t3", parent: "t2" }];
+    const groups = group(rows, [...rows, { address: "t2", parent: "t1" }]);
+    assert.equal(groups.length, 1);
+    assert.equal(groups[0].children[0].address, "t3");
+  });
+
+  it("qualifies remote parents without grouping them under a local terminal with the same ID", () => {
+    const groups = group([
+      { address: "t1", pane: "p1" },
+      { address: "remote/t1", pane: "remote/p1" },
+      { address: "remote/t2", parent: "t1" },
+    ]);
+    assert.equal(groups[0].helpers, 0);
+    assert.equal(groups[1].children[0].address, "remote/t2");
+  });
+
+  it("counts nested helpers while retaining their hierarchy", () => {
+    const groups = group([
+      { address: "t1", pane: "p1" },
+      { address: "t2", parent: "t1" },
+      { address: "t3", parent: "t2" },
+    ]);
+    assert.equal(groups[0].helpers, 2);
+    assert.equal(groups[0].children[0].helpers, 1);
+    assert.equal(groups[0].children[0].children[0].address, "t3");
+  });
+
+  it("keeps orphaned agents visible and handles malformed ancestry without cycles", () => {
+    const groups = group([
+      { address: "t1", parent: "missing" },
+      { address: "t2", parent: "t3" },
+      { address: "t3", parent: "t2" },
+    ]);
+    assert.equal(groups.length, 3);
+    assert.ok(groups.every((row) => row.helpers === 0));
+  });
+});

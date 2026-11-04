@@ -66,6 +66,8 @@ export function sessionRows(all, listed, spaces, history, panes = []) {
     const record = history[terminal.address] ?? {};
     return {
       address: terminal.address, parent: terminal.parent, machine,
+      pane: pane?.pane ?? agent?.pane ?? null,
+      tab: tab?.id ?? pane?.tab ?? agent?.tab ?? null,
       cwd: pane?.cwd ?? terminal.foreground?.cwd ?? terminal.cwd ?? null,
       branch: pane?.branch ?? null,
       name: terminal.name || tab?.name || goalTitle(terminal.title) || terminal.address,
@@ -78,4 +80,36 @@ export function sessionRows(all, listed, spaces, history, panes = []) {
       startedAt: record.startedAt, reported: Boolean(record.activity),
     };
   }).sort((a, b) => `${a.machine ?? ""}|${a.space}|${a.name}`.localeCompare(`${b.machine ?? ""}|${b.space}|${b.name}`));
+}
+
+export function groupSessions(rows, terminals) {
+  const nodes = new Map(rows.map((row) => [row.address, { ...row, children: [], helpers: 0 }]));
+  const byAddress = new Map(terminals.map((terminal) => [terminal.address, terminal]));
+  const roots = [];
+  for (const node of nodes.values()) {
+    let owner = null;
+    if (!node.pane && !node.tab) {
+      const seen = new Set([node.address]);
+      let address = node.address, parent = node.parent;
+      while (parent) {
+        const machine = machineOf(address);
+        const key = machine && !parent.includes("/") ? `${machine}/${parent}` : parent;
+        if (seen.has(key)) { owner = null; break; }
+        seen.add(key);
+        const ancestor = nodes.get(key);
+        if (!owner && ancestor) owner = ancestor;
+        if (ancestor?.pane || ancestor?.tab) break;
+        address = key;
+        parent = byAddress.get(key)?.parent ?? ancestor?.parent;
+      }
+    }
+    if (owner) owner.children.push(node);
+    else roots.push(node);
+  }
+  const count = (node) => {
+    node.helpers = node.children.reduce((total, child) => total + 1 + count(child), 0);
+    return node.helpers;
+  };
+  for (const root of roots) count(root);
+  return roots;
 }
