@@ -107,6 +107,72 @@ describe("Herdr mods", () => {
       assert.equal(evaluate('carry("codex", ["--model=gpt-6", "--no-daemon", "--profile=unsafe"]).join(" ")'), "--model gpt-6 --no-daemon");
     });
 
+    it("carries every --add-dir folder and quotes it on resume", () => {
+      assert.equal(evaluate('JSON.stringify(carry("claude", ["--add-dir", "/tmp/a b", "../c", "--model", "opus", "fix it"]))'), JSON.stringify(["--add-dir", "/tmp/a b", "../c", "--model", "opus"]));
+      assert.equal(evaluate('JSON.stringify(carry("claude", ["--add-dir=/tmp/x"]))'), JSON.stringify(["--add-dir", "/tmp/x"]));
+      for (const bad of ["/tmp/it's", "/tmp/a\nb"]) assert.equal(evaluate(`carry("claude", ["--add-dir", ${JSON.stringify(bad)}]).length`), 0);
+      assert.equal(evaluate('carry("claude", ["constructor", "x"]).length'), 0);
+      assert.equal(evaluate('command({agent:"claude",session:"s1",cwd:"/tmp/p",flags:["--add-dir","/tmp/a b"]})'), "cd '/tmp/p' && claude --add-dir '/tmp/a b' --resume s1");
+    });
+
+    it("tells a recovered shell from the old one by its start time when the pid repeats", async () => {
+      const starts = { 7: "Fri Nov  6 09:00:00 2026" };
+      const evaluate = loadMod("resume", { exec: async (_cmd, args) => ({ code: 0, stdout: `${starts[args.at(-1)] ?? ""}\n` }) });
+      const rec = (since) => JSON.stringify({ shell: 7, since });
+      assert.equal(await evaluate(`replaced({pid:8}, ${rec("x")})`), true);
+      assert.equal(await evaluate(`replaced({pid:7}, ${rec("Fri Nov  6 09:00:00 2026")})`), false);
+      assert.equal(await evaluate(`replaced({pid:7}, ${rec("Thu Nov  5 22:00:00 2026")})`), true);
+      assert.equal(await evaluate('replaced({pid:7}, {shell:7})'), false);
+    });
+
+    it("stops offering a resume that gave up, and lets a later press retry it", async () => {
+      const session = "12345678-1234-1234-1234-123456789abc";
+      const record = (extra = {}) => JSON.stringify({ agent: "codex", session, cwd: "/tmp", shell: 1, ...extra });
+      let label = record();
+      const sent = [], notes = [];
+      const evaluate = loadMod("resume", {
+        terminals: () => [{ address: "t1", keep: true, state: "live", pid: 2, foreground: { name: "zsh", argv: ["-zsh"] }, labels: { resume: label } }],
+        hc: async ([cmd, , arg]) => {
+          if (cmd === "label") label = arg.slice("resume=".length);
+          else sent.push(arg);
+          return { code: 0, stderr: "" };
+        },
+        exec: async () => ({ code: 1, stdout: "" }),
+        spaces: () => [],
+        shared: () => [],
+        localStorage: { getItem: () => null, setItem() {} },
+        notify: (n) => notes.push(n),
+      });
+      const mod = evaluate("new Resume()");
+      await mod.watch();
+      assert.equal(notes.at(-1).title, "1 agent can be resumed");
+      await mod.resume();
+      assert.equal(sent.length, 1);
+      assert.ok(Number.isFinite(JSON.parse(label).tried));
+      await mod.resume();
+      assert.equal(sent.length, 1, "a second press while it starts types nothing");
+      notes.length = 0;
+      await mod.watch();
+      assert.equal(notes.length, 0, "no new nudge after it gave up");
+      label = record({ tried: Date.now() - 120000 });
+      await mod.resume();
+      assert.equal(sent.length, 2);
+    });
+
+    it("finds a Codex session from the thread lock its process holds", async () => {
+      const own = "01a1b11a-5e62-7eb3-bced-0debdfdcc0bb", helper = "01a1b11a-5eb3-7e42-8a88-dd7e0930762a";
+      const evaluate = loadMod("resume", {
+        exec: async (cmd, args) => {
+          if (cmd === "find" && args[0] === "/proc/42/fd") return { code: 0, stdout: [own, helper, own].map((id) => `/home/test/.codex/thread-writer-locks/${id}.lock`).join("\n") };
+          if (cmd === "find") return args[2].includes(own) ? { code: 0, stdout: `/home/test/.codex/sessions/r-${own}.jsonl\n` } : { code: 0, stdout: "" };
+          if (cmd === "head") return { code: 0, stdout: '{"type":"session_meta","payload":{"thread_source":"user"}}' };
+          return { code: 1, stdout: "" };
+        },
+      });
+      assert.equal((await evaluate('codexSession("Same name | /tmp", async () => "", 42)')).session, own);
+      assert.equal(await evaluate('codexSession("", async () => "", 43)'), null);
+    });
+
     it("forces isolated Codex routing on resume, including records saved without the flag", () => {
       assert.equal(evaluate('command({agent:"codex",session:"session-id",cwd:"/tmp/project",flags:[]})'), "cd '/tmp/project' && \"$HOME/scripts/herdr-codex\" resume session-id");
       assert.equal(evaluate('command({agent:"codex",session:"session-id",cwd:"/tmp/project",flags:["--no-daemon"]})'), "cd '/tmp/project' && \"$HOME/scripts/herdr-codex\" resume session-id");
@@ -131,11 +197,13 @@ describe("Herdr mods", () => {
         })),
         readTextFile: () => { reads++; return new Promise((resolve) => { release = resolve; }); },
         hc: async (args) => { writes.push(args); },
+        exec: async () => ({ code: 1, stdout: "" }),
         shared: () => [],
         localStorage: { getItem: () => null, setItem() {} },
         notify() {},
       });
       const pending = evaluate("new Resume().watch()");
+      await new Promise((resolve) => setImmediate(resolve));
       assert.equal(reads, 1);
       assert.equal(writes.length, 0);
       release([1, 2].map((id) => JSON.stringify({ thread_name: `Task ${id}`, id: `12345678-1234-1234-1234-123456789ab${id}` })).join("\n"));
