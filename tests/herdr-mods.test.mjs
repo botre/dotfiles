@@ -212,32 +212,63 @@ describe("Herdr mods", () => {
 
   describe("agent-commands", () => {
     const evaluate = loadMods(["agent-commands/main.js"]);
-    const entry = (type, content) => JSON.stringify({ type, message: { role: type, content } });
-    const text = (t) => [{ type: "text", text: t }];
+    const parse = (screen, cols) => JSON.parse(evaluate("JSON.stringify((({ suggested, executed }) => ({ suggested, executed: [...executed] }))(screenCommands(screen, cols)))", { screen, cols }));
 
-    it("picks the ! lines of every reply since the last prompt, once each", () => {
-      const jsonl = [
-        entry("user", "first prompt"),
-        entry("assistant", text("Old:\n! echo old")),
-        entry("user", "fix it"),
-        entry("assistant", text("Run that first:\n\n! cd ~/a && pnpm exec cf dns delete --force\n\nThen:")),
-        entry("assistant", [{ type: "tool_use", name: "Bash" }]),
-        entry("user", [{ type: "tool_result", content: "ok" }]),
-        JSON.stringify({ type: "api-request-blob", message: { role: "assistant", content: text("! echo skipped") } }),
-        entry("assistant", text("```\n!  pnpm exec cf email-routing enable  \n```\n! cd ~/a && pnpm exec cf dns delete --force\nnot ! this one")),
-        "not json",
+    it("reads suggestions from Claude's replies and joins a command wrapped across rows", () => {
+      const cols = 60;
+      const screen = [
+        "● Email Routing refused because the old MX records are still",
+        "  there. Run that first:",
+        "",
+        "  ! cd ~/calmdots && for id in cd3aab96 a81dc022 61f66eeb a",
+        "  c4f9cd9; do pnpm exec cf dns records delete $id --force;",
+        "  done",
+        "",
+        "  Then run enable again:",
+        "",
+        "  ! cd ~/calmdots && pnpm exec cf email-routing enable",
+        "  - not a command, a list item",
+        "  ! cd ~/calmdots && pnpm exec cf email-routing enable",
+        "",
+        "!  pnpm exec cf whoami",
+        "  ⎿  bjorn@example.com",
+        "  Run types ! <command> into Claude: prose, not a suggestion",
       ].join("\n");
-      assert.deepEqual(JSON.parse(evaluate("JSON.stringify(suggestedCommands(jsonl))", { jsonl })), ["cd ~/a && pnpm exec cf dns delete --force", "pnpm exec cf email-routing enable"]);
-      assert.equal(evaluate("suggestedCommands(jsonl).length", { jsonl: [entry("assistant", text("! echo a")), entry("user", "new prompt")].join("\n") }), 0);
+      assert.deepEqual(parse(screen, cols), {
+        suggested: [
+          "cd ~/calmdots && for id in cd3aab96 a81dc022 61f66eeb a c4f9cd9; do pnpm exec cf dns records delete $id --force; done",
+          "cd ~/calmdots && pnpm exec cf email-routing enable",
+        ],
+        executed: ["pnpm exec cf whoami"],
+      });
     });
 
-    it("finds the session from Herdr's label or the resume record, and refuses anything else", () => {
-      const id = "2ae85a05-3a01-4fcd-b7a3-e12da61b34b5";
-      const fromLabel = JSON.parse(evaluate("JSON.stringify(sessionOf(t))", { t: { labels: { "herdr.session": id }, foreground: { cwd: "/home/u/calmdots" } } }));
-      assert.deepEqual(fromLabel, { session: id, folders: ["/home/u/calmdots"] });
-      const resume = JSON.stringify({ session: id, cwd: "/home/u/a" });
-      assert.deepEqual(JSON.parse(evaluate("JSON.stringify(sessionOf(t))", { t: { labels: { resume }, foreground: { cwd: "/home/u/a/sub" } } })).folders, ["/home/u/a", "/home/u/a/sub"]);
-      assert.equal(evaluate("sessionOf(t)", { t: { labels: { "herdr.session": "../../etc/passwd" } } }), null);
+    it("leaves out what ran, here or typed, and what was dismissed while it stays on screen", async () => {
+      let screen = "  ! echo a\n  ! echo b\n  ! echo c\n!  echo c";
+      const store = {}, sent = [], resizes = [];
+      const evaluate = loadMods(["agent-commands/main.js"], {
+        localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } },
+        focused: () => ({ agent: null, terminal: "t1" }),
+        terminals: () => [{ address: "t1", state: "live", cols: 200, program: { key: "claude" } }],
+        hc: async (args) => { if (args[0] === "read") return { code: 0, stdout: screen }; sent.push(args); return { code: 0 }; },
+        run: (name, args) => resizes.push(args.px), props: () => ({}), notify() {},
+      });
+      const view = evaluate("new Commands()");
+      Object.assign(view, { ran: new Set(), dismissed: new Set(), height: 0 });
+      const cx = { notify() {} };
+      await view.load(cx);
+      assert.deepEqual(JSON.parse(JSON.stringify(view.commands)), ["echo a", "echo b"], "echo c was typed already");
+      await view.send("echo a", cx);
+      assert.deepEqual(JSON.parse(JSON.stringify(sent.at(-1))), ["send", "t1", "! echo a"]);
+      view.dismiss("echo b", cx);
+      await view.load(cx);
+      assert.deepEqual(JSON.parse(JSON.stringify(view.commands)), []);
+      assert.equal(resizes.at(-1), 0);
+      screen = "  ! echo z";
+      await view.load(cx);
+      screen = "  ! echo a\n  ! echo b";
+      await view.load(cx);
+      assert.deepEqual(JSON.parse(JSON.stringify(view.commands)), ["echo b"], "a dismissal ends once its line leaves the screen; a run one stays gone");
     });
   });
 
