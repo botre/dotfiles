@@ -50,11 +50,24 @@ export function observe(terminal, previous, now, startedAt) {
   const goal = valid ? text(terminal.labels?.["summary.goal"]) : "";
   const activity = valid ? text(terminal.labels?.["summary.activity"]) : "";
   const sameActivity = before.activity === activity && before.goal === goal;
+  // Herdr's turn counter counts finished turns; the one at a report says which turn it describes.
+  const turn = Number.isInteger(terminal.turn) ? terminal.turn : undefined;
+  const reportTurn = !valid ? undefined : updatedAt !== before.updatedAt ? turn : before.reportTurn;
   return {
     pid, createdAt: terminal.created_ms, startedAt: started, observedAt,
-    goal, activity, updatedAt: valid ? updatedAt : null,
+    goal, activity, updatedAt: valid ? updatedAt : null, reportTurn,
     activityAt: activity ? (sameActivity ? before.activityAt ?? updatedAt : updatedAt) : null,
   };
+}
+
+// An agent report is current while no newer turn has started: none has finished
+// since, or one has (the one it was made in) and the agent is now at rest. The
+// transcript changes on every tool call, so its time alone can't tell.
+export function reportFreshness(terminal, record) {
+  if (!Number.isInteger(record.reportTurn) || !Number.isInteger(terminal.turn)) return null;
+  const finished = terminal.turn - record.reportTurn;
+  const resting = terminal.status === "idle" || terminal.status === "done";
+  return finished <= 0 || (finished === 1 && resting) ? "current" : "outdated";
 }
 
 export function activityState(terminal, record, observation, now = Date.now()) {
@@ -69,7 +82,9 @@ export function activityState(terminal, record, observation, now = Date.now()) {
   const selected = candidates[0];
   const inspected = observation?.session && !observation.error && now - observation.checkedAt < INSPECTION_TTL;
   let freshness = "unknown";
-  if (selected && inspected) {
+  const byTurn = selected?.source === "agent" ? reportFreshness(terminal, record) : null;
+  if (byTurn) freshness = byTurn;
+  else if (selected && inspected) {
     freshness = selected.source === "recap"
       ? (selected.stamp === observation.stamp ? "current" : "outdated")
       : (observation.conversationAt > selected.coverage + 10000 ? "outdated" : "current");

@@ -58,6 +58,27 @@ describe("Herdr conversation freshness", () => {
     }
     assert.equal(needed(terminal, {}, observed), true);
   });
+  it("keeps a report current through its own turn, whatever the transcript does", () => {
+    const working = { ...terminal, turn: 4, status: "working" };
+    assert.equal(state(working, { ...report, reportTurn: 4 }).freshness, "current");
+    assert.equal(state({ ...working, turn: 5, status: "idle" }, { ...report, reportTurn: 4 }).freshness, "current");
+    assert.equal(state({ ...working, turn: 5, status: "done" }, { ...report, reportTurn: 4 }, null).freshness, "current");
+    assert.equal(needed({ ...working, turn: 5, status: "idle" }, { ...report, reportTurn: 4 }), false);
+  });
+  it("marks a report outdated once a newer turn starts without one", () => {
+    assert.equal(state({ ...terminal, turn: 5, status: "working" }, { ...report, reportTurn: 4 }).freshness, "outdated");
+    assert.equal(state({ ...terminal, turn: 5, status: "blocked" }, { ...report, reportTurn: 4 }).freshness, "outdated");
+    assert.equal(state({ ...terminal, turn: 6, status: "idle" }, { ...report, reportTurn: 4 }).freshness, "outdated");
+  });
+  it("remembers the turn of each new report and keeps it while the report stands", () => {
+    const base = { ...terminal, created_ms: 1, turn: 3, labels: { "summary.goal": "G", "summary.activity": "A", "summary.updated": "1900" } };
+    const first = JSON.parse(evaluate(`JSON.stringify(observe(${JSON.stringify(base)}, undefined, ${now}, 1000))`));
+    assert.equal(first.reportTurn, 3);
+    const later = JSON.parse(evaluate(`JSON.stringify(observe(${JSON.stringify({ ...base, turn: 4 })}, ${JSON.stringify(first)}, ${now}, 1000))`));
+    assert.equal(later.reportTurn, 3);
+    const renewed = JSON.parse(evaluate(`JSON.stringify(observe(${JSON.stringify({ ...base, turn: 4, labels: { ...base.labels, "summary.updated": "1950" } })}, ${JSON.stringify(later)}, ${now}, 1000))`));
+    assert.equal(renewed.reportTurn, 4);
+  });
   it("rejects a report from a previous foreground process", () => {
     assert.equal(state(terminal, { ...report, pid: 99 }).source, null);
   });
