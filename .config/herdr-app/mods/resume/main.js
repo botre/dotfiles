@@ -3,6 +3,7 @@
 // keeps the label when it replaces a lost program with a fresh shell; the
 // `run` command (ctrl-shift-r) then types the resume command into each such
 // shell that sits idle at its prompt. Quitting an agent on purpose forgets it.
+// A resume that gives up is not offered again, only run again by hand.
 // Only kept terminals (your tabs) come back as shells, so only they count.
 // Draws nothing.
 
@@ -21,13 +22,19 @@ const EVERY = 20 * 1000;
 const DAY = 24 * 60 * 60 * 1000;
 const SEEN = "resume.lost"; // when each lost session was first seen
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// Flags worth carrying over. Nothing that loads code or config (no
+// Flags worth carrying over: 0 for a switch, 1 for one value, 2 for every
+// value up to the next flag. Nothing that loads code or config (no
 // --settings, --mcp-config, --plugin-dir, -c, --profile).
 const CARRY = {
-  claude: { "--model": 1, "--permission-mode": 1, "--effort": 1 },
+  claude: { "--model": 1, "--permission-mode": 1, "--effort": 1, "--add-dir": 2 },
   codex: { "--no-daemon": 0, "--sandbox": 1, "-s": 1, "--model": 1, "-m": 1, "--ask-for-approval": 1, "-a": 1 },
 };
 const VALUE = /^[A-Za-z0-9._:\[\]-]+$/;
+// A folder for --add-dir: no quote or control character, so it can be single-quoted.
+const FOLDER = /^[^-'\u0000-\u001f][^'\u0000-\u001f]*$/;
+const PATHS = new Set(["--add-dir"]);
+// A second Ctrl+Shift+R while the agent is still starting must not type the command again.
+const RETRY_AFTER = 60 * 1000;
 const SHELLS = new Set(["zsh", "bash", "fish", "sh", "dash", "nu"]);
 
 const base = (path) => (path ?? "").split("/").pop().replace(LEADING_HYPHEN_RE, "");
@@ -48,12 +55,37 @@ function carry(agent, argv) {
   const out = [];
   for (let i = 0; i < argv.length; i++) {
     const [flag, inline] = argv[i].split(FLAG_VALUE_RE);
-    if (!(flag in allowed)) continue;
+    if (!Object.prototype.hasOwnProperty.call(allowed, flag)) continue;
     if (allowed[flag] === 0) { out.push(flag); continue; }
-    const value = inline ?? argv[++i];
-    if (value !== undefined && VALUE.test(value)) out.push(flag, value);
+    const ok = (value) => (PATHS.has(flag) ? FOLDER : VALUE).test(value);
+    if (allowed[flag] === 1 || inline !== undefined) {
+      const value = inline ?? argv[++i];
+      if (value !== undefined && ok(value)) out.push(flag, value);
+      continue;
+    }
+    const values = [];
+    while (i + 1 < argv.length && !argv[i + 1].startsWith("-")) values.push(argv[++i]);
+    if (values.length && values.every(ok)) out.push(flag, ...values);
   }
   return out;
+}
+
+// carry() only lets through words that are plain or free of quotes.
+const quote = (word) => (VALUE.test(word) ? word : `'${word}'`);
+
+// When a process started, as ps prints it, or null.
+async function started(pid) {
+  const r = await exec("ps", ["-o", "lstart=", "-p", String(pid)]).catch(() => null);
+  return r?.code === 0 ? r.stdout.trim() || null : null;
+}
+
+// Whether herdr-core replaced the program the agent ran in. Pids start over
+// after a reboot, so a shell with the old pid must also have the old start time.
+async function replaced(t, rec) {
+  if (t.pid !== rec.shell) return true;
+  if (!rec.since) return false;
+  const now = await started(t.pid);
+  return Boolean(now) && now !== rec.since;
 }
 
 // Claude Code writes ~/.claude/sessions/<pid>.json for each running session.
@@ -62,11 +94,46 @@ async function claudeSession(pid) {
   return s?.sessionId && ID.test(s.sessionId) ? { session: s.sessionId, cwd: s.cwd } : null;
 }
 
+// Codex holds a lock file for each thread it writes, named by the thread's id.
+// Its own conversation is the one whose session file says a person started it;
+// the others are helpers (a reviewer, sub-agents). Linux only: elsewhere, and
+// before the first message, there is nothing to find and the title decides.
+const userThreads = new Map(); // id → whether it is a person's conversation
+const shellStarts = new Map(); // pid → start time, for the shells agents run in
+
+async function lockedThreads(pid) {
+  const r = await exec("find", [`/proc/${pid}/fd`, "-lname", "*/thread-writer-locks/*.lock", "-printf", "%l\\n"]).catch(() => null);
+  if (r?.code !== 0) return [];
+  return [...new Set(r.stdout.split("\n").map((l) => base(l).replace(/\.lock$/, "")).filter((id) => ID.test(id)))];
+}
+
+async function isUserThread(id) {
+  if (userThreads.has(id)) return userThreads.get(id);
+  const found = await exec("find", [`${home()}/.codex/sessions`, "-name", `rollout-*-${id}.jsonl`, "-print", "-quit"]).catch(() => null);
+  const path = found?.code === 0 ? found.stdout.trim() : "";
+  // No session file yet: it may still get one, so nothing is remembered.
+  if (!path) return false;
+  const head = await exec("head", ["-c", "8192", path]).catch(() => null);
+  const user = head?.code === 0 && head.stdout.includes('"thread_source":"user"');
+  userThreads.set(id, user);
+  return user;
+}
+
+async function codexByLock(pid) {
+  const ids = [];
+  for (const id of await lockedThreads(pid)) if (await isUserThread(id)) ids.push(id);
+  return ids.length === 1 ? { session: ids[0] } : null;
+}
+
 // Codex titles its terminal "<thread name> | <folder>"; the index maps
 // thread names to ids. A name used twice is ambiguous, so it is skipped.
 const readCodexIndex = () => readTextFile(`${home()}/.codex/session_index.jsonl`);
 
-async function codexSession(title, readIndex = readCodexIndex) {
+async function codexSession(title, readIndex = readCodexIndex, pid = null) {
+  if (pid) {
+    const locked = await codexByLock(pid);
+    if (locked) return locked;
+  }
   const name = (title ?? "").split(" | ")[0].trim();
   if (!name) return null;
   const text = (await readIndex()) ?? "";
@@ -85,10 +152,14 @@ function valid(rec) {
 
 // Lost: herdr-core replaced the process the agent ran in, and the new
 // shell sits idle at its prompt.
-function lost(t) {
+async function lost(t) {
   const rec = parse(t.labels?.[LABEL] ?? "");
-  return valid(rec) && t.state === "live" && t.pid !== rec.shell && idle(t) ? rec : null;
+  return valid(rec) && t.state === "live" && idle(t) && (await replaced(t, rec)) ? rec : null;
 }
+
+// A resume was typed and the agent is back at the shell: it gave up (the
+// folder is gone, the session can't be found). Only asked for by hand again.
+const tried = (rec, now = Date.now()) => Number.isFinite(rec.tried) && rec.tried <= now;
 
 // Claude writes its session file before the first message, its transcript
 // only after; without a transcript there is nothing to resume.
@@ -112,7 +183,7 @@ function command(rec) {
   const words = rec.agent === "claude"
     ? ["claude", ...flags, "--resume", rec.session]
     : ['"$HOME/scripts/herdr-codex"', "resume", ...flags, rec.session];
-  return `cd '${rec.cwd}' && ${words.join(" ")}`;
+  return `cd '${rec.cwd}' && ${words.map((w, i) => (rec.agent === "codex" && i === 0 ? w : quote(w))).join(" ")}`;
 }
 
 export default class Resume extends View {
@@ -144,7 +215,7 @@ export default class Resume extends View {
         const prog = program(t);
         const agent = prog === "claude" ? "claude" : prog === "codex" ? "codex" : null;
         if (agent) {
-          const found = agent === "claude" ? await claudeSession(t.foreground.pid) : await codexSession(t.title, readIndex);
+          const found = agent === "claude" ? await claudeSession(t.foreground.pid) : await codexSession(t.title, readIndex, t.foreground.pid);
           if (!found) return;
           const rec = {
             agent,
@@ -153,12 +224,14 @@ export default class Resume extends View {
             flags: carry(agent, (t.foreground.argv ?? []).slice(1)),
             shell: t.pid,
           };
+          if (!shellStarts.has(t.pid)) shellStarts.set(t.pid, await started(t.pid));
+          if (shellStarts.get(t.pid)) rec.since = shellStarts.get(t.pid);
           const text = JSON.stringify(rec);
           if (valid(rec) && saved !== text) await hc(["label", t.address, `${LABEL}=${text}`]);
         } else if (saved) {
           const rec = parse(saved);
           if (await this.forget(t, rec, seen, now, busy)) await hc(["label", t.address, `${LABEL}=`]);
-          else if (lost(t)) resumable.push(`${t.address}:${rec.session}`);
+          else if (!tried(rec) && (await lost(t))) resumable.push(`${t.address}:${rec.session}`);
         }
       }));
       const failure = results.find((result) => result.status === "rejected");
@@ -176,7 +249,7 @@ export default class Resume extends View {
   // there, and it was lost less than a day ago.
   async forget(t, rec, seen, now, busy) {
     if (!valid(rec)) return true;
-    if (t.pid === rec.shell) return idle(t); // the agent was quit on purpose
+    if (!(await replaced(t, rec))) return idle(t); // the agent was quit on purpose
     if (!idle(t)) {
       // The recovered shell runs something else; twice in a row, so that a
       // prompt helper caught mid-draw does not count.
@@ -208,11 +281,16 @@ export default class Resume extends View {
 
   async resume() {
     const done = [], skipped = [];
+    const now = Date.now();
     for (const t of terminals()) {
-      const rec = lost(t);
+      const rec = await lost(t);
       if (!rec) continue;
       const where = place(t);
+      if (tried(rec, now) && now - rec.tried < RETRY_AFTER) { skipped.push(`${where}: still starting`); continue; }
       if (!(await transcript(rec))) { skipped.push(`${where}: transcript gone`); continue; }
+      // Marked first, so the nudge stops and a second press can't type it twice.
+      const mark = await hc(["label", t.address, `${LABEL}=${JSON.stringify({ ...rec, tried: now })}`]);
+      if (mark.code !== 0) { skipped.push(`${where}: ${mark.stderr.trim() || "label failed"}`); continue; }
       const r = await hc(["send", t.address, command(rec)]);
       if (r.code !== 0) { skipped.push(`${where}: ${r.stderr.trim() || "send failed"}`); continue; }
       done.push(where);
