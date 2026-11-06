@@ -39,6 +39,138 @@ describe("Herdr mods", () => {
     });
   });
 
+  describe("agent-list inbox", () => {
+    const local = (...args) => new Date(...args).getTime();
+    const friday = local(2026, 10, 6, 14, 0); // Fri Nov 6 2026, 14:00
+    const helpers = loadMods(["agent-list/inbox.js"]);
+    const json = (expression, values) => JSON.parse(helpers(`JSON.stringify(${expression})`, values));
+
+    it("parses settle and snooze labels and refuses anything else", () => {
+      assert.deepEqual(json('parseSettled("1700:4")'), { at: 1700, turn: 4 });
+      for (const bad of ['""', '"x:1"', '"1:"', "undefined"]) assert.equal(helpers(`parseSettled(${bad})`), null);
+      assert.equal(helpers('parseSnoozed("1800")'), 1800);
+      assert.equal(helpers('parseSnoozed("soon")'), null);
+    });
+
+    it("shows a label just written until the core has it, but not for ever", () => {
+      const term = { address: "t1", labels: { "inbox.settled": "" } };
+      const pending = { t1: { "inbox.settled": "5:1", at: 1000 } };
+      assert.equal(helpers("labelOf(term, SETTLED, pending, 1500)", { term, pending }), "5:1");
+      assert.equal(helpers("labelOf(term, SETTLED, pending, 7000)", { term, pending }), "");
+      assert.equal(helpers("labelOf(term, SNOOZED, pending, 1500)", { term, pending }), "");
+      assert.deepEqual(Object.keys(json('withPending({old:{at:1}, t2:{a:"1",at:9000}}, "t2", {b:"2"}, 10000)')), ["t2"]);
+      assert.deepEqual(json('withPending({t2:{a:"1",at:9000}}, "t2", {b:"2"}, 10000)').t2, { a: "1", b: "2", at: 10000 });
+    });
+
+    it("offers snooze times soonest first, one per wake minute", () => {
+      assert.deepEqual(json("presets(now)", { now: friday }).map((p) => [p.id, p.wake]), [
+        ["hour", friday + 3600000], ["hours", friday + 3 * 3600000], ["evening", local(2026, 10, 6, 18)],
+        ["tomorrow", local(2026, 10, 7, 9)], ["week", local(2026, 10, 9, 9)],
+      ]);
+      const sunday = local(2026, 10, 8, 20, 0);
+      assert.deepEqual(json("presets(now)", { now: sunday }).map((p) => p.id), ["hour", "hours", "tomorrow"]);
+    });
+
+    it("names wake times by how far away they are", () => {
+      const cases = [[local(2026, 10, 6, 18), "18:00"], [local(2026, 10, 7, 9), "Tomorrow 9:00"], [local(2026, 10, 9, 9, 5), "Mon 9:05"], [local(2026, 10, 20, 9), "Nov 20 9:00"]];
+      for (const [wake, label] of cases) assert.equal(helpers("wakeLabel(wake, now)", { wake, now: friday }), label);
+    });
+
+    it("builds a one-line reference that can't submit the prompt", () => {
+      const text = helpers('reference({address:"t3", title:"Fix \\"double\\"\\ncharge", cwd:"/home/u/acme", home:"/home/u"})');
+      assert.equal(text, `[agent t3 "Fix 'double' charge" · ~/acme · read it with: hc read t3]`);
+      assert.equal(helpers('reference({address:"t4"})'), '[agent t4 "t4" · read it with: hc read t4]');
+    });
+
+    const sidebar = (terms, extra = {}) => {
+      const writes = [], notes = [], store = {};
+      let pending = {};
+      const evaluate = loadMods(["agent-list/inbox.js", "agent-list/main.js"], {
+        hc: async (args) => { writes.push(args); return { code: 0, stderr: "" }; },
+        notify: (n) => notes.push(n),
+        shared: (key) => (key === "agent-list.pending" ? pending : undefined),
+        setShared: (key, value) => { if (key === "agent-list.pending") pending = value; },
+        localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } },
+        run() {},
+        ...extra,
+      });
+      const view = evaluate("new Agents()");
+      Object.assign(view, { changed: {}, pins: [], woke: new Set(), listed: new Map(), terms: new Map(terms.map((t) => [t.address, t])) });
+      const tasks = [];
+      const cx = { spawn: (f) => tasks.push(f(cx)), notify() {}, timer: { after: (ms, f) => { if (ms === 0) f(cx); } } };
+      const settle = async () => { await Promise.all(tasks); tasks.length = 0; };
+      return { view, writes, notes, cx, settle, pendingOf: () => pending };
+    };
+    const plain = (value) => JSON.parse(JSON.stringify(value));
+    const agent = (address, status, extra = {}) => ({ address, status, pane: `p-${address}`, space_name: "daily", tab_name: "Work", ...extra });
+
+    it("keeps a settled agent on the shelf until a later turn or new work brings it back", async () => {
+      const terms = [
+        { address: "t1", turn: 4, labels: { "inbox.settled": "100:4" } },
+        { address: "t2", turn: 5, labels: { "inbox.settled": "100:4" } },
+        { address: "t3", turn: 4, labels: { "inbox.settled": "100:4" } },
+      ];
+      const { view, writes, cx, settle } = sidebar(terms);
+      const list = [agent("t1", "idle"), agent("t2", "idle"), agent("t3", "working")];
+      view.inbox(list, terms, () => 1, 1000, cx);
+      await settle();
+      assert.deepEqual([...view.shelf.keys()], ["t1"]);
+      assert.deepEqual(writes.map((w) => w.join(" ")).sort(), ["label t2 inbox.settled=", "label t3 inbox.settled="]);
+    });
+
+    it("wakes a due snooze with a notification, and a blocked one without", async () => {
+      const terms = [
+        { address: "t1", labels: { "inbox.snoozed": "500" } },
+        { address: "t2", labels: { "inbox.snoozed": "5000" } },
+        { address: "t3", labels: { "inbox.snoozed": "5000" } },
+      ];
+      const { view, writes, notes, cx, settle } = sidebar(terms);
+      view.inbox([agent("t1", "idle"), agent("t2", "blocked"), agent("t3", "done")], terms, () => 1, 1000, cx);
+      await settle();
+      assert.deepEqual([...view.shelf.keys()], ["t3"]);
+      assert.equal(writes.length, 2);
+      assert.equal(notes.length, 1);
+      assert.deepEqual(plain(notes[0].action), { name: "agent.focus", args: { terminal: "t1" } });
+      assert.ok(view.woke.has("t1"));
+    });
+
+    it("settles at once on screen, unpins, moves on, and undoes it all", async () => {
+      const terms = [{ address: "t1", turn: 7, labels: {} }, { address: "t2", turn: 1, labels: {} }];
+      const focus = [];
+      const { view, writes, cx, settle, pendingOf } = sidebar(terms, { run: (name, args) => focus.push([name, args]) });
+      view.pins = ["t1"];
+      view.activeOrder = [agent("t1", "idle", { focused: true }), agent("t2", "idle")];
+      await view.putAway(["t1"], "Settled", (a) => ({ "inbox.settled": `9:${view.terms.get(a).turn}`, "inbox.snoozed": "" }), cx);
+      assert.equal(pendingOf().t1["inbox.settled"], "9:7");
+      assert.deepEqual(plain(view.pins), []);
+      assert.deepEqual(plain(focus), [["pane.focus", { pane: "p-t2" }]]);
+      assert.equal(writes[0].join(" "), "label t1 inbox.settled=9:7 inbox.snoozed=");
+      assert.equal(view.undo.items.length, 1);
+      await view.undoLast(cx);
+      await settle();
+      assert.deepEqual(plain(view.pins), ["t1"]);
+      assert.equal(writes[1].join(" "), "label t1 inbox.settled= inbox.snoozed=");
+    });
+
+    it("holds a run that just stopped in Working, except when it is blocked", () => {
+      const { view } = sidebar([]);
+      view.changed = { t1: { s: "idle", at: 1000, prev: "working" } };
+      assert.equal(view.rank(agent("t1", "idle"), 2500), 2);
+      assert.equal(view.rank(agent("t1", "idle"), 3500), 1);
+      view.changed.t1.s = "blocked";
+      assert.equal(view.rank(agent("t1", "blocked"), 2500), 4);
+    });
+
+    it("seeds a first-seen agent's time from the core, and later changes from the clock", () => {
+      const { view } = sidebar([{ address: "t1", status_ms: 400 }, { address: "t2", status_ms: 99999 }]);
+      view.track([agent("t1", "idle"), agent("t2", "idle")], 1000);
+      assert.equal(view.changed.t1.at, 400);
+      assert.equal(view.changed.t2.at, 1000, "a time from the future is not trusted");
+      view.track([agent("t1", "working")], 2000);
+      assert.deepEqual(plain(view.changed.t1), { s: "working", at: 2000, prev: "idle" });
+    });
+  });
+
   describe("tab-actions cleanup", () => {
     const shell = { shell: true, agent: false }, app = { shell: false, agent: false }, agent = { shell: false, agent: true };
     const load = (panes, terminals = [], hc = async () => ({ code: 1 })) =>
