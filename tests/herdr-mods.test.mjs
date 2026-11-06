@@ -210,6 +210,37 @@ describe("Herdr mods", () => {
     });
   });
 
+  describe("agent-commands", () => {
+    const evaluate = loadMods(["agent-commands/main.js"]);
+    const entry = (type, content) => JSON.stringify({ type, message: { role: type, content } });
+    const text = (t) => [{ type: "text", text: t }];
+
+    it("picks the ! lines of every reply since the last prompt, once each", () => {
+      const jsonl = [
+        entry("user", "first prompt"),
+        entry("assistant", text("Old:\n! echo old")),
+        entry("user", "fix it"),
+        entry("assistant", text("Run that first:\n\n! cd ~/a && pnpm exec cf dns delete --force\n\nThen:")),
+        entry("assistant", [{ type: "tool_use", name: "Bash" }]),
+        entry("user", [{ type: "tool_result", content: "ok" }]),
+        JSON.stringify({ type: "api-request-blob", message: { role: "assistant", content: text("! echo skipped") } }),
+        entry("assistant", text("```\n!  pnpm exec cf email-routing enable  \n```\n! cd ~/a && pnpm exec cf dns delete --force\nnot ! this one")),
+        "not json",
+      ].join("\n");
+      assert.deepEqual(JSON.parse(evaluate("JSON.stringify(suggestedCommands(jsonl))", { jsonl })), ["cd ~/a && pnpm exec cf dns delete --force", "pnpm exec cf email-routing enable"]);
+      assert.equal(evaluate("suggestedCommands(jsonl).length", { jsonl: [entry("assistant", text("! echo a")), entry("user", "new prompt")].join("\n") }), 0);
+    });
+
+    it("finds the session from Herdr's label or the resume record, and refuses anything else", () => {
+      const id = "2ae85a05-3a01-4fcd-b7a3-e12da61b34b5";
+      const fromLabel = JSON.parse(evaluate("JSON.stringify(sessionOf(t))", { t: { labels: { "herdr.session": id }, foreground: { cwd: "/home/u/calmdots" } } }));
+      assert.deepEqual(fromLabel, { session: id, folders: ["/home/u/calmdots"] });
+      const resume = JSON.stringify({ session: id, cwd: "/home/u/a" });
+      assert.deepEqual(JSON.parse(evaluate("JSON.stringify(sessionOf(t))", { t: { labels: { resume }, foreground: { cwd: "/home/u/a/sub" } } })).folders, ["/home/u/a", "/home/u/a/sub"]);
+      assert.equal(evaluate("sessionOf(t)", { t: { labels: { "herdr.session": "../../etc/passwd" } } }), null);
+    });
+  });
+
   describe("agent-tabs", () => {
     const evaluate = loadMods(["agent-tabs/main.js"]);
     const ids = (expression, values) => JSON.parse(evaluate(`JSON.stringify(${expression}.map((t) => t.id))`, values));
