@@ -39,6 +39,28 @@ describe("Herdr mods", () => {
     });
   });
 
+  describe("agent-list unreported agents", () => {
+    const evaluate = loadMods(["agent-list/inbox.js", "agent-list/main.js"]);
+    it("lists a Claude or Codex pane that reports no status, with its status read from the title", () => {
+      const listed = [{ address: "t1" }];
+      const all = [
+        { address: "t1", state: "live", foreground: { argv: ["/opt/claude-code/bin/claude"] }, title: "x" },
+        { address: "t2", state: "live", foreground: { argv: ["/opt/claude-code/bin/claude"] }, title: "\u25D0 Telegram chat UI issues" },
+        { address: "t3", state: "live", foreground: { name: "codex" }, title: "Review | ~/x" },
+        { address: "t4", state: "live", foreground: { argv: ["/usr/bin/zsh"] }, title: "\u25D0 zsh" },
+        { address: "t5", state: "live", foreground: { argv: ["claude"] }, title: "no pane" },
+        { address: "t6", state: "finished", foreground: { argv: ["claude"] }, title: "gone" },
+      ];
+      const panes = ["t1", "t2", "t3", "t4", "t6"].map((t, i) => ({ pane: `p${i}`, terminal: t, tab: "tb1", focused: t === "t2", program: { key: "claude" } }));
+      const spaces = [{ id: "sp1", name: "daily", tabs: [{ id: "tb1", index: 1, name: "Calmdots" }] }];
+      const rows = JSON.parse(evaluate("JSON.stringify(unreportedAgents(listed, all, panes, spaces))", { listed, all, panes, spaces }));
+      assert.deepEqual(rows.map((r) => [r.address, r.status, r.pane, r.space_name, r.focused, r.unreported]), [
+        ["t2", "working", "p1", "daily", true, true],
+        ["t3", "idle", "p2", "daily", false, true],
+      ]);
+    });
+  });
+
   describe("agent-list inbox", () => {
     const local = (...args) => new Date(...args).getTime();
     const friday = local(2026, 10, 6, 14, 0); // Fri Nov 6 2026, 14:00

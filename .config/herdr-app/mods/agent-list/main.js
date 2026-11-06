@@ -104,6 +104,37 @@ function menuItems(address, { snoozeOnly = false, finished = false, blocked = fa
 
 const menuHeight = (items) => 10 + items.reduce((h, it) => h + (it.heading ? 26 : MENU_ROW), 0);
 
+// Agent programs a terminal can run while Herdr lists it only once it reports a status.
+const AGENT_PROGRAMS = new Set(["claude", "codex"]);
+// Claude Code and Codex spin a half circle or braille dots in the title while they work.
+const WORKING_TITLE_RE = /^[\u25D0-\u25D3\u2800-\u28FF]/;
+
+// Terminals in a pane that run Claude Code or Codex but report no status, as
+// rows like agents()'s. Claude Code stops reporting once it moves a session into
+// its background daemon; the title still spins, so it gives a rough status.
+export function unreportedAgents(listed, all, allPanes, allSpaces) {
+  const known = new Set(listed.map((a) => a.address));
+  const byTerminal = new Map(allPanes.filter((p) => p.terminal).map((p) => [p.terminal, p]));
+  const rows = [];
+  for (const t of all) {
+    if (t.state !== "live" || known.has(t.address)) continue;
+    const name = String(t.foreground?.argv?.[0] ?? t.foreground?.name ?? "").split("/").pop();
+    if (!AGENT_PROGRAMS.has(name)) continue;
+    const pane = byTerminal.get(t.address);
+    if (!pane) continue;
+    const space = allSpaces.find((s) => s.tabs.some((tab) => tab.id === pane.tab));
+    const tab = space?.tabs.find((x) => x.id === pane.tab);
+    if (!space || !tab) continue;
+    rows.push({
+      address: t.address, pane: pane.pane, space: space.id, space_name: space.name,
+      tab: tab.id, tab_index: tab.index, tab_name: tab.name,
+      status: WORKING_TITLE_RE.test(t.title ?? "") ? "working" : "idle",
+      app: null, program: pane.program, title: t.title ?? "", seq: 0, focused: pane.focused, unreported: true,
+    });
+  }
+  return rows;
+}
+
 function icon(p, size, color) {
   if (!p?.icon) return null;
   return p.tint ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
@@ -528,9 +559,10 @@ export default class Agents extends View {
     if (props()?.rowMenu) return this.rowMenu(t);
     const collapsed = narrow();
     const sort = sortOf();
-    let list = agents();
-    this.listed = new Map(list.map((a) => [a.address, a.status]));
     const all = terminals();
+    let list = agents();
+    list = [...list, ...unreportedAgents(list, all, panes(), spaces())];
+    this.listed = new Map(list.map((a) => [a.address, a.status]));
     this.terms = new Map(all.map((k) => [k.address, k]));
     const shown = focused()?.agent;
     const now = Date.now();
@@ -701,6 +733,8 @@ export default class Agents extends View {
         .when(woke && this.hovered !== a.address, el => el.child(div().flex_none().text_size(10.5).font_medium().text_color(t.accent).child("Woke")))
         .when(this.hovered === a.address, el => el.child(actions))
         .when(this.hovered !== a.address && !woke && Boolean(when), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child(duration(now - when))))
+        .when(Boolean(a.unreported), el => el.child(div().id(`unreported-${a.address}`).flex_none().text_size(10.5).text_color(t.dim)
+          .tooltip("Not reporting to Herdr; status read from its title").child("?")))
         .child(this.status(t, a, byPriority && !isPinned));
     };
 
