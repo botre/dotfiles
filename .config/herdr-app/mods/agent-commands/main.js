@@ -2,8 +2,7 @@
 // screen right now: the "! " lines of its replies. It follows the chat: scroll
 // up to an older suggestion and it comes back, scroll past it and it goes.
 // Run types the line into Claude, which runs it in its bash mode as if typed;
-// Insert puts it in the prompt without Enter; the cross hides it while it
-// stays on screen. A command that has run, here or typed, leaves the strip.
+// the cross hides it while it stays on screen. A command that has run, here or typed, leaves the strip.
 // The layout gives this block no height; it grows while there are commands.
 
 import { View, div, svg } from "gpui-kit";
@@ -124,16 +123,6 @@ export default class Commands extends View {
     if (r.code !== 0) notify({ title: "Couldn't run the command", body: r.stderr?.trim() || undefined, level: "error" });
   }
 
-  // Insert: puts the line in Claude's prompt to edit or send. Through the
-  // clipboard, which gets its old text back afterwards.
-  insert(command, cx) {
-    const old = cx.read_from_clipboard();
-    cx.write_to_clipboard(`! ${command}`);
-    run("pane.focus", { terminal: this.address });
-    run("terminal.paste");
-    if (old !== undefined) cx.timer.after(500, (cx) => cx.write_to_clipboard(old));
-  }
-
   dismiss(command, cx) {
     this.dismissed.add(`${this.address}:${command}`);
     this.hide(command, cx);
@@ -142,7 +131,7 @@ export default class Commands extends View {
   render() {
     const t = theme();
     if (!this.commands.length) return div();
-    const button = (id, label, solid, onClick) => div()
+    const button = (id, label, onClick) => div()
       .id(id)
       .flex_none()
       .h(22)
@@ -152,8 +141,9 @@ export default class Commands extends View {
       .items_center()
       .text_size(11.5)
       .cursor_pointer()
-      .when(solid, (el) => el.bg(t.solid).text_color(t.solid_foreground).hover((s) => s.opacity(0.9)))
-      .when(!solid, (el) => el.border_1().border_color(t.border).text_color(t.foreground).hover((s) => s.bg(t.hover)))
+      .bg(t.solid)
+      .text_color(t.solid_foreground)
+      .hover((s) => s.opacity(0.9))
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
       .on_click((_e, cx) => onClick(cx))
       .child(label);
@@ -181,8 +171,7 @@ export default class Commands extends View {
         .child(div().id(`command-text-${i}`).flex_1().min_w(0).truncate().font_family("JetBrains Mono").text_size(12)
           .text_color(t.foreground).tooltip(command).child(command))
         .when(i === shown.length - 1 && more > 0, (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(`+${more} more`)))
-        .child(button(`insert-${i}`, "Insert", false, (cx) => this.insert(command, cx)))
-        .child(button(`run-${i}`, "Run", true, (cx) => cx.spawn(async (cx) => this.send(command, cx))))
+        .child(button(`run-${i}`, "Run", (cx) => cx.spawn(async (cx) => this.send(command, cx))))
         .child(div()
           .id(`dismiss-${i}`)
           .flex_none()
