@@ -50,13 +50,18 @@ describe("Herdr mods", () => {
         { address: "t4", state: "live", foreground: { argv: ["/usr/bin/zsh"] }, title: "\u25D0 zsh" },
         { address: "t5", state: "live", foreground: { argv: ["claude"] }, title: "no pane" },
         { address: "t6", state: "finished", foreground: { argv: ["claude"] }, title: "gone" },
+        { address: "t7", state: "live", foreground: { name: "codex", argv: ["node", "/usr/lib/node_modules/@openai/codex/bin/codex"] }, title: "\u2819 Fix | ~/y" },
       ];
-      const panes = ["t1", "t2", "t3", "t4", "t6"].map((t, i) => ({ pane: `p${i}`, terminal: t, tab: "tb1", focused: t === "t2", program: { key: "claude" } }));
+      const panes = ["t1", "t2", "t3", "t4", "t6", "t7"].map((t, i) => ({ pane: `p${i}`, terminal: t, tab: "tb1", focused: t === "t2", program: { key: "claude" } }));
       const spaces = [{ id: "sp1", name: "daily", tabs: [{ id: "tb1", index: 1, name: "Calmdots" }] }];
-      const rows = JSON.parse(evaluate("JSON.stringify(unreportedAgents(listed, all, panes, spaces))", { listed, all, panes, spaces }));
+      // terminals() drops the spinner; the titles read from hc keep it.
+      const titles = new Map(all.map((t) => [t.address, t.title]));
+      for (const t of all) t.title = t.title.replace(/^\S+ /, "");
+      const rows = JSON.parse(evaluate("JSON.stringify(unreportedAgents(listed, all, panes, spaces, titles))", { listed, all, panes, spaces, titles }));
       assert.deepEqual(rows.map((r) => [r.address, r.status, r.pane, r.space_name, r.focused, r.unreported]), [
         ["t2", "working", "p1", "daily", true, true],
         ["t3", "idle", "p2", "daily", false, true],
+        ["t7", "working", "p5", "daily", false, true],
       ]);
     });
   });
@@ -172,6 +177,18 @@ describe("Herdr mods", () => {
       await settle();
       assert.deepEqual(plain(view.pins), ["t1"]);
       assert.equal(writes[1].join(" "), "label t1 inbox.settled= inbox.snoozed=");
+    });
+
+    it("settles or brings back the focused terminal even when it reports no status", async () => {
+      const terms = [{ address: "t3", turn: 0, labels: { "inbox.settled": "5:0" } }];
+      const { view, writes, cx } = sidebar(terms, { focused: () => ({ agent: null, terminal: "t3" }), agents: () => [] });
+      view.rows = new Set(["t3"]);
+      view.shelf = new Map([["t3", { kind: "settled", at: 5 }]]);
+      await view.settleInView(cx);
+      assert.equal(writes[0].join(" "), "label t3 inbox.settled=");
+      view.rows = new Set();
+      await view.settleInView(cx);
+      assert.equal(writes.length, 1, "a terminal the list doesn't show is left alone");
     });
 
     it("holds a run that just stopped in Working, except when it is blocked", () => {
