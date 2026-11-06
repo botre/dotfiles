@@ -1,69 +1,53 @@
-// A strip under the chat with the shell commands Claude Code suggested in its
-// last reply: the lines that start with "! ". Run types the line into Claude,
-// which runs it in its bash mode, as if typed; Insert types it without Enter.
-// The layout gives this block no height; it grows while there are commands
-// for the agent in view and goes back to nothing when there are none.
+// A strip under the chat with the shell commands Claude Code suggests on
+// screen right now: the "! " lines of its replies. It follows the chat: scroll
+// up to an older suggestion and it comes back, scroll past it and it goes.
+// Run types the line into Claude, which runs it in its bash mode as if typed;
+// the cross hides it while it stays on screen. A command that has run, here or typed, leaves the strip.
+// The layout gives this block no height; it grows while there are commands.
 
 import { View, div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { terminals, focused, hc, exec, home, run, theme, props, notify } from "herdr";
+import { terminals, focused, hc, run, theme, props, notify } from "herdr";
 
-const EVERY = 2000;
+const EVERY = 1500;
 const ROW = 30;
 const PAD = 8;
 const MAX = 5;
-// Enough of the end of a transcript to hold the last turn.
-const TAIL_BYTES = "400000";
-const BANG_RE = /^\s*!\s+(\S.*)$/;
-const CONTROL_RE = /[\u0000-\u001f\u007f\u2028\u2029]/;
-const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const NON_ALPHANUMERIC_RE = /[^A-Za-z0-9]/g;
+// Claude indents its replies, so a suggestion starts after spaces; a command
+// that ran (bash mode) starts at the edge.
+const SUGGESTED_RE = /^( {2,})! (\S.*)$/;
+const EXECUTED_RE = /^! +(\S.*)$/;
+const LIST_OR_COMMAND_RE = /^\s*(! |[-*] )/;
+// A wrapped row is nearly full; Claude breaks at spaces, so a little short.
+const WRAP_SLACK = 24;
+const RAN = "ran";
+const KEEP_RAN = 200;
 
-function parse(text) {
-  try { return JSON.parse(text); } catch { return null; }
-}
+const norm = (command) => command.replace(/\s+/g, " ").trim();
 
-// A prompt from the person, not a tool's result handed back to the model.
-function isPrompt(entry) {
-  if (entry?.type !== "user") return false;
-  const content = entry.message?.content;
-  if (typeof content === "string") return true;
-  return Array.isArray(content) && content.some((c) => c?.type === "text");
-}
-
-// The "! " lines of every reply since the person's last prompt, in order, once
-// each. One line each: a command that spans lines can't be typed as one.
-export function suggestedCommands(jsonl) {
-  const texts = [];
-  for (const line of jsonl.split("\n").reverse()) {
-    const entry = parse(line);
-    if (!entry) continue;
-    if (isPrompt(entry)) break;
-    if (entry.type !== "assistant" || !Array.isArray(entry.message?.content)) continue;
-    const text = entry.message.content.filter((c) => c?.type === "text").map((c) => c.text).join("\n");
-    if (text) texts.unshift(text);
-  }
-  const seen = new Set();
-  const commands = [];
-  for (const text of texts) {
-    for (const line of text.split("\n")) {
-      const m = BANG_RE.exec(line);
-      const command = m?.[1].trim();
-      if (!command || CONTROL_RE.test(command) || seen.has(command)) continue;
-      seen.add(command);
-      commands.push(command);
+// The suggested and the already run commands on a screen, each joined back
+// from the rows it wraps onto (same indent, the row above nearly full).
+export function screenCommands(screen, cols = 200) {
+  const rows = screen.split("\n").map((r) => r.replace(/\s+$/, ""));
+  const suggested = [], executed = new Set();
+  for (let i = 0; i < rows.length; i++) {
+    const s = SUGGESTED_RE.exec(rows[i]);
+    const e = s ? null : EXECUTED_RE.exec(rows[i]);
+    if (!s && !e) continue;
+    let command = s ? s[2] : e[1];
+    const indent = s ? s[1] : "  ";
+    let last = rows[i];
+    while (i + 1 < rows.length && last.length >= cols - WRAP_SLACK) {
+      const next = rows[i + 1];
+      if (!next.trim() || !next.startsWith(indent) || next[indent.length] === " " || LIST_OR_COMMAND_RE.test(next)) break;
+      command += ` ${next.trim()}`;
+      last = next;
+      i++;
     }
+    if (s) { if (!suggested.includes(norm(command))) suggested.push(norm(command)); }
+    else executed.add(norm(command));
   }
-  return commands;
-}
-
-// The Claude Code session a terminal runs, and the folders its transcript may be under.
-export function sessionOf(terminal) {
-  const resume = parse(terminal?.labels?.resume ?? "") ?? {};
-  const session = [terminal?.labels?.["herdr.session"], resume.session].find((s) => ID_RE.test(s ?? ""));
-  if (!session) return null;
-  const folders = [...new Set([resume.cwd, terminal.foreground?.cwd].filter((f) => typeof f === "string" && f.startsWith("/")))];
-  return { session, folders };
+  return { suggested, executed };
 }
 
 const isClaude = (t) => t?.state === "live" && (t.program?.key === "claude" || t.report?.app === "claude-code" || t.foreground?.name === "claude");
@@ -71,13 +55,19 @@ const isClaude = (t) => t?.state === "live" && (t.program?.key === "claude" || t
 export default class Commands extends View {
   init(_props, cx) {
     this.commands = [];
-    this.ran = new Set();
+    this.ran = new Set(JSON.parse(localStorage.getItem(RAN) ?? "[]"));
+    this.dismissed = new Set();
     this.height = 0;
     cx.timer.every(EVERY, (cx) => cx.spawn(async (cx) => this.load(cx)));
     cx.spawn(async (cx) => this.load(cx));
   }
 
-  // The commands for the agent in view, from the end of its transcript.
+  remember(key) {
+    this.ran.add(key);
+    localStorage.setItem(RAN, JSON.stringify([...this.ran].slice(-KEEP_RAN)));
+  }
+
+  // The commands on the screen of the agent in view.
   async load(cx) {
     if (this.loading) return;
     this.loading = true;
@@ -85,60 +75,63 @@ export default class Commands extends View {
       const f = focused();
       const address = f?.agent ?? f?.terminal;
       const terminal = terminals().find((t) => t.address === address);
-      const found = isClaude(terminal) ? sessionOf(terminal) : null;
       let commands = [];
-      if (found && !address.includes("/")) {
-        for (const folder of found.folders) {
-          const path = `${home()}/.claude/projects/${folder.replace(NON_ALPHANUMERIC_RE, "-")}/${found.session}.jsonl`;
-          const r = await exec("tail", ["-c", TAIL_BYTES, path]).catch(() => null);
-          if (r?.code !== 0) continue;
-          commands = suggestedCommands(r.stdout);
-          break;
+      if (isClaude(terminal)) {
+        const r = await hc(["read", address]).catch(() => null);
+        if (r?.code === 0) {
+          const { suggested, executed } = screenCommands(r.stdout, terminal.cols);
+          for (const c of executed) if (!this.ran.has(`${address}:${c}`)) this.remember(`${address}:${c}`);
+          const shown = new Set(suggested.map((c) => `${address}:${c}`));
+          // A dismissal lasts while its line stays on screen.
+          for (const key of this.dismissed) if (key.startsWith(`${address}:`) && !shown.has(key)) this.dismissed.delete(key);
+          commands = suggested.filter((c) => !this.ran.has(`${address}:${c}`) && !this.dismissed.has(`${address}:${c}`));
         }
       }
-      const key = `${address}:${commands.join("\n")}`;
-      if (key !== this.key) {
-        this.key = key;
-        this.address = address;
-        this.session = found?.session ?? null;
-        this.commands = commands;
-        this.fit();
-        cx.notify();
-      }
+      this.show(address, commands, cx);
     } finally { this.loading = false; }
+  }
+
+  show(address, commands, cx) {
+    const key = `${address}\n${commands.join("\n")}`;
+    if (key === this.key) return;
+    this.key = key;
+    this.address = address;
+    this.commands = commands;
+    this.fit();
+    cx.notify();
   }
 
   // Grows the block to its rows, or back to nothing.
   fit() {
     const shown = Math.min(this.commands.length, MAX);
-    const height = shown ? PAD * 2 + shown * ROW : 0;
+    const height = shown ? PAD * 2 + shown * ROW + (shown - 1) * 2 : 0;
     if (height === this.height) return;
     this.height = height;
     run("layout.resize", { id: props()?.block ?? "commands", px: height });
   }
 
-  // Run: Claude runs the line in its bash mode and then reads the output, as
-  // when it is typed. hc waits until the person stops typing first.
-  async send(command) {
-    const r = await hc(["send", this.address, `! ${command}`]).catch((e) => ({ code: 1, stderr: String(e) }));
-    if (r.code !== 0) { notify({ title: "Couldn't run the command", body: r.stderr?.trim() || undefined, level: "error" }); return; }
-    this.ran.add(`${this.session}:${command}`);
+  hide(command, cx) {
+    this.show(this.address, this.commands.filter((c) => c !== command), cx);
   }
 
-  // Insert: puts the line in Claude's prompt to edit or send. Through the
-  // clipboard, which gets its old text back afterwards.
-  insert(command, cx) {
-    const old = cx.read_from_clipboard();
-    cx.write_to_clipboard(`! ${command}`);
-    run("pane.focus", { terminal: this.address });
-    run("terminal.paste");
-    if (old !== undefined) cx.timer.after(500, (cx) => cx.write_to_clipboard(old));
+  // Run: Claude runs the line in its bash mode and then reads the output, as
+  // when it is typed. hc waits until the person stops typing first.
+  async send(command, cx) {
+    this.remember(`${this.address}:${command}`);
+    this.hide(command, cx);
+    const r = await hc(["send", this.address, `! ${command}`]).catch((e) => ({ code: 1, stderr: String(e) }));
+    if (r.code !== 0) notify({ title: "Couldn't run the command", body: r.stderr?.trim() || undefined, level: "error" });
+  }
+
+  dismiss(command, cx) {
+    this.dismissed.add(`${this.address}:${command}`);
+    this.hide(command, cx);
   }
 
   render() {
     const t = theme();
     if (!this.commands.length) return div();
-    const button = (id, label, solid, onClick) => div()
+    const button = (id, label, onClick) => div()
       .id(id)
       .flex_none()
       .h(22)
@@ -148,8 +141,9 @@ export default class Commands extends View {
       .items_center()
       .text_size(11.5)
       .cursor_pointer()
-      .when(solid, (el) => el.bg(t.solid).text_color(t.solid_foreground).hover((s) => s.opacity(0.9)))
-      .when(!solid, (el) => el.border_1().border_color(t.border).text_color(t.foreground).hover((s) => s.bg(t.hover)))
+      .bg(t.solid)
+      .text_color(t.solid_foreground)
+      .hover((s) => s.opacity(0.9))
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
       .on_click((_e, cx) => onClick(cx))
       .child(label);
@@ -160,27 +154,35 @@ export default class Commands extends View {
       .py(PAD)
       .px(4)
       .bg(t.canvas)
-      .children(shown.map((command, i) => {
-        const ran = this.ran.has(`${this.session}:${command}`);
-        return h_flex()
-          .id(`command-${i}`)
-          .h(ROW)
+      .children(shown.map((command, i) => h_flex()
+        .id(`command-${i}`)
+        .h(ROW)
+        .flex_none()
+        .pl(10)
+        .pr(4)
+        .gap(8)
+        .items_center()
+        .rounded(8)
+        .bg(t.raised)
+        .border_1()
+        .border_color(t.border)
+        .when(i > 0, (el) => el.mt(2))
+        .child(div().flex_none().text_size(12).font_bold().text_color(t.blocked).child("!"))
+        .child(div().id(`command-text-${i}`).flex_1().min_w(0).truncate().font_family("JetBrains Mono").text_size(12)
+          .text_color(t.foreground).tooltip(command).child(command))
+        .when(i === shown.length - 1 && more > 0, (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(`+${more} more`)))
+        .child(button(`run-${i}`, "Run", (cx) => cx.spawn(async (cx) => this.send(command, cx))))
+        .child(div()
+          .id(`dismiss-${i}`)
           .flex_none()
-          .px(10)
-          .gap(8)
-          .items_center()
-          .rounded(8)
-          .bg(t.raised)
-          .border_1()
-          .border_color(t.border)
-          .when(i > 0, (el) => el.mt(2))
-          .child(div().flex_none().text_size(12).font_bold().text_color(t.blocked).child("!"))
-          .child(div().id(`command-text-${i}`).flex_1().min_w(0).truncate().font_family("JetBrains Mono").text_size(12)
-            .text_color(ran ? t.muted : t.foreground).tooltip(command).child(command))
-          .when(i === shown.length - 1 && more > 0, (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(`+${more} more`)))
-          .when(ran, (el) => el.child(svg("mods/workspace-chrome/check.svg").size(13).flex_none().text_color(t.ansi2)))
-          .child(button(`insert-${i}`, "Insert", false, (cx) => this.insert(command, cx)))
-          .child(button(`run-${i}`, "Run", true, (cx) => cx.spawn(async (cx) => { await this.send(command); cx.notify(); })));
-      }));
+          .p(4)
+          .rounded(5)
+          .text_color(t.dim)
+          .cursor_pointer()
+          .hover((s) => s.bg(t.hover).text_color(t.foreground))
+          .tooltip("Dismiss while it stays on screen")
+          .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+          .on_click((_e, cx) => this.dismiss(command, cx))
+          .child(svg("mods/pane/close.svg").size(12)))));
   }
 }
