@@ -112,14 +112,16 @@ const WORKING_TITLE_RE = /^[\u25D0-\u25D3\u2800-\u28FF]/;
 // Terminals in a pane that run Claude Code or Codex but report no status, as
 // rows like agents()'s. Claude Code stops reporting once it moves a session into
 // its background daemon; the title still spins, so it gives a rough status.
-export function unreportedAgents(listed, all, allPanes, allSpaces) {
+// terminals() drops the spinner from titles, so `titles` holds them as hc has them.
+export function unreportedAgents(listed, all, allPanes, allSpaces, titles = new Map()) {
   const known = new Set(listed.map((a) => a.address));
   const byTerminal = new Map(allPanes.filter((p) => p.terminal).map((p) => [p.terminal, p]));
   const rows = [];
   for (const t of all) {
     if (t.state !== "live" || known.has(t.address)) continue;
-    const name = String(t.foreground?.argv?.[0] ?? t.foreground?.name ?? "").split("/").pop();
-    if (!AGENT_PROGRAMS.has(name)) continue;
+    // By the process's name too: a wrapper (node …/codex) starts with its interpreter.
+    const names = [t.foreground?.name, String(t.foreground?.argv?.[0] ?? "").split("/").pop()];
+    if (!names.some((n) => AGENT_PROGRAMS.has(n))) continue;
     const pane = byTerminal.get(t.address);
     if (!pane) continue;
     const space = allSpaces.find((s) => s.tabs.some((tab) => tab.id === pane.tab));
@@ -128,7 +130,7 @@ export function unreportedAgents(listed, all, allPanes, allSpaces) {
     rows.push({
       address: t.address, pane: pane.pane, space: space.id, space_name: space.name,
       tab: tab.id, tab_index: tab.index, tab_name: tab.name,
-      status: WORKING_TITLE_RE.test(t.title ?? "") ? "working" : "idle",
+      status: WORKING_TITLE_RE.test(titles.get(t.address) ?? "") ? "working" : "idle",
       app: null, program: pane.program, title: t.title ?? "", seq: 0, focused: pane.focused, unreported: true,
     });
   }
@@ -158,6 +160,8 @@ export default class Agents extends View {
     this.sessions = new SessionTracker();
     cx.spawn(async (cx) => this.sessions.sync(cx));
     cx.timer.every(5000, (cx) => cx.spawn(async (cx) => this.sessions.sync(cx)));
+    this.rawTitles = new Map();
+    cx.timer.every(3000, (cx) => cx.spawn(async (cx) => this.readTitles(cx)));
     // Snoozes are checked on every draw; this draws often enough to wake them on time.
     cx.timer.every(15000, (cx) => cx.notify());
     cx.spawn(async (cx) => {
@@ -167,6 +171,22 @@ export default class Agents extends View {
         cx.notify();
       }
     });
+  }
+
+  // Reads the titles of agents that report no status as hc has them, spinner and all.
+  async readTitles(cx) {
+    if (this.readingTitles) return;
+    this.readingTitles = true;
+    try {
+      const next = new Map();
+      for (const address of this.unreported ?? []) {
+        const r = await hc(["get", address, "--json"]).catch(() => null);
+        try { if (r?.code === 0) next.set(address, JSON.parse(r.stdout).title ?? ""); } catch { /* not JSON: no title */ }
+      }
+      const changed = next.size !== this.rawTitles.size || [...next].some(([a, title]) => this.rawTitles.get(a) !== title);
+      this.rawTitles = next;
+      if (changed) cx.notify();
+    } finally { this.readingTitles = false; }
   }
 
   // Key commands, and what the row menu asks for (it closes before its tasks could finish).
@@ -295,7 +315,10 @@ export default class Agents extends View {
 
   // ctrl-shift-s: settles the agent in view when it is finished, or brings it back.
   async settleInView(cx) {
-    const address = focused()?.agent ?? this.activeOrder?.find((a) => a.focused)?.address ?? agents().find((a) => a.focused)?.address;
+    // The agent block's agent, else the focused terminal: one that reports no
+    // status has no agent block, and a settled one isn't among the active rows.
+    const f = focused();
+    const address = [f?.agent, f?.terminal].find((a) => a && this.rows?.has(a));
     if (!address) return;
     const shelf = this.shelf?.get(address);
     if (shelf?.kind === "settled") return this.write(address, { [SETTLED]: "" });
@@ -561,7 +584,9 @@ export default class Agents extends View {
     const sort = sortOf();
     const all = terminals();
     let list = agents();
-    list = [...list, ...unreportedAgents(list, all, panes(), spaces())];
+    const unreported = unreportedAgents(list, all, panes(), spaces(), this.rawTitles);
+    this.unreported = unreported.map((a) => a.address);
+    list = [...list, ...unreported];
     this.listed = new Map(list.map((a) => [a.address, a.status]));
     this.terms = new Map(all.map((k) => [k.address, k]));
     const shown = focused()?.agent;
@@ -599,6 +624,7 @@ export default class Agents extends View {
     const rest = list.filter((a) => !this.pins.includes(a.address));
     list = [...pinned, ...rest];
     this.activeOrder = list;
+    this.rows = new Set([...list, ...snoozed, ...settled].map((a) => a.address));
     setAgentOrder([...list, ...snoozed, ...settled].map((a) => a.address));
 
     const withKids = (a, i) => {
