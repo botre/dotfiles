@@ -171,6 +171,48 @@ describe("Herdr mods", () => {
     });
   });
 
+  describe("agent-tabs", () => {
+    const evaluate = loadMods(["agent-tabs/main.js"]);
+    const ids = (expression, values) => JSON.parse(evaluate(`JSON.stringify(${expression}.map((t) => t.id))`, values));
+    const tab = (id, active = false) => ({ id, active });
+    const agentPane = (tabId, terminal) => ({ tab: tabId, terminal, program: { agent: true } });
+
+    it("hides a tab only when every agent in it is snoozed, and never the tab in view", () => {
+      const space = { tabs: [tab("a"), tab("b"), tab("c"), tab("d", true), tab("e"), tab("f"), tab("g")] };
+      const all = [
+        agentPane("a", "t1"),
+        agentPane("b", "t2"), agentPane("b", "t3"),
+        { tab: "c", terminal: "t4", program: { shell: true } },
+        agentPane("d", "t5"),
+        agentPane("e", "t6"),
+        agentPane("f", "t7"),
+        { tab: "g", terminal: "t8", program: { agent: false }, status: null },
+        { tab: "g", terminal: "t9", program: { shell: true }, status: null },
+      ];
+      const terms = new Map([
+        ["t1", { labels: { "inbox.snoozed": "5000" } }],
+        ["t2", { labels: { "inbox.snoozed": "5000" } }],
+        ["t4", { labels: { "inbox.snoozed": "5000" } }],
+        ["t5", { labels: { "inbox.snoozed": "5000" } }],
+        ["t6", { labels: { "inbox.snoozed": "500" } }],
+        ["t8", { labels: { "inbox.snoozed": "5000" } }],
+      ]);
+      const pending = { t7: { "inbox.snoozed": "5000", at: 900 } };
+      assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 1000)", { space, all, terms, pending }), ["b", "d", "e"]);
+      assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 9000)", { space, all, terms, pending }), ["a", "b", "c", "d", "e", "f", "g"]);
+    });
+
+    it("numbers and steps through the tabs the bar shows", () => {
+      const tabs = [tab("a"), tab("c", true), tab("e")];
+      assert.equal(evaluate('tabFor("select-2", tabs).id', { tabs }), "c");
+      assert.equal(evaluate('tabFor("select-4", tabs)', { tabs }), null);
+      assert.equal(evaluate('tabFor("next", tabs).id', { tabs }), "e");
+      assert.equal(evaluate('tabFor("prev", tabs).id', { tabs }), "a");
+      assert.equal(evaluate('tabFor("next", [tabs[2], tabs[1]]).id', { tabs }), "e");
+      assert.equal(evaluate('tabFor("other", tabs)', { tabs }), null);
+    });
+  });
+
   describe("tab-actions cleanup", () => {
     const shell = { shell: true, agent: false }, app = { shell: false, agent: false }, agent = { shell: false, agent: true };
     const load = (panes, terminals = [], hc = async () => ({ code: 1 })) =>
