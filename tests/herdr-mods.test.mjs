@@ -178,7 +178,7 @@ describe("Herdr mods", () => {
     const agentPane = (tabId, terminal) => ({ tab: tabId, terminal, program: { agent: true } });
 
     it("hides a tab only when every agent in it is snoozed, and never the tab in view", () => {
-      const space = { tabs: [tab("a"), tab("b"), tab("c"), tab("d", true), tab("e"), tab("f")] };
+      const space = { tabs: [tab("a"), tab("b"), tab("c"), tab("d", true), tab("e"), tab("f"), tab("g")] };
       const all = [
         agentPane("a", "t1"),
         agentPane("b", "t2"), agentPane("b", "t3"),
@@ -186,6 +186,8 @@ describe("Herdr mods", () => {
         agentPane("d", "t5"),
         agentPane("e", "t6"),
         agentPane("f", "t7"),
+        { tab: "g", terminal: "t8", program: { agent: false }, status: null },
+        { tab: "g", terminal: "t9", program: { shell: true }, status: null },
       ];
       const terms = new Map([
         ["t1", { labels: { "inbox.snoozed": "5000" } }],
@@ -193,10 +195,11 @@ describe("Herdr mods", () => {
         ["t4", { labels: { "inbox.snoozed": "5000" } }],
         ["t5", { labels: { "inbox.snoozed": "5000" } }],
         ["t6", { labels: { "inbox.snoozed": "500" } }],
+        ["t8", { labels: { "inbox.snoozed": "5000" } }],
       ]);
       const pending = { t7: { "inbox.snoozed": "5000", at: 900 } };
-      assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 1000)", { space, all, terms, pending }), ["b", "c", "d", "e"]);
-      assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 9000)", { space, all, terms, pending }), ["a", "b", "c", "d", "e", "f"]);
+      assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 1000)", { space, all, terms, pending }), ["b", "d", "e"]);
+      assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 9000)", { space, all, terms, pending }), ["a", "b", "c", "d", "e", "f", "g"]);
     });
 
     it("numbers and steps through the tabs the bar shows", () => {

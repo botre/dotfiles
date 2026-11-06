@@ -17,12 +17,16 @@ function snoozedNow(address, terms, pending, now) {
 }
 
 // The tabs the bar shows: all but those whose every agent is snoozed. The tab
-// in view always shows, and a tab without an agent never hides.
+// in view always shows, and a tab without an agent never hides. A snoozed
+// terminal counts as an agent even while it reports no status (Herdr marks a
+// program as an agent only once it does).
 export function visibleTabs(space, all = panes(), terms = new Map(terminals().map((k) => [k.address, k])), pending = shared(PENDING), now = Date.now()) {
   return (space?.tabs ?? []).filter((tab) => {
     if (tab.active) return true;
-    const agents = all.filter((p) => p.tab === tab.id && p.terminal && (p.program?.agent || p.status));
-    return !(agents.length && agents.every((p) => snoozedNow(p.terminal, terms, pending, now)));
+    const mine = all.filter((p) => p.tab === tab.id && p.terminal);
+    const snoozed = new Set(mine.filter((p) => snoozedNow(p.terminal, terms, pending, now)).map((p) => p.terminal));
+    const agents = mine.filter((p) => p.program?.agent || p.status || snoozed.has(p.terminal));
+    return !(agents.length && agents.every((p) => snoozed.has(p.terminal)));
   });
 }
 
