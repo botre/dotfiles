@@ -84,6 +84,20 @@ function duration(ms) {
   return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
 
+// The space a terminal's pane is in, and the pane.
+function whereIs(address) {
+  const pane = panes().find((p) => p.terminal === address);
+  const space = pane && spaces().find((s) => s.tabs.some((tab) => tab.id === pane.tab));
+  return { pane, space, tab: space?.tabs.find((tab) => tab.id === pane.tab) };
+}
+
+// The other spaces on the agent's machine, in sidebar order.
+function moveTargets(address) {
+  const { space } = whereIs(address);
+  if (!space) return [];
+  return spaces().filter((s) => s.id !== space.id && (s.machine ?? null) === (space.machine ?? null));
+}
+
 // The row menu's entries for an agent, as it stands now (labels as just written).
 function menuItems(address, { snoozeOnly = false, finished = false, blocked = false, pinned = false } = {}) {
   const term = terminals().find((t) => t.address === address) ?? { address };
@@ -98,6 +112,12 @@ function menuItems(address, { snoozeOnly = false, finished = false, blocked = fa
     if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Un-settle" });
     else if (finished) items.push({ kind: "settle", icon: chrome("check"), label: "Settle", hint: keys().find((k) => k.action === "agent-list.settle")?.keys });
     if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
+  }
+  // Its tab can go to another space on the same machine.
+  if (!snoozeOnly) {
+    const targets = moveTargets(address);
+    if (targets.length) items.push({ heading: "Move to" });
+    for (const s of targets) items.push({ kind: "move", preset: s.id, icon: chrome("layers"), label: s.name });
   }
   // A blocked agent needs you now, so it can't be snoozed.
   if (!blocked && !snoozed) {
@@ -304,6 +324,35 @@ export default class Agents extends View {
     if (kind === "pin") return this.setPins([...this.pins.filter((p) => p !== address), address]);
     if (kind === "unpin") return this.setPins(this.pins.filter((p) => p !== address));
     if (kind === "reference") return this.reference(address, cx);
+    if (kind === "move") return this.move(address, act.preset, cx);
+  }
+
+  // Moves an agent's pane to a new tab in another space; it keeps running.
+  // Herdr has no move, so its pane goes (terminal.park, which also turns off
+  // keep) and comes back as a tab of the selected space (terminal.keep, which
+  // turns keep back on). The space in view stays the same.
+  async move(address, spaceId, cx) {
+    const from = whereIs(address);
+    const to = spaces().find((s) => s.id === spaceId);
+    if (!from.pane || !to) return;
+    const back = spaces().find((s) => s.active)?.id;
+    // A tab's name goes with it only when the agent was all of it; otherwise
+    // "" gives the new tab Herdr's automatic name (keep names it by address).
+    const name = from.tab?.named && from.tab.panes === 1 ? from.tab.name : "";
+    const until = async (done) => {
+      for (let i = 0; i < 40; i++) { if (done()) return true; await cx.sleep(75); }
+      return false;
+    };
+    const fail = (why) => notify({ title: `Couldn't move it to ${to.name}`, body: why, level: "error" });
+    run("terminal.park", { terminal: address });
+    if (!(await until(() => !panes().some((p) => p.terminal === address)))) return fail("Its pane didn't go away.");
+    run("space.select", { id: spaceId });
+    run("terminal.keep", { terminal: address, place: "tab" });
+    const landed = await until(() => whereIs(address).space?.id === spaceId);
+    if (landed) run("tab.rename", { id: whereIs(address).pane.tab, name });
+    if (back) run("space.select", { id: back });
+    if (!landed) return fail(`It still runs, without a pane: hc attach ${address}`);
+    notify({ title: `Moved to ${to.name}`, level: "success", timeout: 3000 });
   }
 
   // Writes labels on an agent's terminal, shown at once as pending.
