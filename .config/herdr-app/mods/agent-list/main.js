@@ -84,7 +84,6 @@ function duration(ms) {
   return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
 
-// The space a terminal's pane is in, and the pane.
 function whereIs(address) {
   const pane = panes().find((p) => p.terminal === address);
   const space = pane && spaces().find((s) => s.tabs.some((tab) => tab.id === pane.tab));
@@ -113,7 +112,6 @@ function menuItems(address, { snoozeOnly = false, finished = false, blocked = fa
     else if (finished) items.push({ kind: "settle", icon: chrome("check"), label: "Settle", hint: keys().find((k) => k.action === "agent-list.settle")?.keys });
     if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
   }
-  // Its tab can go to another space on the same machine.
   if (!snoozeOnly) {
     const targets = moveTargets(address);
     if (targets.length) items.push({ heading: "Move to" });
@@ -175,7 +173,6 @@ export default class Agents extends View {
       cx.timer.every(10000, (cx) => cx.notify());
       return;
     }
-    // The shelves start folded.
     this.folded = new Set(["inbox-snoozed", "inbox-settled"]);
     // Each agent's last state and when it changed (ms), kept across restarts.
     this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
@@ -754,7 +751,6 @@ export default class Agents extends View {
       const tab = tabs.find(tab => tab.id === a.tab);
       return tab ? title(tab, lead(tab)) : a.title || a.program?.name || "";
     };
-    // Sort within groups by space and tab names.
     const spaceAt = new Map(spaces().map((s, i) => [s.id, i]));
     const byName = (x, y) => `${x.space_name ?? ""} ${label(x)}`.localeCompare(`${y.space_name ?? ""} ${label(y)}`, undefined, { numeric: true, sensitivity: "base" });
     list = [...list].sort(byPriority

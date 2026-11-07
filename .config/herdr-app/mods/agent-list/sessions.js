@@ -31,7 +31,7 @@ export class SessionTracker {
         }
         records[terminal.address] = observe(terminal, previous[terminal.address], now, start.at);
       }));
-      // Retain offline machines' timelines for up to 30 days.
+      // Ended terminals' records go after 30 days.
       const live = new Set(all.map((t) => t.address));
       for (const [address, record] of Object.entries(records)) {
         if (!live.has(address) && now - (record.updatedAt ?? record.startedAt ?? 0) > 30 * 86400000) delete records[address];

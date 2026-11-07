@@ -2,7 +2,8 @@
 // screen right now: the "! " lines of its replies. It follows the chat: scroll
 // up to an older suggestion and it comes back, scroll past it and it goes.
 // Run types the line into Claude, which runs it in its bash mode as if typed;
-// the cross hides it while it stays on screen. A command that has run, here or typed, leaves the strip.
+// the cross hides it while it stays on screen. A command that has run, from
+// here or typed, leaves the strip.
 // The layout gives this block no height; it grows while there are commands.
 
 import { View, div, svg } from "gpui-kit";
