@@ -88,6 +88,17 @@ alias vim="nvim"
 # Keep an alias: mise recreates deleted shims, and the package bin also shadows the app.
 alias ticktick='/usr/bin/ticktick'
 
+# Codex's shared background server keeps the Herdr terminal that started it, so
+# the helpers of every later Codex session report into that terminal's chat.
+# Inside Herdr, herdr-codex starts Codex without that server.
+function codex {
+  if [[ -n "$HC_TERMINAL_ID" && -x "$HOME/scripts/herdr-codex" ]]; then
+    "$HOME/scripts/herdr-codex" "$@"
+  else
+    command codex "$@"
+  fi
+}
+
 export GOPATH=$(go env GOPATH)
 export PATH=$PATH:$GOPATH/bin
 
