@@ -120,7 +120,7 @@ describe("agent-list", () => {
         ...extra,
       });
       const view = evaluate("new Agents()");
-      Object.assign(view, { changed: {}, pins: [], woke: new Set(), listed: new Map(), terms: new Map(terms.map((t) => [t.address, t])) });
+      Object.assign(view, { changed: {}, woke: new Set(), listed: new Map(), terms: new Map(terms.map((t) => [t.address, t])) });
       const tasks = [];
       const cx = { spawn: (f) => tasks.push(f(cx)), notify() {}, timer: { after: (ms, f) => { if (ms === 0) f(cx); } } };
       const settle = async () => { await Promise.all(tasks); tasks.length = 0; };
@@ -158,21 +158,18 @@ describe("agent-list", () => {
       assert.ok(view.woke.has("t1"));
     });
 
-    it("settles at once on screen, unpins, moves on, and undoes it all", async () => {
+    it("settles at once on screen, moves on, and undoes it all", async () => {
       const terms = [{ address: "t1", turn: 7, labels: {} }, { address: "t2", turn: 1, labels: {} }];
       const focus = [];
       const { view, writes, cx, settle, pendingOf } = sidebar(terms, { run: (name, args) => focus.push([name, args]) });
-      view.pins = ["t1"];
       view.activeOrder = [agent("t1", "idle", { focused: true }), agent("t2", "idle")];
       await view.putAway(["t1"], "Settled", (a) => ({ "inbox.settled": `9:${view.terms.get(a).turn}`, "inbox.snoozed": "" }), cx);
       assert.equal(pendingOf().t1["inbox.settled"], "9:7");
-      assert.deepEqual(plain(view.pins), []);
       assert.deepEqual(plain(focus), [["pane.focus", { pane: "p-t2" }]]);
       assert.equal(writes[0].join(" "), "label t1 inbox.settled=9:7 inbox.snoozed=");
       assert.equal(view.undo.items.length, 1);
       await view.undoLast(cx);
       await settle();
-      assert.deepEqual(plain(view.pins), ["t1"]);
       assert.equal(writes[1].join(" "), "label t1 inbox.settled= inbox.snoozed=");
     });
 
@@ -222,7 +219,7 @@ describe("agent-list", () => {
       assert.deepEqual(plain(evaluate('kidStatuses(all, "t1", listed)', { all, listed })), ["idle", "blocked", "idle"]);
     });
 
-    it("shows a waiting agent as a dim spinner with its helper count, and the count only outside sections", () => {
+    it("shows every status in the same 18px slot, a waiting agent as a dim spinner without a count", () => {
       // Elements that record their builder calls; `when` applies its callback.
       const element = (kind) => {
         const calls = [{ kind }];
@@ -235,14 +232,15 @@ describe("agent-list", () => {
       };
       const evaluate = loadMods(["agent-list/main.js"], { div: () => element("div"), h_flex: () => element("h_flex"), svg: (path) => element(`svg ${path}`) });
       const t = { dim: "#999", working: "#0a0" };
-      const render = (a, compact) => JSON.stringify(evaluate("Agents.prototype.status.call({}, t, a, compact)", { t, a, compact }).calls);
-      const full = render({ address: "t1", status: "idle", waiting: 2 }, false);
-      assert.match(full, /"tooltip","Waiting on 2 helpers"/);
-      assert.match(full, /spinner\.svg.*"text_color","#999".*"spin",1800/);
-      assert.match(full, /"child",\[\{"kind":"div"\},\["text_size",10\.5\],\["child","2"\]\]/);
-      assert.match(render({ address: "t1", status: "done", waiting: 1 }, false), /"Waiting on 1 helper"/);
-      assert.doesNotMatch(render({ address: "t1", status: "idle", waiting: 2 }, true), /"child","2"/);
-      assert.doesNotMatch(render({ address: "t1", status: "idle" }, false), /Waiting on/);
+      const render = (a) => JSON.stringify(evaluate("Agents.prototype.status.call(Agents.prototype, t, a)", { t, a }).calls);
+      const waiting = render({ address: "t1", status: "idle", waiting: 2 });
+      assert.match(waiting, /"tooltip","Waiting on helpers"/);
+      assert.match(waiting, /spinner\.svg.*"text_color","#999".*"spin",1800/);
+      assert.doesNotMatch(waiting, /"child","2"/);
+      assert.doesNotMatch(render({ address: "t1", status: "idle" }), /Waiting on/);
+      for (const status of ["working", "blocked", "idle", "done"]) assert.match(render({ address: "t1", status }), /^\[\{"kind":"h_flex"\},\["w",18\],\["h",18\]/);
+      assert.doesNotMatch(render({ address: "t1", status: "blocked" }), /Needs you/);
+      assert.match(render({ address: "t1", status: "working", unreported: true }), /"opacity",0\.5/);
     });
 
     it("counts the working helpers of an agent that has stopped, at any depth", () => {
@@ -286,14 +284,14 @@ describe("agent-list", () => {
       return { evaluate, state, commands, notes, store, cx, view: evaluate("new Agents()") };
     };
 
-    it("offers rename and the other spaces on the agent's machine, but not from the snooze clock", () => {
+    it("offers rename, snooze and the other spaces on the agent's machine, but no pin", () => {
       const { evaluate } = setup(() => ({}));
       const items = plain(evaluate('menuItems("t1")'));
       assert.equal(items[0].kind, "rename");
       assert.deepEqual(items.filter((it) => it.kind === "move").map((it) => [it.preset, it.label]), [["sp2", "side"], ["sp4", "later"]]);
       assert.ok(items.some((it) => it.heading === "Move to"));
-      const clock = plain(evaluate('menuItems("t1", { snoozeOnly: true })'));
-      assert.ok(clock.every((it) => it.kind === "snooze"));
+      assert.ok(items.some((it) => it.kind === "snooze"));
+      assert.ok(items.every((it) => it.kind !== "pin" && it.kind !== "unpin"));
       assert.ok(plain(evaluate('menuItems("t9")')).every((it) => it.kind !== "move" && it.heading !== "Move to"), "an agent without a pane can't move");
     });
 
