@@ -5,7 +5,16 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { run, props, closeOverlay, openOverlay, theme, keys, terminals, spaces, panes, exec } from "herdr";
+import { run, props, closeOverlay, openOverlay, theme, keys, terminals, spaces, panes, exec, setShared } from "herdr";
+
+// The agents list types references; it reads the request from here (agent-list/inbox.js).
+const ACTION = "agent-list.action";
+
+// The terminal a tab stands for: its agent, else its focused pane, else its first.
+function tabTerminal(id) {
+  const mine = panes().filter((p) => p.tab === id && p.terminal);
+  return (mine.find((p) => p.program?.agent) ?? mine.find((p) => p.focused) ?? mine[0])?.terminal;
+}
 
 // Where a space is now: its first terminal's live folder, else where it was made.
 function place(s) {
@@ -47,12 +56,15 @@ function items(p, git) {
         ["Close pane", "pane.close", { pane: tg.pane }],
       ];
     }
-    case "tab":
+    case "tab": {
+      const terminal = tabTerminal(tg.id);
       return [
         ["Rename", "tab.rename", { id: tg.id }],
+        ...(terminal ? [["Reference this", "reference", { terminal }]] : []),
         ["New tab", "tab.new", { space: tg.space }],
         ["Close", "tab.close", { id: tg.id }],
       ];
+    }
     case "space":
       return [
         ["Rename", "space.rename", { id: tg.id }],
@@ -106,6 +118,10 @@ export default class Menu extends View {
     if (!it) return;
     closeOverlay(props()?.overlay);
     if (it[1] === "worktree") openOverlay({ mod: "worktree-org", kind: "dialog", ...(it[2].action === "open" ? { width: 560, height: 480 } : { width: 440, height: 260 }), props: it[2] });
+    else if (it[1] === "reference") {
+      setShared(ACTION, { kind: "reference", address: it[2].terminal, at: Date.now() });
+      run("agent-list.act");
+    }
     else run(it[1], it[2]);
   }
 
