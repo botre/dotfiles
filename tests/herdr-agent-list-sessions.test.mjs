@@ -147,3 +147,18 @@ describe("agent-list session groups", () => {
     assert.ok(groups.every((row) => row.helpers === 0));
   });
 });
+
+describe("agent-list helper names", () => {
+  const helper = { address: "t2qg", name: "cx675", foreground: { pid: 42 }, labels: {} };
+  const name = (t) => evaluate(`helperName(${JSON.stringify(t)})`);
+
+  it("prefers the published title, then the goal, then the terminal name", () => {
+    assert.equal(name({ ...helper, labels: { "session.title": "Script 675 probes", "session.title.pid": "42", "summary.goal": "Explore", "summary.pid": "42" } }), "Script 675 probes");
+    assert.equal(name({ ...helper, labels: { "summary.goal": "Explore native scripts", "summary.pid": "42" } }), "Explore native scripts");
+    assert.equal(name(helper), "cx675");
+  });
+
+  it("ignores labels an earlier program in the terminal wrote", () => {
+    assert.equal(name({ ...helper, labels: { "session.title": "Old work", "session.title.pid": "7" } }), "cx675");
+  });
+});

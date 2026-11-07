@@ -11,6 +11,21 @@ export const directoryName = (cwd) => text(cwd).replace(/[\\/]+$/, "").split(/[\
 
 export const sameProcess = (record, terminal) => record?.pid === terminal.foreground?.pid && record?.createdAt === terminal.created_ms;
 
+// A label the terminal's current program wrote: one from an earlier program
+// in the same terminal names other work.
+const ownLabel = (terminal, key, pidKey) => {
+  const author = terminal.labels?.[pidKey];
+  return !author || author === String(terminal.foreground?.pid) ? goalTitle(terminal.labels?.[key]) : "";
+};
+
+// A helper row's name: the title the helper published, then its goal, then
+// the terminal name its parent gave it (often a code like `cx675`).
+export function helperName(terminal) {
+  return ownLabel(terminal, "session.title", "session.title.pid")
+    || ownLabel(terminal, "summary.goal", "summary.pid")
+    || terminal.name || terminal.template || terminal.program?.name || terminal.address;
+}
+
 export function isAgent(terminal) {
   return terminal.state === "live" && Boolean(terminal.program?.agent || terminal.report?.app);
 }
