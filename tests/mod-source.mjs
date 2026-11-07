@@ -13,3 +13,12 @@ export function loadMods(paths, globals = {}) {
   for (const path of paths) vm.runInContext(modSource(path), context);
   return (expression, values = {}) => vm.runInContext(expression, Object.assign(context, values));
 }
+
+// A mod's main.js, with a fixed home folder unless `globals` sets one.
+export const loadMod = (name, globals = {}) => loadMods([`${name}/main.js`], { home: () => "/home/test", ...globals });
+
+// Values from the vm context, as plain data that deepEqual compares by content.
+export const plain = (value) => JSON.parse(JSON.stringify(value));
+
+// A localStorage stand-in backed by `store`.
+export const memoryStorage = (store = {}) => ({ getItem: (key) => store[key] ?? null, setItem: (key, value) => { store[key] = value; } });

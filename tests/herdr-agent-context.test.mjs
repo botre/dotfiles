@@ -22,7 +22,7 @@ function fixture() {
   return { files, state, writes, sync: () => mod.sync({ notify() {} }) };
 }
 
-describe("Herdr plugin context", () => {
+describe("agent-context", () => {
   it("publishes enabled providers to remote terminals and clears disabled instructions", async () => {
     const f = fixture();
     await f.sync();

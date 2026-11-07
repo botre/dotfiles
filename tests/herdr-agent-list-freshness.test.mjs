@@ -11,7 +11,7 @@ const call = (name, ...args) => evaluate(`${name}(${args.map((value) => JSON.str
 const state = (t = terminal, r = report, o = observed) => call("activityState", t, r, o, now);
 const needed = (t = terminal, r = report, o = observed) => call("needsRecap", t, r, o, now);
 
-describe("Herdr conversation freshness", () => {
+describe("agent-list conversation freshness", () => {
   it("prefers a newer status report over an older explicit summary", () => {
     const value = state({ ...terminal, report: { msg: "Wait for CI" }, status_ms: now - 1000 });
     assert.equal(value.activity, "Wait for CI");
@@ -106,7 +106,7 @@ function harness({ shown = true, enabled = true, all = [terminal], probe, fail =
     sync: (records = {}) => evaluate("watcher.sync(input, records)", { input: all, records }) };
 }
 
-describe("Herdr recap scheduling", () => {
+describe("agent-list recap scheduling", () => {
   it("inspects transcripts without model calls when recaps are disabled or the overview is closed", async () => {
     for (const options of [{ shown: false }, { enabled: false }, { enabled: undefined }]) {
       const h = harness(options);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { loadMods } from "./mod-source.mjs";
 
-describe("Herdr terminal palette", () => {
+describe("terminal-palette", () => {
   it("publishes palette changes locally and remotely, and retries failed writes", async () => {
     let colors = { foreground: "#1b1b1e", terminal_foreground: "#4c4f69", background: "#eff1f5" }, offline = true;
     const writes = [];
