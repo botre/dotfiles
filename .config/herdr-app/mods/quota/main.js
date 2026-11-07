@@ -122,7 +122,7 @@ export default class Quota extends View {
   strip(t, data) {
     const items = (data?.providers ?? []).map((p) => {
       const stale = !p.at || Date.now() - p.at > STALE;
-      const trigger = h_flex().gap(7).items_center().opacity(stale ? 0.6 : 1)
+      return h_flex().gap(7).items_center().opacity(stale ? 0.6 : 1)
         .child(div().text_color(t.foreground).child(p.name))
         .children(p.windows?.length
           ? p.windows.map((w) =>
@@ -131,13 +131,14 @@ export default class Quota extends View {
                 .child(bar(t, w, 34, 4))
                 .child(div().child(`${Math.round(w.pct)}%`)))
           : [div().text_color(t.dim).child(p.error ?? "no limits")]);
-      return HoverCard.new(`quota-hover-${p.name}`).open_delay(400).close_delay(200)
-        .anchor("bottom_right").trigger(trigger)
-        .content(this.popup(t, { providers: [p] }).w(390).rounded(8).border(1).border_color(t.border).shadow_md());
     });
-    return h_flex().id("quota").size_full().px(14).gap(16).items_center().justify_end()
+    // One card for the whole strip, so it lists every provider at once.
+    const card = HoverCard.new("quota-hover").open_delay(400).close_delay(200)
+      .anchor("bottom_right").trigger(h_flex().gap(16).items_center().children(items))
+      .content(this.popup(t, data).w(390).rounded(8).border(1).border_color(t.border).shadow_md());
+    return h_flex().id("quota").size_full().px(14).items_center().justify_end()
       .bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
-      .children(data ? items : [div().text_color(t.dim).child("quota…")]);
+      .child(data ? card : div().text_color(t.dim).child("quota…"));
   }
 
   popup(t, data) {
