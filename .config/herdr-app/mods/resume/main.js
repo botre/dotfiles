@@ -5,10 +5,12 @@
 // shell that sits idle at its prompt. Quitting an agent on purpose forgets it.
 // A resume that gives up is not offered again, only run again by hand.
 // Only kept terminals (your tabs) come back as shells, so only they count.
+// The sessions waiting to come back are shared as "resume.waiting" for the
+// sidebar, which resumes or forgets one through "resume.action".
 // Draws nothing.
 
 import { View, div } from "gpui-kit";
-import { terminals, spaces, hc, exec, home, readTextFile, notify, nextCommand, shared } from "herdr";
+import { terminals, spaces, hc, exec, home, readTextFile, notify, nextCommand, shared, setShared } from "herdr";
 
 const FLAG_VALUE_RE = /=(.*)/s;
 const UNSAFE_SHELL_QUOTE_RE = /['\u0000-\u001f]/;
@@ -21,6 +23,13 @@ const LABEL = "resume";
 const EVERY = 20 * 1000;
 const DAY = 24 * 60 * 60 * 1000;
 const SEEN = "resume.lost"; // when each lost session was first seen
+export const WAITING = "resume.waiting";
+// What the sidebar asked for: { kind: "resume" | "forget", addresses, at }.
+export const ACTION = "resume.action";
+const ACTION_MS = 10 * 1000;
+// A label written with hc takes about 0.65 s to show; a terminal just resumed
+// or forgotten stays off the shared list this long, so a watch can't bring it back.
+const HANDLED_MS = 30 * 1000;
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Flags worth carrying over: 0 for a switch, 1 for one value, 2 for every
 // value up to the next flag. Nothing that loads code or config (no
@@ -163,19 +172,35 @@ const tried = (rec, now = Date.now()) => Number.isFinite(rec.tried) && rec.tried
 
 // Claude writes its session file before the first message, its transcript
 // only after; without a transcript there is nothing to resume.
+const transcriptPath = (rec) => `${home()}/.claude/projects/${rec.cwd.replace(NON_ALPHANUMERIC_RE, "-")}/${rec.session}.jsonl`;
+
 async function transcript(rec) {
   if (rec.agent !== "claude") return true;
-  const dir = rec.cwd.replace(NON_ALPHANUMERIC_RE, "-");
-  const r = await exec("test", ["-f", `${home()}/.claude/projects/${dir}/${rec.session}.jsonl`]).catch(() => ({ code: 1 }));
+  const r = await exec("test", ["-f", transcriptPath(rec)]).catch(() => ({ code: 1 }));
   return r.code === 0;
 }
 
-// "daily · Formspark": the space and tab the terminal shows in.
-function place(t) {
+// When the agent last wrote its conversation (ms), or null.
+async function lastActive(rec) {
+  const path = rec.agent === "claude" ? transcriptPath(rec) : null;
+  if (!path) return null;
+  const r = await exec("stat", ["-c", "%Y", path]).catch(() => null);
+  const s = Number(r?.code === 0 ? r.stdout.trim() : NaN);
+  return Number.isFinite(s) && s > 0 ? s * 1000 : null;
+}
+
+// The space and tab the terminal shows in.
+function where(t) {
   const space = spaces().find((s) => s.id === t.labels?.["herdr.space"]);
   const tab = space?.tabs.find((tab) => tab.id === t.labels?.["herdr.tab"]);
-  if (space && tab) return `${space.name} · ${tab.name}`;
-  return space?.name ?? "a terminal outside your tabs";
+  return { space: space?.name ?? null, tab: tab?.name ?? null };
+}
+
+// "daily · Formspark".
+function place(t) {
+  const { space, tab } = where(t);
+  if (space && tab) return `${space} · ${tab}`;
+  return space ?? "a terminal outside your tabs";
 }
 
 function command(rec) {
@@ -192,7 +217,12 @@ export default class Resume extends View {
     cx.spawn(async () => this.watch());
     cx.spawn(async () => {
       for (;;) {
-        if ((await nextCommand()) === "run" && !off()) await this.resume();
+        const c = await nextCommand();
+        if (off()) continue;
+        try {
+          if (c === "run") await this.resume();
+          else if (c === "act") await this.act();
+        } catch (e) { notify({ title: "Resume", body: String(e), level: "error" }); }
       }
     });
   }
@@ -206,6 +236,7 @@ export default class Resume extends View {
       const now = Date.now();
       this.kept = new Set();
       const resumable = [];
+      const waiting = [];
       const busy = new Map();
       let codexIndex;
       const readIndex = () => codexIndex ??= readCodexIndex();
@@ -231,14 +262,18 @@ export default class Resume extends View {
         } else if (saved) {
           const rec = parse(saved);
           if (await this.forget(t, rec, seen, now, busy)) await hc(["label", t.address, `${LABEL}=`]);
-          else if (!tried(rec) && (await lost(t))) resumable.push(`${t.address}:${rec.session}`);
+          else if (!tried(rec) && (await lost(t))) {
+            resumable.push(`${t.address}:${rec.session}`);
+            waiting.push({ address: t.address, agent: rec.agent, session: rec.session, cwd: rec.cwd, ...where(t), active: await lastActive(rec) });
+          }
         }
       }));
       const failure = results.find((result) => result.status === "rejected");
       if (failure) throw failure.reason;
       this.lastBusy = busy;
       localStorage.setItem(SEEN, JSON.stringify(Object.fromEntries(Object.entries(seen).filter(([k]) => this.kept.has(k)))));
-      this.nudge(resumable);
+      this.share(waiting);
+      this.nudge(resumable.filter((k) => !this.handled?.has(k.slice(0, k.lastIndexOf(":")))));
     } finally {
       this.busy = false;
     }
@@ -264,12 +299,48 @@ export default class Resume extends View {
     return now - seen[key] > DAY;
   }
 
-  // Says once per set of lost sessions that they can come back.
+  share(waiting) {
+    const now = Date.now();
+    for (const [a, at] of this.handled ?? []) if (now - at > HANDLED_MS) this.handled.delete(a);
+    waiting = waiting.filter((w) => !this.handled?.has(w.address));
+    waiting.sort((x, y) => (y.active ?? 0) - (x.active ?? 0) || x.address.localeCompare(y.address));
+    if (JSON.stringify(waiting) !== JSON.stringify(shared(WAITING) ?? [])) setShared(WAITING, waiting);
+  }
+
+  // Drops these terminals from the shared list straight away, before the next watch.
+  unshare(addresses) {
+    const gone = new Set(addresses);
+    const now = Date.now();
+    this.handled ??= new Map();
+    for (const a of addresses) this.handled.set(a, now);
+    this.share((shared(WAITING) ?? []).filter((w) => !gone.has(w.address)));
+  }
+
+  // What the sidebar asked for.
+  async act() {
+    const a = shared(ACTION);
+    if (!a || Date.now() - a.at > ACTION_MS || !Array.isArray(a.addresses)) return;
+    setShared(ACTION, null);
+    if (a.kind === "resume") await this.resume(new Set(a.addresses));
+    else if (a.kind === "forget") await this.forgetAll(a.addresses);
+  }
+
+  // Forgets the saved session of each terminal; the shell stays as it is.
+  async forgetAll(addresses) {
+    this.unshare(addresses);
+    const failed = [];
+    for (const address of addresses) {
+      const r = await hc(["label", address, `${LABEL}=`]).catch((e) => ({ code: 1, stderr: String(e) }));
+      if (r.code !== 0) failed.push(address);
+    }
+    if (failed.length) notify({ title: "Couldn't forget a session", body: failed.join(", "), level: "error" });
+  }
+
+  // Says when sessions newly become resumable; one going away says nothing.
   nudge(resumable) {
-    const key = [...resumable].sort().join(" ");
-    if (key === this.told) return;
-    this.told = key;
-    if (!resumable.length) return;
+    const fresh = resumable.filter((k) => !this.told?.has(k));
+    this.told = new Set(resumable);
+    if (!fresh.length) return;
     const n = resumable.length;
     notify({
       title: `${n} agent${n === 1 ? "" : "s"} can be resumed`,
@@ -279,22 +350,30 @@ export default class Resume extends View {
     });
   }
 
-  async resume() {
-    const done = [], skipped = [];
+  // Every lost session, or only those of these terminals.
+  async resume(only = null) {
+    const done = [], skipped = [], seen = [];
     const now = Date.now();
+    if (only) this.unshare([...only]);
     for (const t of terminals()) {
+      if (only && !only.has(t.address)) continue;
       const rec = await lost(t);
       if (!rec) continue;
-      const where = place(t);
-      if (tried(rec, now) && now - rec.tried < RETRY_AFTER) { skipped.push(`${where}: still starting`); continue; }
-      if (!(await transcript(rec))) { skipped.push(`${where}: transcript gone`); continue; }
+      seen.push(t.address);
+      const at = place(t);
+      if (tried(rec, now) && now - rec.tried < RETRY_AFTER) { skipped.push(`${at}: still starting`); continue; }
+      if (!(await transcript(rec))) { skipped.push(`${at}: transcript gone`); continue; }
       // Marked first, so the nudge stops and a second press can't type it twice.
       const mark = await hc(["label", t.address, `${LABEL}=${JSON.stringify({ ...rec, tried: now })}`]);
-      if (mark.code !== 0) { skipped.push(`${where}: ${mark.stderr.trim() || "label failed"}`); continue; }
+      if (mark.code !== 0) { skipped.push(`${at}: ${mark.stderr.trim() || "label failed"}`); continue; }
       const r = await hc(["send", t.address, command(rec)]);
-      if (r.code !== 0) { skipped.push(`${where}: ${r.stderr.trim() || "send failed"}`); continue; }
-      done.push(where);
+      if (r.code !== 0) { skipped.push(`${at}: ${r.stderr.trim() || "send failed"}`); continue; }
+      done.push(at);
+      // hc send can wait seconds for a busy terminal; each row goes as its turn comes.
+      this.unshare([t.address]);
     }
+    // The next watch brings back any that are still waiting.
+    this.unshare(seen);
     const n = done.length;
     notify({
       title: n ? `Resumed ${n} agent${n === 1 ? "" : "s"}` : "Nothing to resume",

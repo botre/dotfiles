@@ -15,6 +15,11 @@ const GRACE = 2000;
 const UNDO_MS = 5000;
 const CLEAR_ASK_MS = 3000;
 const UNDO_ICON = "mods/agent-list/undo.svg";
+const PLAY_ICON = "mods/agent-list/play.svg";
+const X_ICON = "mods/workspace-chrome/x.svg";
+// Shared by the resume mod: sessions that a restart left waiting in their tab.
+const RESUME_WAITING = "resume.waiting";
+const RESUME_ACTION = "resume.action";
 const MENU_ROW = 31;
 
 const TITLE_PREFIX_RE = /^[^\p{L}\p{N}]+/u;
@@ -187,6 +192,97 @@ export default class Agents extends View {
       this.rawTitles = next;
       if (changed) cx.notify();
     } finally { this.readingTitles = false; }
+  }
+
+  // Asks the resume mod to resume or forget the sessions of these terminals,
+  // and drops their rows now rather than at its next look.
+  resumeAction(kind, addresses, cx) {
+    setShared(RESUME_WAITING, (shared(RESUME_WAITING) ?? []).filter((w) => !addresses.includes(w.address)));
+    setShared(RESUME_ACTION, { kind, addresses, at: Date.now() });
+    run("resume.act");
+    this.hovered = null;
+    cx.notify();
+  }
+
+  // The "Can be resumed" section: tabs a restart turned back into shells
+  // that still hold an agent's session. Empty when there are none.
+  resumable(t, now) {
+    const byTerminal = new Map(panes().filter((p) => p.terminal).map((p) => [p.terminal, p]));
+    const waiting = (shared(RESUME_WAITING) ?? []).filter((w) => byTerminal.has(w.address));
+    if (!waiting.length) return [];
+    const all = waiting.map((w) => w.address);
+    const link = (id, text, tip, onClick) => div()
+      .id(id)
+      .px(5)
+      .rounded(4)
+      .text_color(t.dim)
+      .cursor_pointer()
+      .hover((s) => s.bg(t.hover).text_color(t.foreground))
+      .tooltip(tip)
+      .on_click((_e, cx) => { cx.stop_propagation(); onClick(cx); })
+      .child(text);
+    const header = h_flex()
+      .id("resume-header")
+      .px(8)
+      .pt(8)
+      .h(30)
+      .flex_none()
+      .gap(2)
+      .items_center()
+      .text_size(11)
+      .font_medium()
+      .child(div().truncate().text_color(t.accent).child("Can be resumed"))
+      .child(div().pl(4).text_color(t.dim).child(String(waiting.length)))
+      .child(div().flex_1())
+      .child(link("resume-all", "Resume all", "Resume every session (Ctrl+Shift+R)", (cx) => this.resumeAction("resume", all, cx)))
+      .child(link("resume-dismiss-all", "Dismiss all", "Forget these sessions; the tabs stay shells", (cx) => this.resumeAction("forget", all, cx)));
+    const button = (id, glyph, tip, onClick) => div()
+      .id(id)
+      .flex_none()
+      .p(2)
+      .rounded(4)
+      .text_color(t.dim)
+      .cursor_pointer()
+      .hover((s) => s.bg(t.hover).text_color(t.foreground))
+      .tooltip(tip)
+      .on_click((_e, cx) => { cx.stop_propagation(); onClick(cx); })
+      .child(svg(glyph).size(13));
+    const row = (w) => {
+      const pane = byTerminal.get(w.address);
+      const key = `resume:${w.address}`;
+      const hovered = this.hovered === key;
+      // The tab names the work; an automatic tab number says nothing, so the space does.
+      const named = Boolean(w.tab) && !DIGITS_RE.test(w.tab);
+      const name = named ? w.tab : w.space ?? w.address;
+      const more = named ? w.space : null;
+      const agent = w.agent === "codex" ? "Codex" : "Claude";
+      return h_flex()
+        .id(`resume-${w.address}`)
+        .px(8)
+        .h(30)
+        .flex_none()
+        .rounded(8)
+        .items_center()
+        .gap(9)
+        .when(pane.focused, (el) => el.bg(t.selected))
+        .cursor_pointer()
+        .hover((s) => s.bg(t.hover))
+        .on_hover((on, cx) => {
+          if (on) this.hovered = key;
+          else if (this.hovered === key) this.hovered = null;
+          cx.notify();
+        })
+        .on_click(() => run("pane.focus", { pane: pane.pane }))
+        .child(image(`icons/${w.agent}.svg`).w(16).h(16).flex_none().opacity(hovered || pane.focused ? 1 : 0.6))
+        .child(h_flex().flex_1().min_w(0).gap(5).items_center()
+          .child(div().min_w(0).max_w(more ? 120 : 200).truncate().text_color(t.foreground).child(name))
+          .when(Boolean(more), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))))
+        .when(hovered, (el) => el.child(h_flex().flex_none().gap(1).items_center()
+          .child(button(`resume-run-${w.address}`, PLAY_ICON, `Resume ${agent}`, (cx) => this.resumeAction("resume", [w.address], cx)))
+          .child(button(`resume-dismiss-${w.address}`, X_ICON, "Dismiss: forget this session, keep the shell", (cx) => this.resumeAction("forget", [w.address], cx)))))
+        .when(!hovered && Boolean(w.active), (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(duration(now - w.active))));
+    };
+    return [header, ...waiting.map(row)];
   }
 
   // Key commands, and what the row menu asks for (it closes before its tasks could finish).
@@ -872,6 +968,7 @@ export default class Agents extends View {
         return [header(g), ...(g.shelf ? members.map(shelfRow) : members.flatMap(withKids))];
       });
     const undo = this.undo && now < this.undo.until ? this.undo : null;
+    const resumable = collapsed ? [] : this.resumable(t, now);
 
     return v_flex()
       .size_full()
@@ -909,10 +1006,10 @@ export default class Agents extends View {
             ),
         ),
       )
-      .when(list.length === 0 && !collapsed, (el) =>
+      .when(list.length === 0 && !collapsed && !resumable.length, (el) =>
         el.child(div().px(12).text_size(12).text_color(t.dim).child("No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not.")),
       )
-      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).overflow_y_scrollbar().mode("always").children(rows))
+      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).overflow_y_scrollbar().mode("always").children([...resumable, ...rows]))
       .when(Boolean(undo) && !collapsed, (el) => el.child(h_flex()
         .mx(8)
         .mb(6)
