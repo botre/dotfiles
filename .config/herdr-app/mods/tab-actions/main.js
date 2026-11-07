@@ -1,6 +1,5 @@
 // The tab bar's actions menu. agent-tabs opens it as a popup from its ··· button,
 // and hides the button while this mod is off in the Mods panel.
-// Add an entry to ACTIONS for each new action.
 import { View, div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { theme, spaces, run, closeOverlay, notify, props } from "herdr";

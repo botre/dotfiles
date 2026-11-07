@@ -189,7 +189,6 @@ async function lastActive(rec) {
   return Number.isFinite(s) && s > 0 ? s * 1000 : null;
 }
 
-// The space and tab the terminal shows in.
 function where(t) {
   const space = spaces().find((s) => s.id === t.labels?.["herdr.space"]);
   const tab = space?.tabs.find((tab) => tab.id === t.labels?.["herdr.tab"]);
@@ -316,7 +315,6 @@ export default class Resume extends View {
     this.share((shared(WAITING) ?? []).filter((w) => !gone.has(w.address)));
   }
 
-  // What the sidebar asked for.
   async act() {
     const a = shared(ACTION);
     if (!a || Date.now() - a.at > ACTION_MS || !Array.isArray(a.addresses)) return;

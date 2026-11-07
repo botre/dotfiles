@@ -1,7 +1,8 @@
 // Workspace spaces: stable colored avatars, worktrees under their checkout,
-// grouped by machine when more than one is known. After a space's name, the repo
-// its first terminal is in now, only where unusual: branch, ahead/behind. Agent state lives in the agents list, not here. Click to
-// switch, right-click for its menu, drag to reorder.
+// grouped by machine when more than one is known. Agent state lives in the
+// agents list, not here. Click to switch, right-click for its menu, drag to
+// reorder. A fork of Herdr's spaces 0.1.11 that drops the repo, branch and
+// ahead/behind label after a space's name.
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
