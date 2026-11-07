@@ -2,31 +2,45 @@ import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, panes, terminals, run, openOverlay, theme, window, shared, layout, settings, nextCommand } from "herdr";
 
-// The agents list snoozes an agent with a label on its terminal, and shares
-// what it just wrote until hc has it (agent-list/inbox.js).
+// The agents list snoozes or settles an agent with a label on its terminal,
+// and shares what it just wrote until hc has it (agent-list/inbox.js).
 const SNOOZED = "inbox.snoozed";
+const SETTLED = "inbox.settled";
+const SETTLED_RE = /^(\d+):(\d+)$/;
 const PENDING = "agent-list.pending";
 const PENDING_MS = 5000;
 const NUMBER_RE = /^\d+$/;
 const SELECT_RE = /^select-([1-9])$/;
 
-function snoozedNow(address, terms, pending, now) {
+function labelNow(key, address, terms, pending, now) {
   const p = pending?.[address];
-  const value = p && Object.prototype.hasOwnProperty.call(p, SNOOZED) && now - p.at < PENDING_MS ? p[SNOOZED] : terms.get(address)?.labels?.[SNOOZED];
+  return p && Object.prototype.hasOwnProperty.call(p, key) && now - p.at < PENDING_MS ? p[key] : terms.get(address)?.labels?.[key];
+}
+
+function snoozedNow(address, terms, pending, now) {
+  const value = labelNow(SNOOZED, address, terms, pending, now);
   return NUMBER_RE.test(value ?? "") && Number(value) > now;
 }
 
-// The tabs the bar shows: all but those whose every agent is snoozed. The tab
-// in view always shows, and a tab without an agent never hides. A snoozed
-// terminal counts as an agent even while it reports no status (Herdr marks a
-// program as an agent only once it does).
+// Settled until it works, needs you or starts a new turn, as the agents list
+// has it, so the tab comes back before that list clears the label.
+function settledNow(pane, terms, pending, now) {
+  const m = SETTLED_RE.exec(labelNow(SETTLED, pane.terminal, terms, pending, now) ?? "");
+  if (!m || pane.status === "working" || pane.status === "blocked") return false;
+  return (terms.get(pane.terminal)?.turn ?? 0) <= Number(m[2]);
+}
+
+// The tabs the bar shows: all but those whose every agent is snoozed or
+// settled. The tab in view always shows, and a tab without an agent never
+// hides. A put-away terminal counts as an agent even while it reports no
+// status (Herdr marks a program as an agent only once it does).
 export function visibleTabs(space, all = panes(), terms = new Map(terminals().map((k) => [k.address, k])), pending = shared(PENDING), now = Date.now()) {
   return (space?.tabs ?? []).filter((tab) => {
     if (tab.active) return true;
     const mine = all.filter((p) => p.tab === tab.id && p.terminal);
-    const snoozed = new Set(mine.filter((p) => snoozedNow(p.terminal, terms, pending, now)).map((p) => p.terminal));
-    const agents = mine.filter((p) => p.program?.agent || p.status || snoozed.has(p.terminal));
-    return !(agents.length && agents.every((p) => snoozed.has(p.terminal)));
+    const away = new Set(mine.filter((p) => snoozedNow(p.terminal, terms, pending, now) || settledNow(p, terms, pending, now)).map((p) => p.terminal));
+    const agents = mine.filter((p) => p.program?.agent || p.status || away.has(p.terminal));
+    return !(agents.length && agents.every((p) => away.has(p.terminal)));
   });
 }
 
