@@ -674,6 +674,48 @@ export default class Agents extends View {
         .when(s.id === on, (el) => el.child(svg("mods/workspace-chrome/check.svg").size(14).flex_none().text_color(t.foreground)))));
   }
 
+  peek(addr) {
+    run("terminal.peek", { terminal: addr });
+  }
+
+  // Live sub-agents of `addr`, depth first, each with the tree lines in front of it.
+  tree(all, addr, lead = []) {
+    const kids = all.filter((k) => k.parent === addr && k.state === "live");
+    return kids.flatMap((k, i) => {
+      const last = i === kids.length - 1;
+      return [
+        { t: k, lines: [...lead, last ? "└" : "├"] },
+        ...this.tree(all, k.address, [...lead, last ? "" : "│"]),
+      ];
+    });
+  }
+
+  subRow(t, s, shown, compact) {
+    const k = s.t;
+    const st = kidStatus(k, this.listed);
+    const pic = icon(k.program, 14, t.foreground);
+    const on = k.address === shown;
+    return h_flex()
+      .id(`sub-${k.address}`)
+      .pl(39)
+      .pr(8)
+      .rounded(8)
+      .h(26)
+      .flex_none()
+      .gap(0)
+      .items_center()
+      .text_size(12.5)
+      .when(on, (el) => el.bg(t.raised))
+      .hover((s) => s.bg(t.hover))
+      .on_click(() => this.peek(k.address))
+      .children(s.lines.map(l => div().self_start().mt(-4).w(9).h(17).mr(4).flex_none()
+        .when(Boolean(l), el => el.border_l(1.5).border_color(t.input))
+        .when(l === "└" || l === "├", el => el.border_b(1.5).rounded_bl(6))))
+      .when(Boolean(pic), el => el.child(div().mr(8).child(pic)))
+      .child(div().flex_1().truncate().text_color(on ? t.foreground : t.muted).child(k.name || k.template || k.program?.name || k.address))
+      .child(this.status(t, { status: st }, compact));
+  }
+
   // compact: a ! for blocked where a header already says "Needs you".
   status(t, a, compact = false) {
     const color = t[a.status] ?? t.dim;
@@ -704,6 +746,7 @@ export default class Agents extends View {
     list = [...list, ...unreported];
     this.listed = new Map(list.map((a) => [a.address, a.status]));
     this.terms = new Map(all.map((k) => [k.address, k]));
+    const inView = focused()?.agent;
     const now = Date.now();
     this.track(list, now);
     this.hold(list);
@@ -740,6 +783,39 @@ export default class Agents extends View {
     this.rows = new Set([...list, ...snoozed, ...settled].map((a) => a.address));
     setAgentOrder([...list, ...snoozed, ...settled].map((a) => a.address));
 
+    const withKids = (a, i) => {
+      const subs = collapsed ? [] : this.tree(all, a.address);
+      const r = row(a, i, subs);
+      if (this.folded.has(a.address)) return [r];
+      return [r, ...subs.map((s) => this.subRow(t, s, inView, byPriority))];
+    };
+
+    // Closed groups show the descendant count and highest-priority status.
+    const fold = (a, subs) => {
+      const sts = subs.map((s) => kidStatus(s.t, this.listed));
+      const top = sts.reduce((m, s) => ((RANK[s] ?? 0) > (RANK[m] ?? 0) ? s : m), null);
+      const open = !this.folded.has(a.address);
+      return div()
+        .id(`fold-${a.address}`)
+        .h(18)
+        .px(3)
+        .gap(3)
+        .flex()
+        .items_center()
+        .rounded(4)
+        .text_size(11)
+        .text_color(open ? t.dim : (t[top] ?? t.dim))
+        .cursor_pointer()
+        .hover((s) => s.bg(t.hover).text_color(t.foreground))
+        .on_click((_e, cx) => {
+          cx.stop_propagation();
+          open ? this.folded.add(a.address) : this.folded.delete(a.address);
+          cx.notify();
+        })
+        .child(svg(`mods/workspace-chrome/chevron-${open ? "down" : "right"}.svg`).size(11).flex_none())
+        .when(!open, (el) => el.child(String(subs.length)));
+    };
+
     const detail = new Map(list.map(a => [a.address, DIGITS_RE.test(label(a)) ? null : label(a)]));
     const seen = {};
     for (const a of list) { const k = `${a.space_name}\u0000${detail.get(a.address) ?? ""}`; seen[k] = (seen[k] ?? 0) + 1; }
@@ -747,7 +823,7 @@ export default class Agents extends View {
       if (detail.get(a.address) == null && seen[`${a.space_name}\u0000`] > 1) detail.set(a.address, label(a));
     }
 
-    const row = (a, i) => {
+    const row = (a, i, subs = []) => {
       const pic = icon(a.program, 16, t.foreground);
       const more = detail.get(a.address);
       // An agent on another machine (`vps/t7`) says which.
@@ -827,11 +903,17 @@ export default class Agents extends View {
         })
         .on_click(() => run("pane.focus", { pane: a.pane }))
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.openMenu(a, false); })
-        .when(Boolean(pic), el => el.child(pic))
+        .when(Boolean(pic), el => el.child(div().id(`agent-fold-${a.address}`)
+          .when(subs.length > 0, el => el.on_click((_e, cx) => {
+            cx.stop_propagation();
+            this.folded.has(a.address) ? this.folded.delete(a.address) : this.folded.add(a.address);
+            cx.notify();
+          })).child(pic)))
         .child(h_flex().flex_1().min_w(0).gap(5).items_center()
           .child(div().min_w(0).max_w(full && more ? 120 : 200).truncate().text_color(idle ? t.muted : t.foreground).child(name))
           .when(full && Boolean(more), el => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))))
         .when(Boolean(machine), el => el.child(div().text_size(10).text_color(t.dim).child(machine)))
+        .when(subs.length > 0, el => el.child(fold(a, subs)))
         .when(woke && this.hovered !== a.address, el => el.child(div().flex_none().text_size(10.5).font_medium().text_color(t.accent).child("Woke")))
         .when(this.hovered === a.address, el => el.child(actions))
         .when(this.hovered !== a.address && !woke && Boolean(when), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child(duration(now - when))))
@@ -941,11 +1023,11 @@ export default class Agents extends View {
           .child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)));
     };
     const rows = collapsed
-      ? list.map(row)
+      ? list.flatMap(withKids)
       : groups.flatMap((g) => {
         // A folded shelf still shows the agent in view.
         const members = this.folded.has(g.id) ? g.members.filter((a) => g.shelf && a.focused) : g.members;
-        return [header(g), ...(g.shelf ? members.map(shelfRow) : members.map(row))];
+        return [header(g), ...(g.shelf ? members.map(shelfRow) : members.flatMap(withKids))];
       });
     const undo = this.undo && now < this.undo.until ? this.undo : null;
     const resumable = collapsed ? [] : this.resumable(t, now);
