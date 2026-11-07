@@ -15,7 +15,7 @@ PROBE = PROBE["resolve"].__globals__
 SESSION = "12345678-1234-1234-1234-123456789abc"
 
 
-class TranscriptTests(unittest.TestCase):
+class HerdrConversationsTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

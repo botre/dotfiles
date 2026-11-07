@@ -68,6 +68,10 @@ const kidStatus = (k, listed) => {
   const s = listed.get(k.address) ?? k.status;
   return s === "error" ? "blocked" : s === "done" ? "idle" : s;
 };
+// The statuses of an agent's live sub-agents, at any depth.
+const kidStatuses = (all, addr, listed) => all
+  .filter((k) => k.parent === addr && k.state === "live")
+  .flatMap((k) => [kidStatus(k, listed), ...kidStatuses(all, k.address, listed)]);
 const SORTS = [
   { id: "priority", label: "Priority", icon: "clock" },
   { id: "grouped", label: "Grouped by space", icon: "layers" },
@@ -424,7 +428,7 @@ export default class Agents extends View {
     };
     for (const a of list) {
       const term = this.terms.get(a.address);
-      const statuses = [a.status, ...this.tree(all, a.address).map((s) => kidStatus(s.t, this.listed))];
+      const statuses = [a.status, ...kidStatuses(all, a.address, this.listed)];
       const blocked = statuses.includes("blocked") || statuses.includes("error");
       const busy = blocked || statuses.includes("working");
       if (!busy && rankOf(a) !== RANK.working) this.finished.add(a.address);
@@ -667,18 +671,6 @@ export default class Agents extends View {
         .when(s.id === on, (el) => el.child(svg("mods/workspace-chrome/check.svg").size(14).flex_none().text_color(t.foreground)))));
   }
 
-  // Live sub-agents of `addr`, depth first, each with the tree lines in front of it.
-  tree(all, addr, lead = []) {
-    const kids = all.filter((k) => k.parent === addr && k.state === "live");
-    return kids.flatMap((k, i) => {
-      const last = i === kids.length - 1;
-      return [
-        { t: k, lines: [...lead, last ? "└" : "├"] },
-        ...this.tree(all, k.address, [...lead, last ? "" : "│"]),
-      ];
-    });
-  }
-
   // compact: a ! for blocked where a header already says "Needs you".
   status(t, a, compact = false) {
     const color = t[a.status] ?? t.dim;
@@ -709,7 +701,7 @@ export default class Agents extends View {
     this.hold(list);
     const byPriority = sort.id === "priority";
     this.graced = false;
-    const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a, now), ...this.tree(all, a.address).map((s) => RANK[kidStatus(s.t, this.listed)] ?? 0))]));
+    const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a, now), ...kidStatuses(all, a.address, this.listed).map((s) => RANK[s] ?? 0))]));
     this.urgency = urgency;
     const rankOf = (a) => urgency.get(a.address);
     if (this.graced && !this.graceTimer) {

@@ -1,6 +1,8 @@
 # Herdr mods
 
-Run tests from the repository root:
+Each mod's tests live in `tests/herdr-<mod>.test.mjs`, and a large mod adds
+`tests/herdr-<mod>-<topic>.test.mjs` files. The Python scripts have
+`tests/test_herdr_<script>.py`. Run tests from the repository root:
 
 ```sh
 node --test --test-isolation=none tests/*.test.mjs

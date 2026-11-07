@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { loadMods } from "./mod-source.mjs";
+import { loadMods, plain } from "./mod-source.mjs";
 
 const evaluate = loadMods(["agent-list/model.js"]);
 const terminal = {
@@ -11,7 +11,7 @@ const terminal = {
 };
 const observe = (t, previous, now = 200000, start = 10000) => evaluate(`observe(${JSON.stringify(t)}, ${JSON.stringify(previous) ?? "undefined"}, ${now}, ${start})`);
 
-describe("Herdr session timing", () => {
+describe("agent-list session timing", () => {
   it("keeps activity age on refresh and resets it only for a different activity", () => {
     const first = observe(terminal);
     const refresh = observe({ ...terminal, labels: { ...terminal.labels, "summary.updated": "110" } }, first);
@@ -82,8 +82,8 @@ describe("Herdr session timing", () => {
   });
 });
 
-describe("Herdr session groups", () => {
-  const group = (rows, terminals = rows) => JSON.parse(JSON.stringify(evaluate(`groupSessions(${JSON.stringify(rows)}, ${JSON.stringify(terminals)})`)));
+describe("agent-list session groups", () => {
+  const group = (rows, terminals = rows) => plain(evaluate(`groupSessions(${JSON.stringify(rows)}, ${JSON.stringify(terminals)})`));
 
   it("collapses live helpers under their primary session, including completed turns", () => {
     const rows = [
