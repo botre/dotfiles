@@ -14,6 +14,17 @@ python3 "$HOME/scripts/herdr-context"
 
 An empty result means no plugin context is available. Continue the task normally.
 
+Never make hc type into a terminal the user may be typing in, since a paste there
+submits their half-written message. That rules out notes and replies to your own
+terminal:
+
+- Do not ask helpers to report with `hc send`. Tell them to finish their turn
+  with the result, or to write a long result to a file and print its path.
+- Collect results yourself with `hc wait <t>` or `hc wait --children any`, then
+  `hc read <t>`. In Claude Code, run the wait as a background command so its
+  end wakes you. A `timeout` reason is a check-in: wait again.
+- Use `hc send` only for terminals you started.
+
 ## Writing
 
 - No em dashes in prose written for the user: UI copy, page titles and meta
