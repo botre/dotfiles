@@ -127,7 +127,7 @@ export default class Tabs extends View {
           if (from !== null && from !== i) run("tab.move", { id: shown[from].id, index: space.tabs.findIndex(x => x.id === c.id) + 1 });
           else run("tab.select", { id: c.id });
         })
-        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: space.id } } }); })
+        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu-org", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: space.id } } }); })
         .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
         .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(t.muted)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
@@ -161,7 +161,7 @@ export default class Tabs extends View {
         if (tab) run("tab.select", { id: tab.id });
       })
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().children(shown.map(item)))
-      .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })))
+      .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu-org", kind: "popup", width: 250, height: 512 })))
       // The tab-actions menu; off in the Mods panel hides the button. Height: 31 per action, plus 10.
       .when(!(shared("mods.off") ?? []).includes("tab-actions"), el => el.child(button("tab-actions", svg("mods/tab-actions/more.svg").size(16),
         () => openOverlay({ mod: "tab-actions", kind: "popup", width: 250, height: 41 }))))
