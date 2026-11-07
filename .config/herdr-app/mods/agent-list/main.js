@@ -114,7 +114,7 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   const chrome = (name) => `mods/workspace-chrome/${name}.svg`;
   const items = [];
   items.push({ kind: "rename", icon: chrome("square-pen"), label: "Rename", hint: keys().find((k) => k.action === "tab.rename")?.keys });
-  items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference in focused agent" });
+  items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference this" });
   if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Un-settle" });
   else if (finished) items.push({ kind: "settle", icon: chrome("check"), label: "Settle", hint: keys().find((k) => k.action === "agent-list.settle")?.keys });
   if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
@@ -478,7 +478,8 @@ export default class Agents extends View {
     }
     const a = agents().find((x) => x.address === address);
     const pane = panes().find((p) => p.terminal === address);
-    const tab = spaces().flatMap((s) => s.tabs).find((t) => t.id === a?.tab);
+    // A tab's shell has no agent entry; its pane still names the tab.
+    const tab = spaces().flatMap((s) => s.tabs).find((t) => t.id === (a?.tab ?? pane?.tab));
     const text = reference({ address, title: tab ? title(tab, lead(tab)) : a?.title, cwd: pane?.cwd, home: home() });
     const old = cx.read_from_clipboard();
     cx.write_to_clipboard(text);
