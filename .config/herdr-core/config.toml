@@ -1,0 +1,4 @@
+# hc types nothing into terminals on its own: no notes to parent agents when a
+# helper finishes, and no <hc> tags on sent messages. Agents collect helper
+# results with hc wait and hc read instead (see .agents/AGENTS.md).
+notes = false
