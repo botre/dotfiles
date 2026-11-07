@@ -221,6 +221,46 @@ describe("agent-list", () => {
       const listed = new Map([["t2", "idle"]]);
       assert.deepEqual(plain(evaluate('kidStatuses(all, "t1", listed)', { all, listed })), ["idle", "blocked", "idle"]);
     });
+
+    it("shows a waiting agent as a dim spinner with its helper count, and the count only outside sections", () => {
+      // Elements that record their builder calls; `when` applies its callback.
+      const element = (kind) => {
+        const calls = [{ kind }];
+        const proxy = new Proxy({}, { get: (_, name) => name === "calls" ? calls : (...args) => {
+          if (name === "when") return args[0] ? args[1](proxy) : proxy;
+          calls.push([name, ...args.map((x) => x?.calls ?? x)]);
+          return proxy;
+        } });
+        return proxy;
+      };
+      const evaluate = loadMods(["agent-list/main.js"], { div: () => element("div"), h_flex: () => element("h_flex"), svg: (path) => element(`svg ${path}`) });
+      const t = { dim: "#999", working: "#0a0" };
+      const render = (a, compact) => JSON.stringify(evaluate("Agents.prototype.status.call({}, t, a, compact)", { t, a, compact }).calls);
+      const full = render({ address: "t1", status: "idle", waiting: 2 }, false);
+      assert.match(full, /"tooltip","Waiting on 2 helpers"/);
+      assert.match(full, /spinner\.svg.*"text_color","#999".*"spin",1800/);
+      assert.match(full, /"child",\[\{"kind":"div"\},\["text_size",10\.5\],\["child","2"\]\]/);
+      assert.match(render({ address: "t1", status: "done", waiting: 1 }, false), /"Waiting on 1 helper"/);
+      assert.doesNotMatch(render({ address: "t1", status: "idle", waiting: 2 }, true), /"child","2"/);
+      assert.doesNotMatch(render({ address: "t1", status: "idle" }, false), /Waiting on/);
+    });
+
+    it("counts the working helpers of an agent that has stopped, at any depth", () => {
+      const all = [
+        { address: "t2", parent: "t1", state: "live", status: "working" },
+        { address: "t3", parent: "t2", state: "live", status: "working" },
+        { address: "t4", parent: "t1", state: "live", status: "done" },
+        { address: "t5", parent: "t1", state: "exited", status: "working" },
+        { address: "t6", parent: "t1", state: "live" },
+      ];
+      const listed = new Map();
+      const waits = (status) => evaluate("waitingOn(a, all, listed)", { a: { address: "t1", status }, all, listed });
+      assert.equal(waits("idle"), 2);
+      assert.equal(waits("done"), 2);
+      assert.equal(waits("working"), 0, "a working agent shows its own spinner");
+      assert.equal(waits("blocked"), 0, "a blocked agent shows Needs you");
+      assert.equal(evaluate("waitingOn(a, all, listed)", { a: { address: "t4", status: "idle" }, all, listed }), 0);
+    });
   });
 
   describe("row menu", () => {

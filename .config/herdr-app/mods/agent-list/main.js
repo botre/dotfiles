@@ -72,6 +72,9 @@ const kidStatus = (k, listed) => {
 const kidStatuses = (all, addr, listed) => all
   .filter((k) => k.parent === addr && k.state === "live")
   .flatMap((k) => [kidStatus(k, listed), ...kidStatuses(all, k.address, listed)]);
+// How many helpers an agent waits on: it has stopped while they still work.
+const waitingOn = (a, all, listed) => (a.status === "working" || a.status === "blocked" ? 0
+  : kidStatuses(all, a.address, listed).filter((s) => s === "working").length);
 const SORTS = [
   { id: "priority", label: "Priority", icon: "clock" },
   { id: "grouped", label: "Grouped by space", icon: "layers" },
@@ -674,6 +677,11 @@ export default class Agents extends View {
   // compact: a ! for blocked where a header already says "Needs you".
   status(t, a, compact = false) {
     const color = t[a.status] ?? t.dim;
+    // A slow, dim spinner and the count: the agent itself waits on its helpers.
+    if (a.waiting) return h_flex().id(`waiting-${a.address}`).flex_none().gap(3).items_center().text_color(t.dim)
+      .tooltip(`Waiting on ${a.waiting} helper${a.waiting === 1 ? "" : "s"}`)
+      .child(svg("mods/workspace-chrome/spinner.svg").size(12).mx(1).text_color(t.dim).spin(1800))
+      .when(!compact, (el) => el.child(div().text_size(10.5).child(String(a.waiting))));
     if (a.status === "working") return svg("mods/workspace-chrome/spinner.svg").size(12).mx(1).flex_none().text_color(t.working).spin(900);
     if (a.status === "blocked" && compact) return div().size(14).flex_none().rounded(4).bg(t.blocked + "26").text_size(10.5).font_bold().text_color(t.blocked).flex().items_center().justify_center().child("!");
     if (a.status === "blocked") return div().flex_none().px(6).h(18).rounded(5).bg(t.blocked + "26").text_size(10.5).font_semibold().text_color(t.blocked).flex().items_center().child("Needs you");
@@ -744,6 +752,8 @@ export default class Agents extends View {
       const more = detail.get(a.address);
       // An agent on another machine (`vps/t7`) says which.
       const machine = a.address.includes("/") ? a.address.split("/")[0] : null;
+      const waits = waitingOn(a, all, this.listed);
+      const shown = waits ? { ...a, waiting: waits } : a;
       if (collapsed) {
         return h_flex()
           .id(`ag-${a.address}`)
@@ -755,10 +765,10 @@ export default class Agents extends View {
           .hover((s) => s.bg(t.hover))
           .on_click(() => run("pane.focus", { pane: a.pane }))
           .child(div().flex_1().min_w(0).whitespace_nowrap().text_right().text_color(t.muted).child(String(i + 1)))
-          .child(h_flex().w(14).flex_none().items_center().justify_center().child(this.status(t, a, true)));
+          .child(h_flex().w(14).flex_none().items_center().justify_center().child(this.status(t, shown, true)));
       }
       const when = this.since(a);
-      const idle = a.status === "idle" && !a.focused;
+      const idle = a.status === "idle" && !a.focused && !waits;
       const isPinned = this.pins.includes(a.address);
       const pin = div()
         .id(`pin-${a.address}`)
@@ -827,7 +837,7 @@ export default class Agents extends View {
         .when(this.hovered !== a.address && !woke && Boolean(when), el => el.child(div().flex_none().text_size(11).text_color(t.dim).child(duration(now - when))))
         .when(Boolean(a.unreported), el => el.child(div().id(`unreported-${a.address}`).flex_none().text_size(10.5).text_color(t.dim)
           .tooltip("Not reporting to Herdr; status read from its title").child("?")))
-        .child(this.status(t, a, byPriority && !isPinned));
+        .child(this.status(t, shown, byPriority && !isPinned));
     };
 
     // Groups in list order: spaces (grouped) or priority sections. Agents of a
