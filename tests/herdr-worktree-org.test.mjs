@@ -21,16 +21,16 @@ describe("worktree-org checkout folders", () => {
 
   it("names a checkout folder after the origin's owner and repo", async () => {
     const repos = {
-      "/dev/botpoison/monorepo": { main: "/dev/botpoison/monorepo", origin: "https://github.com/botpoison/monorepo.git" },
-      "/dev/formspark/monorepo": { main: "/dev/formspark/monorepo", origin: "git@github.com:formspark/monorepo.git" },
+      "/dev/acme/monorepo": { main: "/dev/acme/monorepo", origin: "https://github.com/acme/monorepo.git" },
+      "/dev/globex/monorepo": { main: "/dev/globex/monorepo", origin: "git@github.com:globex/monorepo.git" },
     };
-    assert.equal(await nameOf("/dev/botpoison/monorepo", repos), "botpoison/monorepo");
-    assert.equal(await nameOf("/dev/formspark/monorepo", repos), "formspark/monorepo");
+    assert.equal(await nameOf("/dev/acme/monorepo", repos), "acme/monorepo");
+    assert.equal(await nameOf("/dev/globex/monorepo", repos), "globex/monorepo");
   });
 
   it("names a linked worktree after its main checkout's origin", async () => {
-    const repos = { "/w/botre/calmdots/fix": { main: "/dev/botre/calmdots", origin: "https://github.com/botre/calmdots" } };
-    assert.equal(await nameOf("/w/botre/calmdots/fix", repos), "botre/calmdots");
+    const repos = { "/w/acme/webapp/fix": { main: "/dev/acme/webapp", origin: "https://github.com/acme/webapp" } };
+    assert.equal(await nameOf("/w/acme/webapp/fix", repos), "acme/webapp");
   });
 
   it("falls back to the parent and folder name without a hosted origin", async () => {
