@@ -106,6 +106,7 @@ function menuItems(address, { snoozeOnly = false, finished = false, blocked = fa
   const chrome = (name) => `mods/workspace-chrome/${name}.svg`;
   const items = [];
   if (!snoozeOnly) {
+    items.push({ kind: "rename", icon: chrome("square-pen"), label: "Rename", hint: keys().find((k) => k.action === "tab.rename")?.keys });
     items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference in focused agent" });
     if (!settled && !snoozed) items.push(pinned ? { kind: "unpin", icon: chrome("pin-off"), label: "Unpin" } : { kind: "pin", icon: chrome("pin"), label: "Pin to the top" });
     if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Un-settle" });
@@ -322,6 +323,8 @@ export default class Agents extends View {
     if (kind === "unpin") return this.setPins(this.pins.filter((p) => p !== address));
     if (kind === "reference") return this.reference(address, cx);
     if (kind === "move") return this.move(address, act.preset, cx);
+    // Without a name, Herdr asks for one, as the tab's own Rename does.
+    if (kind === "rename") { const tab = whereIs(address).pane?.tab; if (tab) run("tab.rename", { id: tab }); }
   }
 
   // Moves an agent's pane to a new tab in another space; it keeps running.
