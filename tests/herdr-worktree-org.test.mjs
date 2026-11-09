@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { loadMod, modSource } from "./mod-source.mjs";
+import { loadMod, modSource, plain } from "./mod-source.mjs";
 
 // A git stand-in: `git -C <cwd> <args>` answers from `repos`, keyed by folder.
 const fakeExec = (repos) => async (cmd, args, { cwd }) => {
@@ -62,5 +62,57 @@ describe("worktree-org wiring", () => {
     const tabs = modSource("agent-tabs/main.js");
     assert.match(tabs, /mod: "menu-org"/);
     assert.match(tabs, /mod: "new-menu-org"/);
+  });
+});
+
+describe("worktree-org removal", () => {
+  const setup = ({ status = { code: 0, stdout: "" }, removal = { code: 0 } } = {}) => {
+    const calls = [];
+    const evaluate = loadMod("worktree-org", {
+      props: () => ({ space: "sp1" }),
+      spaces: () => [{ id: "sp1" }],
+      run: (...args) => calls.push(args),
+      exec: async (_cmd, args) => {
+        if (args.includes("status")) return status;
+        if (args[0] === "rev-parse") return { code: 0, stdout: "/dev/tool/.git/worktrees/fix" };
+        if (args.includes("config")) return { code: 1 };
+        if (args[0] === "worktree") { calls.push(args); return removal; }
+        throw new Error(`Unexpected git call: ${args.join(" ")}`);
+      },
+    });
+    const view = evaluate("new Worktree()");
+    Object.assign(view, { repo: { top: "/w/tool/fix", main: "/dev/tool", linked: true }, dirty: false, unpushed: [] });
+    return { view, calls };
+  };
+
+  it("keeps the space and checkout when the final status check fails", async () => {
+    for (const stderr of ["permission denied", ""]) {
+      const { view, calls } = setup({ status: { code: 128, stderr } });
+      assert.equal(await view.remove(), stderr || "git status failed.");
+      assert.deepEqual(calls, []);
+    }
+  });
+
+  it("closes the space before it removes a clean checkout without force", async () => {
+    const { view, calls } = setup();
+    assert.equal(await view.remove(), "");
+    assert.deepEqual(plain(calls), [
+      ["space.close", { id: "sp1", confirmed: true }],
+      ["worktree", "remove", "/w/tool/fix"],
+    ]);
+  });
+
+  it("requires another confirmation for edits made after the dialog opened", async () => {
+    const { view, calls } = setup({ status: { code: 0, stdout: " M notes.txt" } });
+    assert.match(await view.remove(), /changed since this opened/);
+    assert.deepEqual(calls, []);
+    assert.equal(view.dirty, true);
+    assert.equal(await view.remove(), "");
+    assert.deepEqual(plain(calls.at(-1)), ["worktree", "remove", "--force", "/w/tool/fix"]);
+  });
+
+  it("reports a failed worktree removal", async () => {
+    const { view } = setup({ removal: { code: 128, stderr: "checkout is locked" } });
+    assert.equal(await view.remove(), "checkout is locked");
   });
 });
