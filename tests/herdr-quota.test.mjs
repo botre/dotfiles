@@ -79,3 +79,18 @@ describe("quota", () => {
     assert.deepEqual(codex, { ...old, error: "HTTP 503" });
   });
 });
+
+describe("quota pace", () => {
+  it("puts the ideal use at how far the window has run", () => {
+    const evaluate = loadMod("quota", { shared: () => undefined, setShared: () => {} });
+    const now = Date.now();
+    const at = (secsLeft, secs) => evaluate(`elapsed(${JSON.stringify({ resets: new Date(now + secsLeft * 1000).toISOString(), secs })})`);
+    assert.ok(Math.abs(at(5 * 86400, 7 * 86400) - 2 / 7) < 0.01, "2 of 7 days gone is about 29%");
+    assert.equal(at(-60, 3600), 1, "past the reset caps at 100%");
+    assert.equal(at(7200, 3600), 0, "a reset further out than the window starts at 0%");
+    const pace = (pct, secsLeft) => plain(evaluate(`pace(${JSON.stringify({ pct, resets: new Date(now + secsLeft * 1000).toISOString(), secs: 100 * 3600 })})`)).join(" ");
+    assert.equal(pace(32, 70 * 3600), "+2% ahead");
+    assert.equal(pace(46, 45 * 3600), "-9% behind");
+    assert.equal(pace(30, 70 * 3600), "0% on track");
+  });
+});

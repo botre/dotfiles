@@ -79,7 +79,14 @@ function left(iso) {
   return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
 }
 
+// How far the window has run, which is also the use that lands on 100% at the reset.
 const elapsed = (w) => Math.min(1, Math.max(0, 1 - (Date.parse(w.resets) - Date.now()) / 1000 / w.secs));
+
+// Use against the ideal, in whole points: ["+2%", "ahead"], ["-9%", "behind"] or ["0%", "on track"].
+function pace(w) {
+  const gap = Math.round(w.pct) - Math.round(elapsed(w) * 100);
+  return gap > 0 ? [`+${gap}%`, "ahead"] : gap < 0 ? [`${gap}%`, "behind"] : ["0%", "on track"];
+}
 
 function bar(t, w, width, height) {
   return div().relative().w(width).h(height).rounded(height / 2).bg(t.border).overflow_hidden()
@@ -135,27 +142,39 @@ export default class Quota extends View {
     // One card for the whole strip, so it lists every provider at once.
     const card = HoverCard.new("quota-hover").open_delay(400).close_delay(200)
       .anchor("bottom_right").trigger(h_flex().gap(16).items_center().children(items))
-      .content(this.popup(t, data).w(390).rounded(8).border(1).border_color(t.border).shadow_md());
+      .content(this.popup(t, data).w(490).rounded(8).border(1).border_color(t.border).shadow_md());
     return h_flex().id("quota").size_full().px(14).items_center().justify_end()
       .bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .child(data ? card : div().text_color(t.dim).child("quota…"));
   }
 
+  // A table: one header, then each provider's name and its windows. Every row
+  // takes its cell widths from COLS, so the columns line up.
   popup(t, data) {
-    return v_flex().id("quota-popup").p(12).gap(10).bg(t.popover).text_size(12.5)
+    const COLS = [64, 100, 40, 40, 40, 52, 64];
+    const RIGHT = new Set([2, 3, 4, 6]);
+    const row = (cells, color) => h_flex().gap(10).items_center()
+      .children(cells.map((c, i) => div().w(COLS[i]).flex_none().truncate()
+        .when(RIGHT.has(i), (el) => el.text_right())
+        .text_color(color(i)).child(c)));
+    const header = row(["Window", "", "Used", "Ideal", "Pace", "", "Resets in"], () => t.dim).text_size(11);
+    const windowRow = (w) => {
+      const [gap, word] = pace(w);
+      const ideal = `${Math.round(elapsed(w) * 100)}%`;
+      return row([w.long, bar(t, w, COLS[1], 6), `${Math.round(w.pct)}%`, ideal, gap, word, left(w.resets)],
+        (i) => (i === 2 ? t.foreground : i === 0 || i === 4 ? t.muted : t.dim));
+    };
+    return v_flex().id("quota-popup").p(12).gap(8).bg(t.popover).text_size(12.5)
+      .child(header)
+      .child(div().h(1).bg(t.border))
       .children((data?.providers ?? []).map((p) =>
-        v_flex().gap(6)
+        v_flex().gap(6).pt(2)
           .child(h_flex().gap(6)
             .child(div().font_semibold().text_color(t.foreground).child(p.name))
             .child(div().text_color(t.dim).child(p.plan ?? ""))
             .when(Boolean(p.error), (el) => el.child(div().text_color(t.dim).child(`· ${p.error}`))))
-          .children((p.windows ?? []).map((w) =>
-            h_flex().gap(8).items_center()
-              .child(div().w(70).truncate().text_color(t.muted).child(w.long))
-              .child(bar(t, w, 110, 6))
-              .child(div().w(36).text_color(t.foreground).child(`${Math.round(w.pct)}%`))
-              .child(div().text_color(t.dim).child(`resets in ${left(w.resets)}`))))))
-      .child(div().text_size(11).text_color(t.dim).child("The tick marks how far each window has run."));
+          .children((p.windows ?? []).map(windowRow))))
+      .child(div().pt(2).text_size(11).text_color(t.dim).child("Ideal is the use that reaches 100% right at the reset. The tick marks it."));
   }
 
   render() {
