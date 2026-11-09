@@ -24,7 +24,8 @@ const WRAP_SLACK = 24;
 const RAN = "ran";
 const KEEP_RAN = 200;
 
-const norm = (command) => command.replace(/\s+/g, " ").trim();
+// Whitespace inside quoted shell arguments is data.
+const norm = (command) => command.trim();
 
 // The suggested and the already run commands on a screen, each joined back
 // from the rows it wraps onto (same indent, the row above nearly full).
@@ -68,7 +69,6 @@ export default class Commands extends View {
     localStorage.setItem(RAN, JSON.stringify([...this.ran].slice(-KEEP_RAN)));
   }
 
-  // The commands on the screen of the agent in view.
   async load(cx) {
     if (this.loading) return;
     this.loading = true;
@@ -102,7 +102,6 @@ export default class Commands extends View {
     cx.notify();
   }
 
-  // Grows the block to its rows, or back to nothing.
   fit() {
     const shown = Math.min(this.commands.length, MAX);
     const height = shown ? PAD * 2 + shown * ROW + (shown - 1) * 2 : 0;
