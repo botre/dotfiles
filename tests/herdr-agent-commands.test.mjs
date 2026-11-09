@@ -6,21 +6,34 @@ describe("agent-commands", () => {
   const evaluate = loadMods(["agent-commands/main.js"]);
   const parse = (screen, cols) => JSON.parse(evaluate("JSON.stringify((({ suggested, executed }) => ({ suggested, executed: [...executed] }))(screenCommands(screen, cols)))", { screen, cols }));
 
+  it("preserves spaces and tabs inside suggested and executed shell commands", () => {
+    const command = "printf '%s' 'two  spaces\tand a tab'";
+    assert.deepEqual(parse(`  ! ${command}\n! ${command}`), {
+      suggested: [command], executed: [command],
+    });
+  });
+
+  it("keeps distinct quoted values while it deduplicates identical suggestions", () => {
+    assert.deepEqual(parse("  ! echo 'a  b'\n  ! echo 'a b'\n  ! echo 'a  b'"), {
+      suggested: ["echo 'a  b'", "echo 'a b'"], executed: [],
+    });
+  });
+
   it("reads suggestions from Claude's replies and joins a command wrapped across rows", () => {
     const cols = 60;
     const screen = [
       "● Email Routing refused because the old MX records are still",
       "  there. Run that first:",
       "",
-      "  ! cd ~/calmdots && for id in cd3aab96 a81dc022 61f66eeb a",
+      "  ! cd ~/project && for id in cd3aab96 a81dc022 61f66eeb a",
       "  c4f9cd9; do pnpm exec cf dns records delete $id --force;",
       "  done",
       "",
       "  Then run enable again:",
       "",
-      "  ! cd ~/calmdots && pnpm exec cf email-routing enable",
+      "  ! cd ~/project && pnpm exec cf email-routing enable",
       "  - not a command, a list item",
-      "  ! cd ~/calmdots && pnpm exec cf email-routing enable",
+      "  ! cd ~/project && pnpm exec cf email-routing enable",
       "",
       "!  pnpm exec cf whoami",
       "  ⎿  bjorn@example.com",
@@ -28,8 +41,8 @@ describe("agent-commands", () => {
     ].join("\n");
     assert.deepEqual(parse(screen, cols), {
       suggested: [
-        "cd ~/calmdots && for id in cd3aab96 a81dc022 61f66eeb a c4f9cd9; do pnpm exec cf dns records delete $id --force; done",
-        "cd ~/calmdots && pnpm exec cf email-routing enable",
+        "cd ~/project && for id in cd3aab96 a81dc022 61f66eeb a c4f9cd9; do pnpm exec cf dns records delete $id --force; done",
+        "cd ~/project && pnpm exec cf email-routing enable",
       ],
       executed: ["pnpm exec cf whoami"],
     });
@@ -61,5 +74,29 @@ describe("agent-commands", () => {
     screen = "  ! echo a\n  ! echo b";
     await view.load(cx);
     assert.deepEqual(plain(view.commands), ["echo b"], "a dismissal ends once its line leaves the screen; a run one stays gone");
+  });
+
+  it("sends quoted whitespace intact and only hides the exact command that ran", async () => {
+    const sent = [];
+    const evaluate = loadMods(["agent-commands/main.js"], {
+      localStorage: memoryStorage(),
+      focused: () => ({ terminal: "t1" }),
+      terminals: () => [{ address: "t1", state: "live", program: { key: "claude" } }],
+      hc: async (args) => {
+        if (args[0] === "read") return { code: 0, stdout: "  ! echo 'a  b'\n  ! echo 'a b'\n! echo 'a b'" };
+        sent.push(args);
+        return { code: 0 };
+      },
+      run() {}, props: () => ({}), notify() {},
+    });
+    const view = evaluate("new Commands()");
+    Object.assign(view, { ran: new Set(), dismissed: new Set(), height: 0 });
+    const cx = { notify() {} };
+    await view.load(cx);
+    assert.deepEqual(plain(view.commands), ["echo 'a  b'"]);
+    await view.send(view.commands[0], cx);
+    assert.deepEqual(plain(sent), [["send", "t1", "! echo 'a  b'"]]);
+    await view.load(cx);
+    assert.deepEqual(plain(view.commands), []);
   });
 });
