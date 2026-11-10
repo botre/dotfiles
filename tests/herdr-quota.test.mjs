@@ -93,4 +93,16 @@ describe("quota pace", () => {
     assert.equal(pace(46, 45 * 3600), "-9% behind");
     assert.equal(pace(30, 70 * 3600), "0% on track");
   });
+
+  it("colours the bar by pace rather than by use", () => {
+    const evaluate = loadMod("quota", { shared: () => undefined, setShared: () => {} });
+    const now = Date.now();
+    const t = '{ accent: "calm", working: "ahead", ansi1: "far", blocked: "out" }';
+    const tone = (pct, secsLeft) => evaluate(`color(${t}, ${JSON.stringify({ pct, resets: new Date(now + secsLeft * 1000).toISOString(), secs: 100 * 3600 })})`);
+    assert.equal(tone(75, 13 * 3600), "calm", "75% used but 12 behind");
+    assert.equal(tone(30, 70 * 3600), "calm", "on track");
+    assert.equal(tone(32, 70 * 3600), "ahead");
+    assert.equal(tone(45, 70 * 3600), "far");
+    assert.equal(tone(100, 1 * 3600), "out");
+  });
 });
