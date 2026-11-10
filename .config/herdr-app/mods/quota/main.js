@@ -71,8 +71,6 @@ async function codex() {
 
 const failed = (name) => (e) => ({ name, error: String(e?.message ?? e) });
 
-const color = (t, pct) => (pct >= 92 ? t.blocked : pct >= 80 ? t.ansi1 : pct >= 60 ? t.working : t.accent);
-
 function left(iso) {
   const s = Math.max(0, (Date.parse(iso) - Date.now()) / 1000);
   const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
@@ -82,15 +80,24 @@ function left(iso) {
 // How far the window has run, which is also the use that lands on 100% at the reset.
 const elapsed = (w) => Math.min(1, Math.max(0, 1 - (Date.parse(w.resets) - Date.now()) / 1000 / w.secs));
 
-// Use against the ideal, in whole points: ["+2%", "ahead"], ["-9%", "behind"] or ["0%", "on track"].
+// Use minus the ideal, in whole points.
+const gapOf = (w) => Math.round(w.pct) - Math.round(elapsed(w) * 100);
+
+// Colour by pace, not by use: behind or on track is calm, ahead warns, far ahead or used up alarms.
+const color = (t, w) => {
+  const gap = gapOf(w);
+  return w.pct >= 100 ? t.blocked : gap >= 10 ? t.ansi1 : gap > 0 ? t.working : t.accent;
+};
+
+// Use against the ideal: ["+2%", "ahead"], ["-9%", "behind"] or ["0%", "on track"].
 function pace(w) {
-  const gap = Math.round(w.pct) - Math.round(elapsed(w) * 100);
+  const gap = gapOf(w);
   return gap > 0 ? [`+${gap}%`, "ahead"] : gap < 0 ? [`${gap}%`, "behind"] : ["0%", "on track"];
 }
 
 function bar(t, w, width, height) {
   return div().relative().w(width).h(height).rounded(height / 2).bg(t.border).overflow_hidden()
-    .child(div().absolute().left(0).top(0).h(height).w((width * Math.min(100, Math.max(0, w.pct))) / 100).bg(color(t, w.pct)))
+    .child(div().absolute().left(0).top(0).h(height).w((width * Math.min(100, Math.max(0, w.pct))) / 100).bg(color(t, w)))
     .child(div().absolute().top(0).h(height).w(1).left(Math.round(width * elapsed(w))).bg(t.foreground).opacity(0.35));
 }
 
