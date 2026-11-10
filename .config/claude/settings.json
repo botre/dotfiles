@@ -16,7 +16,7 @@
   },
   "voiceEnabled": true,
   "enabledPlugins": {},
-  "remoteControlAtStartup": true,
+  "remoteControlAtStartup": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
