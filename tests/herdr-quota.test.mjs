@@ -106,3 +106,17 @@ describe("quota pace", () => {
     assert.equal(tone(100, 1 * 3600), "out");
   });
 });
+
+describe("quota window pick", () => {
+  const p = { name: "Claude", windows: [{ label: "wk", pct: 64 }, { label: "Fable wk", pct: 4 }] };
+  const pick = (store) => loadMod("quota", { shared: (k) => store[k], setShared: (k, v) => { store[k] = v; } });
+
+  it("shows the first window until one is picked", () => {
+    assert.equal(pick({})(`shown(${JSON.stringify(p)})`).label, "wk");
+  });
+
+  it("shows the picked window, and falls back when the pick is gone", () => {
+    assert.equal(pick({ "quota.pick": { Claude: "Fable wk" } })(`shown(${JSON.stringify(p)})`).label, "Fable wk");
+    assert.equal(pick({ "quota.pick": { Claude: "Opus wk" } })(`shown(${JSON.stringify(p)})`).label, "wk");
+  });
+});
