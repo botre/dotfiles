@@ -42,9 +42,29 @@ describe("worktree-org checkout folders", () => {
     assert.equal(await nameOf("/dev/acme/local", repos), "acme/local");
   });
 
-  it("keeps the checkout root under ~/.herdr/worktrees", () => {
-    const evaluate = loadMod("worktree-org");
-    assert.equal(evaluate("ROOT('/home/test')"), "/home/test/.herdr/worktrees");
+  const rootOf = async (settings) => {
+    const evaluate = loadMod("worktree-org", { appHome: () => "/app", readTextFile: async () => settings });
+    return evaluate("root('/home/test')");
+  };
+
+  it("keeps the checkout root under ~/.herdr/worktrees by default", async () => {
+    assert.equal(await rootOf(null), "/home/test/.herdr/worktrees");
+  });
+
+  it("takes the checkout root from worktrees.directory", async () => {
+    assert.equal(await rootOf(JSON.stringify({ worktrees: { directory: "~/wt/" } })), "/home/test/wt");
+  });
+
+  it("puts a new checkout at <root>/<owner>/<repo>/<branch>", async () => {
+    const calls = [];
+    const evaluate = loadMod("worktree-org", {
+      exec: async (cmd, args) => { calls.push(args); return { code: args[0] === "show-ref" ? 1 : 0, stdout: "" }; },
+      props: () => ({}),
+      run: () => {},
+    });
+    const self = { text: "fix/login", root: "/wt", on: null, repo: { name: "acme/webapp", main: "/dev/acme/webapp", top: "/dev/acme/webapp" } };
+    assert.equal(await evaluate("Worktree.prototype.create.call(self)", { self }), "");
+    assert.deepEqual(plain(calls.at(-1)), ["worktree", "add", "-b", "fix/login", "/wt/acme/webapp/fix-login", "HEAD"]);
   });
 });
 

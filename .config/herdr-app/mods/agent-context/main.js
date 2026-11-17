@@ -1,7 +1,7 @@
 // Publishes enabled mods' instructions to each agent's own core metadata.
 // Remote agents can read them without connecting back to this window.
 import { View, div } from "gpui-kit";
-import { layout, panes, terminals, shared, setShared, appHome, readTextFile, hc } from "herdr";
+import { layout, panes, terminals, shared, setShared, appHome, readTextFile, hc, checking } from "herdr";
 
 const LABEL = "herdr.context";
 const SAFE_NAME = /^[A-Za-z0-9_-]+$/;
@@ -21,7 +21,7 @@ export default class AgentContext extends View {
   }
 
   async sync(cx) {
-    if (this.busy) return;
+    if (this.busy || checking()) return; // `herdr-app check` runs init for real: label no agents there.
     this.busy = true;
     try {
       const off = new Set(shared("mods.off") ?? []);
