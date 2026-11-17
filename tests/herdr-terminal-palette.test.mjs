@@ -7,7 +7,7 @@ describe("terminal-palette", () => {
     let colors = { foreground: "#1b1b1e", terminal_foreground: "#4c4f69", background: "#eff1f5" }, offline = true;
     const writes = [];
     const evaluate = loadMods(["terminal-palette/main.js"], {
-      theme: () => colors,
+      theme: () => colors, checking: () => false,
       terminals: () => [{ state: "live", address: "remote/t1" }],
       exec: async (_program, args, options) => {
         writes.push({ on: options.on, colors: JSON.parse(args.at(-1)) });

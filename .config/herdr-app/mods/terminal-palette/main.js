@@ -1,5 +1,5 @@
 import { View, div } from "gpui-kit";
-import { theme, terminals, exec } from "herdr";
+import { theme, terminals, exec, checking } from "herdr";
 
 const WRITE = `import json, os, pathlib, sys, tempfile
 root = pathlib.Path(os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache")
@@ -21,7 +21,7 @@ export default class TerminalPalette extends View {
   }
 
   async sync() {
-    if (this.busy) return;
+    if (this.busy || checking()) return; // `herdr-app check` runs init for real: write no cache there.
     this.busy = true;
     try {
       const colors = theme();

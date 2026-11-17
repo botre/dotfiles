@@ -13,7 +13,7 @@ function fixture() {
   const terminal = { address: "remote/t7", state: "live", program: { agent: true }, labels: {} };
   const evaluate = loadMods(["agent-context/main.js"], {
     layout: () => ({ children: [{ content: { mod: "summary" } }] }),
-    panes: () => [], terminals: () => [terminal],
+    panes: () => [], terminals: () => [terminal], checking: () => false,
     shared: (key) => state[key], setShared: (key, value) => { state[key] = value; },
     appHome: () => "/app", readTextFile: async (path) => files[path] ?? null,
     hc: async (args) => { writes.push(args); terminal.labels["herdr.context"] = args[2].slice("herdr.context=".length); return { code: 0 }; },
