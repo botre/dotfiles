@@ -6,7 +6,11 @@ import { View, div } from "gpui-kit";
 import { spaces, panes, terminals, run, home, shared, readTextFile, exec } from "herdr";
 
 const CONTROL_CHARACTERS_RE = /[\u0000-\u001f\u007f]/g;
-const TITLE_PREFIX_RE = /^[^\p{L}\p{N}]+/u;
+// A status glyph or spinner and the separator after it ("✦  Working"). It stops at
+// an opening bracket or quote, so a title that starts with one ("[web] login") keeps it.
+const TITLE_PREFIX_RE = /^[^\p{L}\p{N}\p{Ps}\p{Pi}]+/u;
+// Codex's blinking "[ ! ] " / "[ . ] " mark before its title.
+const CODEX_MARK_RE = /^\[ [!.] \] /;
 // Spinner frames, and a status word after a separator ("Fix tests \u00b7 Thinking"),
 // that some agents append to their title.
 const SPINNER_SUFFIX_RE = /[\s\u2800-\u28ff\u25d0-\u25d3\u2722-\u273d\u00b7\u2022*]+$/u;
@@ -29,7 +33,7 @@ const base = (path) => (path ?? "").split("/").pop().replace(LEADING_HYPHEN_RE, 
 function cleanTitle(value) {
   if (typeof value !== "string") return null;
   let t = value.replace(CONTROL_CHARACTERS_RE, " ").trim();
-  t = t.replace(TITLE_PREFIX_RE, "").replace(SPINNER_SUFFIX_RE, "").replace(STATUS_SUFFIX_RE, "").replace(SPINNER_SUFFIX_RE, "").trim();
+  t = t.replace(TITLE_PREFIX_RE, "").replace(CODEX_MARK_RE, "").replace(SPINNER_SUFFIX_RE, "").replace(STATUS_SUFFIX_RE, "").replace(SPINNER_SUFFIX_RE, "").trim();
   return t && !TRANSIENT_TITLE_RE.test(t) ? t : null;
 }
 
