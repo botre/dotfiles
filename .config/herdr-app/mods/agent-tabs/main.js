@@ -1,5 +1,5 @@
 import { View, div, svg, image } from "gpui-kit";
-import { h_flex } from "gpui-base";
+import { h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, terminals, run, openOverlay, theme, window, shared, layout, settings, nextCommand } from "herdr";
 
 // The agents list snoozes or settles an agent with a label on its terminal,
@@ -54,6 +54,33 @@ export function tabFor(command, tabs) {
   return tabs[((at < 0 ? 0 : at + step) + tabs.length) % tabs.length];
 }
 
+// One tab per wheel notch. A touchpad or smooth-scrolling mouse sends many
+// small events per gesture: a short swipe or one smoothed notch (about 25 px)
+// moves one tab, a longer swipe keeps going a tab per 60 px, at most one every
+// 100 ms so each shows. Returns "prev", "next" or null.
+export function wheelStep(swipe, e, now = Date.now()) {
+  if (e.delta_lines) return e.delta_lines.y ? (e.delta_lines.y > 0 ? "prev" : "next") : null;
+  const dy = e.delta?.y ?? 0;
+  // Phases often arrive only as moves (a macOS touchpad included): a pause or
+  // a turn starts a new gesture.
+  if (e.touch_phase === "started" || now - swipe.at > 250 || dy * swipe.acc < 0) Object.assign(swipe, { acc: 0, steps: 0 });
+  swipe.at = now;
+  swipe.acc += dy;
+  const need = swipe.steps ? 60 : 20;
+  if (Math.abs(swipe.acc) < need || now - swipe.last < 100) return null;
+  swipe.acc -= Math.sign(swipe.acc) * need;
+  swipe.steps++;
+  swipe.last = now;
+  return dy > 0 ? "prev" : "next";
+}
+
+// A saved object, or {} when the value is missing or corrupt.
+export function savedObject(raw) {
+  let value;
+  try { value = JSON.parse(raw ?? "{}"); } catch { return {}; }
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
 function find(node, id) {
   if (node?.id === id) return node;
   for (const child of node?.children ?? []) {
@@ -66,7 +93,9 @@ function find(node, id) {
 export default class Tabs extends View {
   init(_props, cx) {
     this.pressed = null;
-    this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}");
+    this.scroll = ScrollHandle.new();
+    this.panels = savedObject(localStorage.getItem("panels"));
+    this.swipe = { acc: 0, steps: 0, at: 0, last: 0 };
     // A snooze that runs out changes nothing the bar watches, so it looks again now and then.
     cx.timer.every(15000, (cx) => cx.notify());
     cx.spawn(async (cx) => {
@@ -111,14 +140,24 @@ export default class Tabs extends View {
     const t = theme();
     const space = spaces().find(p => p.active);
     const shown = visibleTabs(space);
+    // Keep the active tab in view: index into the tabs the bar shows.
+    const active = shown.findIndex(tab => tab.active);
+    const selected = shown[active]?.id;
+    if (selected !== this.selected || active !== this.selectedIndex) {
+      this.selected = selected;
+      this.selectedIndex = active;
+      if (active >= 0) this.scroll.scroll_to_item(active);
+    }
     const stop = (_e, cx) => cx.stop_propagation();
     const button = (id, label, action) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const item = (c, i) => {
       const overview = panes().some(p => p.tab === c.id && p.mod === "agent-list");
       const program = panes().find(p => p.tab === c.id && p.program?.agent)?.program ?? panes().find(p => p.tab === c.id)?.program;
-      const name = /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
+      const name = c.named ? c.name : program?.name ?? "Terminal";
       return h_flex().id(`tab-${c.id}`).h(29).px(10).gap(7).rounded(7).items_center().flex_none().text_size(12.8)
+        // A rename or status dot on this or an earlier tab can push the active one out.
+        .when(i <= active, el => el.on_size_change((_size, cx) => { this.scroll.scroll_to_item(active); cx.notify(); }))
         .border(1).border_color(c.active ? t.border : t.chrome).bg(c.active ? t.raised : t.chrome).text_color(c.active ? t.foreground : t.muted)
         .hover(s => s.bg(t.hover))
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
@@ -156,11 +195,13 @@ export default class Tabs extends View {
     return h_flex().size_full().min_w(0).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
       .on_mouse_up("left", () => { this.pressed = null; })
       .on_scroll_wheel(e => {
-        if (Math.abs(e.delta.y) < 1) return;
-        const tab = tabFor(e.delta.y > 0 ? "prev" : "next", shown);
+        const step = wheelStep(this.swipe, e);
+        const tab = step && tabFor(step, shown);
         if (tab) run("tab.select", { id: tab.id });
       })
-      .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().children(shown.map(item)))
+      .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().track_scroll(this.scroll)
+        .on_size_change((_size, cx) => { if (active >= 0) { this.scroll.scroll_to_item(active); cx.notify(); } })
+        .children(shown.map(item)))
       .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu-org", kind: "popup", width: 250, height: 512 })))
       // The tab-actions menu; off in the Mods panel hides the button. Height: 31 per action, plus 10.
       .when(!(shared("mods.off") ?? []).includes("tab-actions"), el => el.child(button("tab-actions", svg("mods/tab-actions/more.svg").size(16),

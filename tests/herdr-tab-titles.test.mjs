@@ -33,6 +33,16 @@ describe("tab-titles", () => {
     assert.equal(clean("\u280b Working"), null);
   });
 
+  it("keeps a title's leading bracket or quote and drops Codex's attention mark", () => {
+    const clean = (title) => evaluate(`cleanTitle(${JSON.stringify(title)})`);
+    assert.equal(clean("[web] login flow"), "[web] login flow");
+    assert.equal(clean("\u2733 [web] login flow"), "[web] login flow");
+    assert.equal(clean("\u201cQuoted\u201d task"), "\u201cQuoted\u201d task");
+    assert.equal(clean("[ ! ] Fix flaky tests"), "Fix flaky tests");
+    assert.equal(clean("[ . ] Fix flaky tests"), "Fix flaky tests");
+    assert.equal(evaluate('agentTitle({title:"[ ! ] Fix flaky tests | dotfiles"}, "codex")'), "Fix flaky tests");
+  });
+
   it("reads a Claude session's name only after the person used /rename", () => {
     assert.equal(evaluate(`renamedTitle(${JSON.stringify(JSON.stringify({ name: "Sampler regions", nameSource: "user" }))})`), "Sampler regions");
     assert.equal(evaluate(`renamedTitle(${JSON.stringify(JSON.stringify({ name: "dotfiles-69", nameSource: "derived" }))})`), null);

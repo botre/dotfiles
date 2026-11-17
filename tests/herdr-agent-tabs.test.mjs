@@ -66,4 +66,24 @@ describe("agent-tabs", () => {
     assert.equal(evaluate('tabFor("next", [tabs[2], tabs[1]]).id', { tabs }), "e");
     assert.equal(evaluate('tabFor("other", tabs)', { tabs }), null);
   });
+
+  it("moves one tab per wheel notch, and one per stretch of a touchpad swipe", () => {
+    const steps = (events) => {
+      const swipe = { acc: 0, steps: 0, at: 0, last: 0 };
+      return events.map(([e, now]) => evaluate("wheelStep(swipe, e, now)", { swipe, e, now }));
+    };
+    assert.deepEqual(steps([[{ delta_lines: { y: 1 } }, 1000], [{ delta_lines: { y: -1 } }, 1001], [{ delta_lines: { y: 0 } }, 1002]]), ["prev", "next", null]);
+    // Small moves add up to one tab; the rest of the swipe needs 60 px a tab, at most one per 100 ms.
+    const swipe = [5, 5, 5, 5, 20, 20, 20, 20].map((y, i) => [{ delta: { y }, touch_phase: "moved" }, 1000 + i * 30]);
+    assert.deepEqual(steps(swipe), [null, null, null, "prev", null, null, null, "prev"]);
+    // A pause starts a new gesture.
+    assert.deepEqual(steps([[{ delta: { y: -25 } }, 1000], [{ delta: { y: -25 } }, 1500]]), ["next", "next"]);
+  });
+
+  it("starts with no remembered panels when the saved value is corrupt", () => {
+    assert.equal(evaluate('JSON.stringify(savedObject("{oops"))'), "{}");
+    assert.equal(evaluate('JSON.stringify(savedObject("[1]"))'), "{}");
+    assert.equal(evaluate("JSON.stringify(savedObject(null))"), "{}");
+    assert.equal(evaluate('JSON.stringify(savedObject("{\\"sp1\\":\\"files\\"}"))'), '{"sp1":"files"}');
+  });
 });

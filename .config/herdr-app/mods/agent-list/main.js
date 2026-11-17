@@ -23,7 +23,14 @@ const RESUME_WAITING = "resume.waiting";
 const RESUME_ACTION = "resume.action";
 const MENU_ROW = 31;
 
-const TITLE_PREFIX_RE = /^[^\p{L}\p{N}]+/u;
+// What an agent puts before its title: a status glyph or spinner and the
+// separator after it ("✦  Working", "⠋ - Thinking"). It stops at an opening
+// bracket or quote, so a title that starts with one ("[web] login") keeps it.
+const TITLE_PREFIX_RE = /^[^\p{L}\p{N}\p{Ps}\p{Pi}]+/u;
+// Codex's blinking "[ ! ] " / "[ . ] " mark before its title.
+const CODEX_MARK_RE = /^\[ [!.] \] /;
+// Only a status glyph, so a path keeps its leading ~ or /.
+const GLYPH_PREFIX_RE = /^[^\p{L}\p{N}~/]+/u;
 const PATH_TITLE_RE = /^[~/]|^[A-Za-z]:\\/;
 
 const DIGITS_RE = /^\d+$/;
@@ -49,18 +56,70 @@ function toggleSidebar() {
   run("layout.resize", { id: "sidebar", px: narrow() ? (shared("sidebar.width") ?? 268) : window()?.platform === "macos" ? 76 : 44 });
 }
 
-const clean = (s) => (s ?? "").replace(TITLE_PREFIX_RE, "").trim();
+export const clean = (s) => (s ?? "").replace(TITLE_PREFIX_RE, "").replace(CODEX_MARK_RE, "").trim();
 
-function lead(tab, all = panes()) {
-  const mine = all.filter(p => p.tab === tab.id && p.terminal);
-  return mine.find(p => p.program?.agent) ?? mine.find(p => p.focused) ?? mine[0];
+// Each tab's lead pane, from one pane snapshot: its first agent, else its first
+// focused terminal, else its first terminal. Every panes() call copies the whole list.
+export function leadPanes(all) {
+  const leads = new Map();
+  for (const p of all) {
+    if (!p.terminal) continue;
+    const current = leads.get(p.tab);
+    if (!current || (!current.program?.agent && (p.program?.agent || (!current.focused && p.focused)))) leads.set(p.tab, p);
+  }
+  return leads;
 }
 
-function title(tab, l) {
+// A tab's name, or its lead's live title when that says more: the tab is unnamed
+// or only named after the program, and the title is no path, user@host, program
+// name or terminal address.
+export function title(tab, l) {
   const prog = l?.program?.name;
   const live = clean(l?.title);
-  const telling = live && live !== prog && !PATH_TITLE_RE.test(live) && !live.includes("@") && live.toLowerCase() !== l?.program?.key;
-  return tab.name === prog && telling ? live : tab.name;
+  // clean() would strip a path's leading ~ or /: test the title with only its status glyph gone.
+  const path = PATH_TITLE_RE.test((l?.title ?? "").replace(GLYPH_PREFIX_RE, ""));
+  const telling = live && live !== (l?.terminal ?? l?.address) && live !== prog && !path && !live.includes("@") && live.toLowerCase() !== l?.program?.key;
+  return (tab.name === prog || !tab.named) && telling ? live : tab.name;
+}
+
+// Each listed agent's label. Agents sharing a tab each go by their own title,
+// since the tab's name would read the same for all of them.
+export function agentLabels(list, tabs, leads) {
+  const counts = new Map();
+  for (const a of list) counts.set(a.tab, (counts.get(a.tab) ?? 0) + 1);
+  return new Map(list.map((a) => {
+    const tab = tabs.get(a.tab);
+    if (!tab) return [a.address, a.title || a.program?.name || ""];
+    const many = counts.get(a.tab) > 1;
+    return [a.address, title(many ? { ...tab, named: false } : tab, many ? a : leads.get(a.tab))];
+  }));
+}
+
+// Live sub-agents of `addr`, depth first, each with the tree lines in front of it.
+export function subTree(all, addr, lead = []) {
+  const kids = all.filter((k) => k.parent === addr && k.state === "live");
+  return kids.flatMap((k, i) => {
+    const last = i === kids.length - 1;
+    return [
+      { t: k, lines: [...lead, last ? "└" : "├"] },
+      ...subTree(all, k.address, [...lead, last ? "" : "│"]),
+    ];
+  });
+}
+
+// Agents that show in a parent's tree: a kept sub-agent (one with its own pane)
+// is in agents() too, and shows once, under its parent.
+export function nestedAgents(parents, all) {
+  return new Set(parents.flatMap((a) => subTree(all, a.address).map((s) => s.t.address)));
+}
+
+// A saved value parsed, or `fallback` when it is missing, corrupt or not the
+// expected kind (an object or an array), so a bad value can't break the view.
+export function saved(raw, fallback) {
+  let value;
+  try { value = JSON.parse(raw ?? "null"); } catch { return fallback; }
+  if (Array.isArray(fallback)) return Array.isArray(value) ? value : fallback;
+  return value && typeof value === "object" && !Array.isArray(value) ? value : fallback;
 }
 const RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
 // Pane-less sub-agents are absent from agents(). Treat errors as blocked.
@@ -179,9 +238,9 @@ export default class Agents extends View {
     }
     this.folded = new Set(["inbox-snoozed", "inbox-settled"]);
     // Each agent's last state and when it changed (ms), kept across restarts.
-    this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
+    this.changed = saved(localStorage.getItem("changed"), {});
     // Woken from a snooze and not looked at since.
-    this.woke = new Set(JSON.parse(localStorage.getItem("woke") ?? "[]"));
+    this.woke = new Set(saved(localStorage.getItem("woke"), []));
     this.sessions = new SessionTracker();
     cx.spawn(async (cx) => this.sessions.sync(cx));
     cx.timer.every(5000, (cx) => cx.spawn(async (cx) => this.sessions.sync(cx)));
@@ -226,8 +285,8 @@ export default class Agents extends View {
 
   // The "Can be resumed" section: tabs a restart turned back into shells
   // that still hold an agent's session. Empty when there are none.
-  resumable(t, now) {
-    const byTerminal = new Map(panes().filter((p) => p.terminal).map((p) => [p.terminal, p]));
+  resumable(t, now, allPanes = panes()) {
+    const byTerminal = new Map(allPanes.filter((p) => p.terminal).map((p) => [p.terminal, p]));
     const waiting = (shared(RESUME_WAITING) ?? []).filter((w) => byTerminal.has(w.address));
     if (!waiting.length) return [];
     const all = waiting.map((w) => w.address);
@@ -477,10 +536,11 @@ export default class Agents extends View {
       return;
     }
     const a = agents().find((x) => x.address === address);
-    const pane = panes().find((p) => p.terminal === address);
+    const allPanes = panes();
+    const pane = allPanes.find((p) => p.terminal === address);
     // A tab's shell has no agent entry; its pane still names the tab.
     const tab = spaces().flatMap((s) => s.tabs).find((t) => t.id === (a?.tab ?? pane?.tab));
-    const text = reference({ address, title: tab ? title(tab, lead(tab)) : a?.title, cwd: pane?.cwd, home: home() });
+    const text = reference({ address, title: tab ? title(tab, leadPanes(allPanes).get(tab.id)) : a?.title, cwd: pane?.cwd, home: home() });
     const old = cx.read_from_clipboard();
     cx.write_to_clipboard(text);
     run("terminal.paste");
@@ -646,16 +706,8 @@ export default class Agents extends View {
     run("terminal.peek", { terminal: addr });
   }
 
-  // Live sub-agents of `addr`, depth first, each with the tree lines in front of it.
-  tree(all, addr, lead = []) {
-    const kids = all.filter((k) => k.parent === addr && k.state === "live");
-    return kids.flatMap((k, i) => {
-      const last = i === kids.length - 1;
-      return [
-        { t: k, lines: [...lead, last ? "└" : "├"] },
-        ...this.tree(all, k.address, [...lead, last ? "" : "│"]),
-      ];
-    });
+  tree(all, addr) {
+    return subTree(all, addr);
   }
 
   subRow(t, s, shown) {
@@ -675,7 +727,8 @@ export default class Agents extends View {
       .text_size(12.5)
       .when(on, (el) => el.bg(t.raised))
       .hover((s) => s.bg(t.hover))
-      .on_click(() => this.peek(k.address))
+      // A kept sub-agent has a pane to go to; one without only peeks.
+      .on_click(() => (this.listed.has(k.address) ? run("pane.focus", { terminal: k.address }) : this.peek(k.address)))
       .children(s.lines.map(l => div().self_start().mt(-4).w(9).h(17).mr(4).flex_none()
         .when(Boolean(l), el => el.border_l(1.5).border_color(t.input))
         .when(l === "└" || l === "├", el => el.border_b(1.5).rounded_bl(6))))
@@ -712,7 +765,9 @@ export default class Agents extends View {
     const sort = sortOf();
     const all = terminals();
     let list = agents();
-    const unreported = unreportedAgents(list, all, panes(), spaces(), this.rawTitles);
+    // One read of panes and spaces per render: every host read copies the whole list.
+    const allPanes = panes(), allSpaces = spaces();
+    const unreported = unreportedAgents(list, all, allPanes, allSpaces, this.rawTitles);
     this.unreported = unreported.map((a) => a.address);
     list = [...list, ...unreported];
     this.listed = new Map(list.map((a) => [a.address, a.status]));
@@ -731,13 +786,15 @@ export default class Agents extends View {
       cx.timer.after(GRACE + 50, (cx) => { this.graceTimer = false; cx.notify(); });
     }
     this.inbox(list, all, rankOf, now, cx);
+    // A kept sub-agent shows under its parent's tree, not in a row of its own:
+    // only where that tree shows, so not on the rail or under a shelved parent.
+    const nested = collapsed ? new Set() : nestedAgents(list.filter((a) => !this.shelf.has(a.address)), all);
+    list = list.filter((a) => !nested.has(a.address));
     // Use tab numbers only when space and title would otherwise be ambiguous.
-    const tabs = spaces().flatMap(s => s.tabs);
-    const label = (a) => {
-      const tab = tabs.find(tab => tab.id === a.tab);
-      return tab ? title(tab, lead(tab)) : a.title || a.program?.name || "";
-    };
-    const spaceAt = new Map(spaces().map((s, i) => [s.id, i]));
+    // Labels are worked out once, since the sort asks for them on every comparison.
+    const labels = agentLabels(list, new Map(allSpaces.flatMap((s) => s.tabs).map((tab) => [tab.id, tab])), leadPanes(allPanes));
+    const label = (a) => labels.get(a.address) ?? "";
+    const spaceAt = new Map(allSpaces.map((s, i) => [s.id, i]));
     const byName = (x, y) => `${x.space_name ?? ""} ${label(x)}`.localeCompare(`${y.space_name ?? ""} ${label(y)}`, undefined, { numeric: true, sensitivity: "base" });
     list = [...list].sort(byPriority
       ? (x, y) => rankOf(y) - rankOf(x) || byName(x, y)
@@ -941,7 +998,7 @@ export default class Agents extends View {
         return [header(g), ...(g.shelf ? members.map(shelfRow) : members.flatMap(withKids))];
       });
     const undo = this.undo && now < this.undo.until ? this.undo : null;
-    const resumable = collapsed ? [] : this.resumable(t, now);
+    const resumable = collapsed ? [] : this.resumable(t, now, allPanes);
 
     return v_flex()
       .size_full()
