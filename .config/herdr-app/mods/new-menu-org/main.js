@@ -2,6 +2,10 @@ import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { theme, spaces, panes, knownAgents, run, openOverlay, closeOverlay, props, window, keys, shared, setShared } from "herdr";
 
+// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
+// sprite that blurs when scaled and a logo on a white square.
+const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+
 // The last agents each machine reported, shown at once while knownAgents() checks again.
 const KNOWN = "new-menu.agents";
 // As every menu: popup padding, row height, the gap between rows, a heading's height.
@@ -67,7 +71,7 @@ export default class NewMenu extends View {
       .child(this.row("terminal", svg("icons/shell.svg").size(14), "New terminal", () => run("tab.new", { space: space?.id }), shortcut("tab.new")))
       .child(div().px(8).pt(8).h(HEADING).flex_none().text_size(11).text_color(t.dim).child("Start an agent"))
       .child(v_flex().flex_1().min_h(0).gap(GAP).overflow_y_scrollbar()
-        .children(choices.map((a, i) => this.row(a.key, a.tint ? svg(a.icon).size(14).text_color(t.foreground) : image(a.icon).size(14), a.name,
+        .children(choices.map((a, i) => this.row(a.key, BRAND[a.key] ? svg(BRAND[a.key][0]).size(14).text_color(BRAND[a.key][1]) : a.tint ? svg(a.icon).size(14).text_color(t.foreground) : image(a.icon).size(14), a.name,
           () => run("tab.new", { name: a.name, space: space?.id, argv: a.run }), a.installed ? (i < 9 ? String(i + 1) : "") : "Not installed", a.installed)))
         .when(this.failed || this.agents.length === 0, el => el.child(div().px(8).py(6).text_color(t.dim).child(this.failed ? "Couldn't check installed agents" : "Checking installed agents…"))))
       .child(div().h(1).mx(7).my(4).flex_none().bg(t.border))

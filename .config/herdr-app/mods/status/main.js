@@ -7,6 +7,10 @@ import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, agents, panes, focused, theme, run, window, keys, exec } from "herdr";
 
+// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
+// sprite that blurs when scaled and a logo on a white square.
+const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+
 const EVERY = 2 * 60 * 1000;
 const FAILED = new Set(["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]);
 const PENDING = new Set(["PENDING", "EXPECTED", "QUEUED", "IN_PROGRESS", "WAITING", "REQUESTED"]);
@@ -114,7 +118,7 @@ export default class WorkspaceStatus extends View {
     return h_flex().size_full().px(14).gap(16).items_center().bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .child(h_flex().gap(10).items_center()
         .when(Boolean(program), (el) => el.child(div().id("agent-program").flex_none().tooltip(program.name)
-          .child(program.tint ? svg(program.icon).size(13).text_color(t.muted) : image(program.icon).w(13).h(13))))
+          .child(BRAND[program.key] ? svg(BRAND[program.key][0]).size(13).text_color(BRAND[program.key][1]) : program.tint ? svg(program.icon).size(13).text_color(t.muted) : image(program.icon).w(13).h(13))))
         .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer")))
       .when(Boolean(space?.branch), el => el.child(h_flex().gap(10).items_center().child(label("branch", space.branch)).when(Boolean(pr), (e) => e.child(pr))))
       .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} agent${list.length === 1 ? "" : "s"}`)

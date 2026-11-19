@@ -20,6 +20,10 @@ import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SEL
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
 
+// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
+// sprite that blurs when scaled and a logo on a white square.
+const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+
 // Changes made on another machine show up within this long.
 const POLL = 60000;
 // The picture a project's icon comes from, when it has a favicon. An emoji draws as text.
@@ -652,6 +656,7 @@ export default class Projects extends View {
       const inner = it.kind !== "agent"
         ? svg(`mods/workspace-chrome/${it.icon}.svg`).size(16).text_color(t.muted)
         : !it.agent.icon ? div()
+        : BRAND[it.agent.key] ? svg(BRAND[it.agent.key][0]).size(16).text_color(BRAND[it.agent.key][1])
         : it.agent.tint ? svg(it.agent.icon).size(16).text_color(t.foreground) : image(it.agent.icon).size(16);
       return h_flex().size(18).flex_none().items_center().justify_center().child(inner);
     };
