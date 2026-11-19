@@ -3,6 +3,8 @@ const PREFIX = /^[^\p{L}\p{N}]+/u;
 const CONTROL = /[\u0000-\u001f\u007f]/g;
 const INSPECTION_TTL = 90000;
 const RECAP_PENDING = 180000;
+const RECAP_INTERVAL = 900000;
+const AGENT_NAMES = new Set(["claude", "claude code", "codex"]);
 
 export const text = (value) => typeof value === "string" ? value.replace(CONTROL, " ").trim().slice(0, 240) : "";
 export const goalTitle = (value) => text(value).replace(PREFIX, "").split(" | ")[0].trim();
@@ -18,12 +20,36 @@ const ownLabel = (terminal, key, pidKey) => {
   return !author || author === String(terminal.foreground?.pid) ? goalTitle(terminal.labels?.[key]) : "";
 };
 
-// A helper row's name: the title the helper published, then its goal, then
-// the terminal name its parent gave it (often a code like `cx675`).
-export function helperName(terminal) {
-  return ownLabel(terminal, "session.title", "session.title.pid")
-    || ownLabel(terminal, "summary.goal", "summary.pid")
+// The observation the transcript probe made of this terminal's current process.
+const ownObservation = (terminal, observation) => observation && observation.pid === terminal.foreground?.pid ? observation : null;
+
+// A session's own name: Claude Code's /rename name, the title the agent
+// published, the recap's title, then the agent's goal.
+export function sessionName(terminal, observation, record = {}) {
+  const seen = ownObservation(terminal, observation);
+  return goalTitle(seen?.renamed)
+    || ownLabel(terminal, "session.title", "session.title.pid")
+    || goalTitle(seen?.recap?.title)
+    || ownLabel(terminal, "summary.goal", "summary.pid") || text(record.goal);
+}
+
+// A recap asks for a title only when the session has no name of its own.
+export function recapWantsTitle(terminal, observation) {
+  return !goalTitle(ownObservation(terminal, observation)?.renamed) && !ownLabel(terminal, "session.title", "session.title.pid");
+}
+
+// A helper row's name: the session's own name, then the terminal name its
+// parent gave it (often a code like `cx675`).
+export function helperName(terminal, observation) {
+  return sessionName(terminal, observation)
     || terminal.name || terminal.template || terminal.program?.name || terminal.address;
+}
+
+// The conversation title the agent shows in its terminal title, without
+// placeholders such as "Claude Code" before it has one.
+function terminalTitle(terminal) {
+  const title = goalTitle(terminal.title);
+  return title && !AGENT_NAMES.has(title.toLowerCase()) ? title : "";
 }
 
 export function isAgent(terminal) {
@@ -37,6 +63,22 @@ export function duration(ms) {
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
   return `${hours}h${minutes % 60 ? ` ${minutes % 60}m` : ""}`;
+}
+
+// A short age with seconds under a minute: "12s", "4m", "1h 5m".
+export function since(ms) {
+  if (!Number.isFinite(ms)) return "";
+  return ms < 60000 ? `${Math.max(0, Math.floor(ms / 1000))}s` : duration(ms);
+}
+
+// The dim line under an activity that says where it came from and how fresh it is.
+export function activityMeta(row, now = Date.now()) {
+  const age = row.updatedAt ? ` · ${since(now - row.updatedAt)} ago` : "";
+  if (row.source === "live") return `${row.working ? "Live" : "Latest message"}${age}`;
+  if (row.freshness === "current") return `Current · ${row.source === "recap" ? "recap" : row.source === "status" ? "status report" : "agent report"}`;
+  if (row.inspectionError) return "Conversation unavailable";
+  if (row.updatedAt) return `Reported${age}${row.freshness === "outdated" ? " · conversation changed" : ""}`;
+  return "No current report";
 }
 
 export function clock(at, now = Date.now()) {
@@ -85,41 +127,83 @@ export function reportFreshness(terminal, record) {
   return finished <= 0 || (finished === 1 && resting) ? "current" : "outdated";
 }
 
+// Whether the agent's own report still covers the conversation.
+function agentFreshness(terminal, record, observation, inspected) {
+  if (!record.updatedAt) return null;
+  const byTurn = reportFreshness(terminal, record);
+  if (byTurn) return byTurn;
+  if (!inspected) return "unknown";
+  return observation.conversationAt > record.updatedAt + 10000 ? "outdated" : "current";
+}
+
+// What the transcript shows without any model: the running tool action while a
+// turn is underway, else the latest assistant sentence.
+function liveActivity(observation) {
+  const live = observation?.live;
+  if (!live) return null;
+  const working = Boolean(live.working);
+  if (working && live.action) return { text: text(live.action), at: live.actionAt || null, working };
+  if (live.message) return { text: text(live.message), at: live.messageAt || null, working };
+  if (live.action) return { text: text(live.action), at: live.actionAt || null, working };
+  return null;
+}
+
+// The agent's current report wins, then live transcript activity, then the
+// newest of a recap, a status message, or an older report.
 export function activityState(terminal, record, observation, now = Date.now()) {
   if (record.pid !== undefined && record.pid !== terminal.foreground?.pid) record = {};
+  const inspected = Boolean(observation?.session && !observation.error && now - observation.checkedAt < INSPECTION_TTL);
+  const recap = observation?.recap;
+  const recapError = recap?.error || null;
+  const own = record.activity ? agentFreshness(terminal, record, observation, inspected) : null;
+  if (own === "current") {
+    return { activity: record.activity, source: "agent", updatedAt: record.updatedAt, freshness: "current", activityAt: record.activityAt ?? null, working: false, recapError };
+  }
+  const live = inspected ? liveActivity(observation) : null;
+  if (live?.text) {
+    return { activity: live.text, source: "live", updatedAt: live.at, freshness: "current", activityAt: live.at, working: live.working, recapError };
+  }
   const candidates = [];
-  if (record.activity && record.updatedAt) candidates.push({ text: record.activity, at: record.updatedAt, coverage: record.updatedAt, source: "agent" });
+  if (record.activity && record.updatedAt) candidates.push({ text: record.activity, at: record.updatedAt, coverage: record.updatedAt, source: "agent", freshness: own });
   const message = text(terminal.report?.msg);
   if (message) candidates.push({ text: message, at: terminal.status_ms || null, coverage: terminal.status_ms || 0, source: "status" });
-  const recap = observation?.recap;
   if (recap?.activity) candidates.push({ text: text(recap.activity), at: recap.at, coverage: recap.conversationAt || 0, source: "recap", stamp: recap.stamp });
   candidates.sort((a, b) => b.coverage - a.coverage);
   const selected = candidates[0];
-  const inspected = observation?.session && !observation.error && now - observation.checkedAt < INSPECTION_TTL;
-  let freshness = "unknown";
-  const byTurn = selected?.source === "agent" ? reportFreshness(terminal, record) : null;
-  if (byTurn) freshness = byTurn;
-  else if (selected && inspected) {
+  let freshness = selected?.freshness ?? "unknown";
+  if (selected && selected.source !== "agent" && inspected) {
     freshness = selected.source === "recap"
       ? (selected.stamp === observation.stamp ? "current" : "outdated")
       : (observation.conversationAt > selected.coverage + 10000 ? "outdated" : "current");
   }
   return {
     activity: selected?.text || "No activity report yet", source: selected?.source || null,
-    updatedAt: selected?.at || null, freshness,
-    activityAt: selected?.source === "agent" && freshness === "current" ? record.activityAt : null,
-    recapError: recap?.error || null,
+    updatedAt: selected?.at || null, freshness, activityAt: null, working: false, recapError,
   };
 }
 
+// A session's goal: the agent's own, its session title, the recap's, then the
+// first line of the first prompt.
+export function goalState(terminal, record, observation, tab) {
+  const seen = ownObservation(terminal, observation);
+  return text(record.goal) || ownLabel(terminal, "session.title", "session.title.pid") || terminalTitle(terminal)
+    || text(tab?.name) || text(seen?.recap?.goal) || text(seen?.firstPrompt) || "No goal update yet";
+}
+
+// Recaps fill a missing goal or title. They wait for a quiet transcript after a
+// report, skip an unchanged transcript, and run at most every fifteen minutes
+// per session.
 export function needsRecap(terminal, record, observation, now = Date.now()) {
   if (!observation?.session || observation.error || !observation.stamp) return false;
   if (now - observation.checkedAt >= INSPECTION_TTL) return false;
+  if (record.pid !== undefined && record.pid !== terminal.foreground?.pid) record = {};
   const recap = observation.recap || {};
   if (recap.pendingAt && now - recap.pendingAt < RECAP_PENDING) return false;
-  if (recap.at && now - recap.at < 600000) return false;
-  const state = activityState(terminal, record, observation, now);
-  return state.freshness !== "current" && (!state.updatedAt || now - state.updatedAt >= 120000);
+  if (recap.at && now - recap.at < RECAP_INTERVAL) return false;
+  if (record.updatedAt && now - record.updatedAt < 120000) return false;
+  if (recap.stamp === observation.stamp && (recap.goal || recap.activity)) return false;
+  const goalCurrent = Boolean(record.goal) && agentFreshness(terminal, record, observation, true) === "current";
+  return !goalCurrent || recapWantsTitle(terminal, observation);
 }
 
 export function sessionRows(all, listed, spaces, history, panes = [], observations = {}, now = Date.now()) {
@@ -142,13 +226,13 @@ export function sessionRows(all, listed, spaces, history, panes = [], observatio
       tab: tab?.id ?? pane?.tab ?? agent?.tab ?? null,
       cwd: pane?.cwd ?? terminal.foreground?.cwd ?? terminal.cwd ?? null,
       branch: pane?.branch ?? null,
-      name: terminal.name || tab?.name || goalTitle(terminal.title) || terminal.address,
+      name: terminal.name || tab?.name || sessionName(terminal, observation, record) || goalTitle(terminal.title) || terminal.address,
       space: space?.name || (terminal.parent ? "Sub-agent" : "Outside spaces"),
       status: agent?.status ?? terminal.status ?? "idle",
       program: terminal.program,
-      goal: record.goal || goalTitle(terminal.title) || "No goal update yet",
+      goal: goalState(terminal, record, observation, tab),
       activity: state.activity, activityAt: state.activityAt, updatedAt: state.updatedAt,
-      source: state.source, freshness: state.freshness, recapError: state.recapError,
+      source: state.source, freshness: state.freshness, recapError: state.recapError, working: state.working,
       recapPending: observation?.recap?.pendingAt && now - observation.recap.pendingAt < RECAP_PENDING,
       conversationAt: observation?.conversationAt, inspectionError: observation?.error,
       routingLegacy: terminal.program?.key === "codex" && !(terminal.foreground?.argv || []).includes("--no-daemon"),

@@ -1,7 +1,7 @@
 import { div, svg, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { agents, terminals, spaces, panes, shared, setShared, theme } from "herdr";
-import { sessionRows, groupSessions, duration, clock, directoryName } from "./model.js";
+import { sessionRows, groupSessions, duration, clock, directoryName, activityMeta } from "./model.js";
 import { ICON, STORE, focusSession } from "./ui.js";
 import { OBSERVATIONS, RECAPS } from "./conversations.js";
 
@@ -42,7 +42,7 @@ export function overview(expanded = new Set()) {
         .child(div().text_size(12).text_color(t.muted).child(`${groups.length} session${groups.length === 1 ? "" : "s"}`))
         .child(div().id("overview-recaps").px(8).py(5).rounded(4).border(1).border_color(t.border)
           .text_size(11).text_color(t.muted).cursor_pointer().hover((el) => el.bg(t.hover))
-          .tooltip("Recaps send conversation history to the session's existing provider, OpenAI or Anthropic.")
+          .tooltip("Recaps send a short conversation excerpt to the smallest model of the session's provider, OpenAI or Anthropic.")
           .on_click(() => setShared(RECAPS, !recaps)).child(recaps ? "Disable recaps" : "Enable recaps")))
       .child(div().pl(34).text_size(12).text_color(t.dim).child("All spaces · All connected machines")))
     .child(div().flex_1().min_h(0).overflow_scroll().child(v_flex().w_full().min_w(1000).px(14)
@@ -76,10 +76,8 @@ export function overview(expanded = new Set()) {
         .child(cell(row.goal, 1))
         .child(cell(v_flex().gap(6)
           .child(div().child(row.activity))
-          .child(div().text_size(11).text_color(row.freshness === "outdated" ? t.working : t.dim)
-            .child(row.freshness === "current" ? `Current · ${row.source === "recap" ? "recap" : row.source === "status" ? "status report" : "agent report"}`
-              : row.updatedAt ? `Last reported ${duration(now - row.updatedAt)} ago · ${row.freshness === "outdated" ? "conversation changed" : "freshness unknown"}`
-              : row.inspectionError ? "Conversation unavailable" : "No current report"))
+          .child(div().text_size(11).text_color(row.inspectionError && row.source !== "live" ? t.working : t.dim)
+            .child(activityMeta(row, now)))
           .when(row.recapPending, (el) => el.child(div().text_size(11).text_color(t.dim).child("Refreshing recap…")))
           .when(Boolean(row.recapError), (el) => el.child(div().text_size(11).text_color(t.dim).child("Recap unavailable"))), 2, !row.reported))
         .child(cell(row.activityAt ? duration(now - row.activityAt) : "—", 3, true))
