@@ -5,6 +5,8 @@ import { sessionRows, groupSessions, duration, clock, directoryName } from "./mo
 import { ICON, STORE, focusSession } from "./ui.js";
 import { OBSERVATIONS, RECAPS } from "./conversations.js";
 
+const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+
 const COLUMNS = [
   ["Session", 210], ["Goal", null], ["Activity", null],
   ["Activity time", 100], ["Session length", 110], ["Updated", 90],
@@ -27,8 +29,9 @@ export function overview(expanded = new Set()) {
     .when(COLUMNS[index][1] !== null, (el) => el.w(COLUMNS[index][1]).flex_none())
     .when(COLUMNS[index][1] === null, (el) => el.flex_1().min_w(index === 1 ? 190 : 250))
     .text_color(muted ? t.muted : t.foreground).child(content);
-  const icon = (p) => p?.icon
-    ? (p.tint ? svg(p.icon).size(15).text_color(t.muted) : image(p.icon).size(15))
+  // Claude Code and Codex as the same clean marks the sidebar draws.
+  const icon = (p) => BRAND[p?.key] ? svg(BRAND[p.key][0]).size(15).text_color(BRAND[p.key][1])
+    : p?.icon ? (p.tint ? svg(p.icon).size(15).text_color(t.muted) : image(p.icon).size(15))
     : svg(ICON).size(15).text_color(t.muted);
 
   return v_flex().size_full().min_h(0).bg(t.background).text_size(13)
