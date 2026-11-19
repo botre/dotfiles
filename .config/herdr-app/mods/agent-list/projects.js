@@ -122,6 +122,75 @@ export function projectIcon(p, favicons) {
   return { letter: ([...String(p.name ?? "").trim()][0] ?? "?").toUpperCase(), color: tileColor(p.id) };
 }
 
+// --- Sidebar grid ---------------------------------------------------------
+// The projects list and the agents list draw their rows on one grid, so icons,
+// names, counts and status glyphs line up down the whole sidebar. The drawing
+// helpers take the element builders as `ui` ({ div, h_flex, svg, image }),
+// since this file also loads without gpui-kit (in tests).
+export const GRID = Object.freeze({
+  // The list's side padding, then the row's: row content starts 16 from the edge,
+  // where section labels and group headers start too.
+  listPx: 8,
+  rowPx: 8,
+  rowH: 30,
+  radius: 8,
+  // Between rows, as between menu rows.
+  rowGap: 2,
+  // The icon slot, and the space from it to the name.
+  icon: 18,
+  iconGap: 9,
+  // The status slot, always last, with the count (or other detail) just before it.
+  status: 18,
+  trailGap: 4,
+  spinner: 12,
+  dot: 7,
+  // A section's title row ("Projects", "Agents").
+  sectionH: 31,
+  // Below the search box and at the end of a list.
+  listEnd: 12,
+});
+
+// A project's picture (projectIcon) at `size`, centred in its box. An emoji is
+// text with a pixel line height (a bare number would mean rem).
+export function projectIconView(ui, t, pic, size = GRID.icon) {
+  if (!pic) return ui.div().w(size).h(size).flex_none();
+  if (pic.favicon) return ui.image(pic.favicon).w(size).h(size).flex_none().rounded(Math.round(size * 0.2));
+  if (pic.emoji) return ui.h_flex().w(size).h(size).flex_none().items_center().justify_center()
+    .text_size(size - 3).line_height(`${size}px`).text_color(t.foreground).child(pic.emoji);
+  return ui.h_flex().w(size).h(size).flex_none().rounded(Math.round(size * 0.25)).bg(pic.color).items_center().justify_center()
+    .text_size(Math.round(size * 0.6)).line_height(`${size}px`).font_bold().text_color("#ffffff").child(pic.letter);
+}
+
+// The glyph for a status: a spinner while working (slow and dim while it only
+// waits on helpers), a badge when blocked, a dot when done, a ring when idle.
+export function statusGlyph(ui, t, status, waiting = false) {
+  if (waiting) return ui.svg("mods/workspace-chrome/spinner.svg").size(GRID.spinner).text_color(t.dim).spin(1800);
+  if (status === "working") return ui.svg("mods/workspace-chrome/spinner.svg").size(GRID.spinner).text_color(t.working).spin(900);
+  if (status === "blocked") return ui.div().size(14).rounded(4).bg(`${t.blocked}26`).text_size(10.5).font_bold().text_color(t.blocked)
+    .flex().items_center().justify_center().child("!");
+  if (status === "idle") return ui.div().size(GRID.dot).rounded(4).border(1.5).border_color(t.idle ?? t.dim);
+  if (status === "done") return ui.div().size(GRID.dot).rounded(4).bg(t.done ?? t.dim);
+  return null;
+}
+
+// The status slot: the same box whatever it shows (or empty), so a change never
+// moves the name and glyphs line up across rows.
+export const statusSlot = (ui, glyph) => ui.h_flex().w(GRID.status).h(GRID.status).flex_none().items_center().justify_center()
+  .when(Boolean(glyph), (el) => el.child(glyph));
+
+// The right end of a row or group header: its details (a count, a time), then
+// the status slot (`slot`, when the caller built its own from statusSlot).
+export const gridTrail = (ui, details, glyph, slot = null) => ui.h_flex().flex_none().gap(GRID.trailGap).items_center()
+  .children((details ?? []).filter(Boolean)).child(slot ?? statusSlot(ui, glyph));
+
+// A list row on the grid: [icon slot] [name] [details] [status slot]. Callers
+// add selection, hover and clicks.
+export const gridRow = (ui, { id, icon, name, details, glyph, slot }) => ui.h_flex().id(id).h(GRID.rowH).px(GRID.rowPx).gap(GRID.iconGap)
+  .flex_none().items_center().rounded(GRID.radius)
+  .child(ui.h_flex().w(GRID.icon).h(GRID.icon).flex_none().items_center().justify_center().when(Boolean(icon), (el) => el.child(icon)))
+  .child(ui.h_flex().flex_1().min_w(0).items_center().child(name))
+  .child(gridTrail(ui, details, glyph, slot));
+
 // The hc commands that move a tab to a project: a label on each of its
 // terminals, removed for General.
 export function moveCommands(allPanes, tab, project) {
@@ -133,10 +202,12 @@ export function moveCommands(allPanes, tab, project) {
 // The "Move to project" picker: General, then every project by name.
 export const pickerProjects = (list) => [generalProject(), ...[...liveProjects(list)].sort(byProjectName)];
 
-const PICKER_ROW = 31;
+// Menus and pickers: popup padding, row height, the gap between rows, a heading's height.
+export const MENU = Object.freeze({ pad: 5, row: 31, gap: 2, heading: 26, radius: 7 });
+
 const PICKER_ROWS = 10;
 // The picker popup for a tab, sized to its list (it scrolls past ten projects).
 export function pickerOverlay(tab, list) {
   const rows = Math.min(pickerProjects(list).length, PICKER_ROWS);
-  return { mod: "projects", kind: "popup", width: 260, height: 10 + 26 + rows * PICKER_ROW + (rows - 1) * 2, props: { picker: tab } };
+  return { mod: "projects", kind: "popup", width: 260, height: MENU.pad * 2 + MENU.heading + rows * MENU.row + (rows - 1) * MENU.gap, props: { picker: tab } };
 }

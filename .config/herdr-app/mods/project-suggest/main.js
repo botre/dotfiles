@@ -7,7 +7,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, panes, agents, terminals, focused, exec, run, theme, props, shared, setShared, checking, layout } from "herdr";
-import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_ACTION, PROJECT_FAVICONS, PROJECT_DISMISSED, MAIN_STACK, MAIN_START, liveProjects, tabProjects, projectIcon } from "./projects.js";
+import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_ACTION, PROJECT_FAVICONS, PROJECT_DISMISSED, MAIN_STACK, MAIN_START, liveProjects, tabProjects, projectIcon, projectIconView } from "./projects.js";
 
 const EVERY = 1500;
 const ROW = 30;
@@ -144,13 +144,10 @@ export default class ProjectSuggest extends View {
     this.show(null, cx);
   }
 
+  // Drawn as the sidebar draws it (projects.js).
   icon(proj, t) {
-    const pic = projectIcon(proj, shared(PROJECT_FAVICONS) ?? {});
-    if (pic.favicon) return image(pic.favicon).w(16).h(16).flex_none().rounded(3);
-    if (pic.emoji) return h_flex().w(16).h(16).flex_none().items_center().justify_center()
-      .text_size(13).line_height("16px").text_color(t.foreground).child(pic.emoji);
-    return h_flex().w(16).h(16).flex_none().rounded(4).bg(pic.color).items_center().justify_center()
-      .text_size(9.6).font_bold().text_color("#ffffff").child(pic.letter);
+    const ui = { div, h_flex, svg, image };
+    return projectIconView(ui, t, projectIcon(proj, shared(PROJECT_FAVICONS) ?? {}), 16);
   }
 
   render() {

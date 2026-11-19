@@ -257,7 +257,7 @@ describe("agent-list", () => {
         } });
         return proxy;
       };
-      const evaluate = loadMods(["agent-list/main.js"], { div: () => element("div"), h_flex: () => element("h_flex"), svg: (path) => element(`svg ${path}`) });
+      const evaluate = loadMods(["agent-list/projects.js", "agent-list/main.js"], { div: () => element("div"), h_flex: () => element("h_flex"), svg: (path) => element(`svg ${path}`) });
       const t = { dim: "#999", working: "#0a0" };
       const render = (a) => JSON.stringify(evaluate("Agents.prototype.status.call(Agents.prototype, t, a)", { t, a }).calls);
       const waiting = render({ address: "t1", status: "idle", waiting: 2 });
@@ -301,7 +301,7 @@ describe("agent-list", () => {
         panes: [{ pane: "p1", terminal: "t1", tab: "tb1" }],
       };
       const commands = [], notes = [], store = {};
-      const evaluate = loadMods(["agent-list/inbox.js", "agent-list/move.js", "agent-list/main.js"], {
+      const evaluate = loadMods(["agent-list/projects.js", "agent-list/inbox.js", "agent-list/move.js", "agent-list/main.js"], {
         spaces: () => state.spaces, panes: () => state.panes, terminals: () => [{ address: "t1", labels: {} }],
         keys: () => [], machines: () => [{ name: null, layout: "ready" }], shared: (key) => store[key], setShared: (key, value) => { store[key] = value; },
         run: (command, args) => commands.push([command, args]), notify: (n) => notes.push(n),

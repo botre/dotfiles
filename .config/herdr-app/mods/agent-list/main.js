@@ -9,7 +9,7 @@ import { agents, terminals, panes, focused, spaces, run, theme, shared, setShare
 import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { ICON } from "./ui.js";
-import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, liveProjects, projectRank, tabProjects, projectIcon, pickerOverlay } from "./projects.js";
+import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, gridTrail, liveProjects, projectRank, tabProjects, projectIcon, pickerOverlay } from "./projects.js";
 import { overview } from "./overview.js";
 import { machineChoices, machineOf, moveAgent } from "./move.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
@@ -24,9 +24,9 @@ const X_ICON = "mods/workspace-chrome/x.svg";
 // Shared by the resume mod: sessions that a restart left waiting in their tab.
 const RESUME_WAITING = "resume.waiting";
 const RESUME_ACTION = "resume.action";
-const MENU_ROW = 31;
-// Space between menu rows, matching the other menus.
-const MENU_GAP = 2;
+// The element builders the shared grid helpers draw with (projects.js). Each is
+// looked up when called, so a test can leave out the ones it never draws.
+const UI = { div: (...a) => div(...a), h_flex: (...a) => h_flex(...a), svg: (...a) => svg(...a), image: (...a) => image(...a) };
 
 // What an agent puts before its title: a status glyph or spinner and the
 // separator after it ("✦  Working", "⠋ - Thinking"). It stops at an opening
@@ -100,9 +100,27 @@ export function agentLabels(list, tabs, leads) {
   }));
 }
 
+// Each terminal list's live children by parent, built once per list: a render
+// asks for the sub-agents of every row several times. terminals() hands out a
+// new array on each call, so a list never changes under its index.
+const KIDS = new WeakMap();
+function liveKids(all, addr) {
+  let index = KIDS.get(all);
+  if (!index) {
+    index = new Map();
+    for (const k of all) {
+      if (k.state !== "live" || k.parent == null) continue;
+      if (index.has(k.parent)) index.get(k.parent).push(k);
+      else index.set(k.parent, [k]);
+    }
+    KIDS.set(all, index);
+  }
+  return index.get(addr) ?? [];
+}
+
 // Live sub-agents of `addr`, depth first, each with the tree lines in front of it.
 export function subTree(all, addr, lead = []) {
-  const kids = all.filter((k) => k.parent === addr && k.state === "live");
+  const kids = liveKids(all, addr);
   return kids.flatMap((k, i) => {
     const last = i === kids.length - 1;
     return [
@@ -134,8 +152,7 @@ const kidStatus = (k, listed) => {
   return s === "error" ? "blocked" : s === "done" ? "idle" : s;
 };
 // The statuses of an agent's live sub-agents, at any depth.
-const kidStatuses = (all, addr, listed) => all
-  .filter((k) => k.parent === addr && k.state === "live")
+const kidStatuses = (all, addr, listed) => liveKids(all, addr)
   .flatMap((k) => [kidStatus(k, listed), ...kidStatuses(all, k.address, listed)]);
 // How many helpers an agent waits on: it has stopped while they still work.
 const waitingOn = (a, all, listed) => (a.status === "working" || a.status === "blocked" ? 0
@@ -194,7 +211,7 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   const snoozed = parseSnoozed(labelOf(term, SNOOZED, pending));
   const chrome = (name) => `mods/workspace-chrome/${name}.svg`;
   const items = [];
-  items.push({ kind: "rename", icon: chrome("square-pen"), label: "Rename", hint: keys().find((k) => k.action === "tab.rename")?.keys });
+  items.push({ kind: "rename", icon: chrome("square-pen"), label: "Rename…", hint: keys().find((k) => k.action === "tab.rename")?.keys });
   items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference" });
   // Parking keeps its old names inside (kind, label key), so parked agents stay parked.
   if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Bring back" });
@@ -217,7 +234,7 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
 const machineItems = (address) => machineChoices(machines(), machineOf(address))
   .map((m) => ({ kind: "machine", preset: m.name ?? "", icon: `mods/workspace-chrome/${m.name ? "server" : "monitor"}.svg`, label: m.label }));
 
-const menuHeight = (items) => 10 + items.reduce((h, it) => h + (it.heading ? 26 : MENU_ROW), 0) + MENU_GAP * Math.max(0, items.length - 1);
+const menuHeight = (items) => MENU.pad * 2 + items.reduce((h, it) => h + (it.heading ? MENU.heading : MENU.row), 0) + MENU.gap * Math.max(0, items.length - 1);
 
 // Agent programs a terminal can run while Herdr lists it only once it reports a status.
 const AGENT_PROGRAMS = new Set(["claude", "codex"]);
@@ -266,15 +283,17 @@ export function rowIcon(a, projectOf, projects, favicons) {
   return (proj && projectIcon(proj, favicons)) ?? { program: a.program };
 }
 
-// A rowIcon drawn at `size`; an emoji is text, never a picture.
+// A rowIcon drawn at `size`, as the projects sidebar draws it (an emoji is text,
+// never a picture).
 function drawRowIcon(spec, size, t) {
   if (spec.program) return icon(spec.program, size, t.foreground);
-  if (spec.favicon) return image(spec.favicon).w(size).h(size).flex_none().rounded(3);
-  if (spec.emoji) return h_flex().w(size).h(size).flex_none().items_center().justify_center()
-    .text_size(size - 3).line_height(`${size}px`).text_color(t.foreground).child(spec.emoji);
-  return h_flex().w(size).h(size).flex_none().rounded(4).bg(spec.color).items_center().justify_center()
-    .text_size(size * 0.6).font_bold().text_color("#ffffff").child(spec.letter);
+  return projectIconView(UI, t, spec, size);
 }
+
+// A program's logo fills its whole box, so it sits 2px smaller in the icon slot
+// than a project's picture, and both read the same size.
+const programIcon = () => GRID.icon - 2;
+const rowIconSize = (spec) => (spec.program ? programIcon() : GRID.icon);
 
 export default class Agents extends View {
   init(_props, cx) {
@@ -383,14 +402,18 @@ export default class Agents extends View {
       const name = named ? w.tab : w.space ?? w.address;
       const more = named ? w.space : null;
       const agent = w.agent === "codex" ? "Codex" : "Claude";
-      return h_flex()
-        .id(`resume-${w.address}`)
-        .px(8)
-        .h(30)
-        .flex_none()
-        .rounded(8)
-        .items_center()
-        .gap(9)
+      return gridRow(UI, {
+        id: `resume-${w.address}`,
+        icon: image(`icons/${w.agent}.svg`).w(programIcon()).h(programIcon()).flex_none().opacity(hovered || pane.focused ? 1 : 0.6),
+        name: h_flex().flex_1().min_w(0).gap(5).items_center()
+          .child(div().min_w(0).max_w(more ? 120 : 200).truncate().text_color(t.foreground).child(name))
+          .when(Boolean(more), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))),
+        details: hovered
+          ? [h_flex().gap(1).items_center()
+            .child(button(`resume-run-${w.address}`, PLAY_ICON, `Resume ${agent}`, (cx) => this.resumeAction("resume", [w.address], cx)))
+            .child(button(`resume-dismiss-${w.address}`, X_ICON, "Dismiss: forget this session, keep the shell", (cx) => this.resumeAction("forget", [w.address], cx)))]
+          : [Boolean(w.active) && div().text_size(11).text_color(t.dim).child(duration(now - w.active))],
+      })
         .when(pane.focused, (el) => el.bg(t.selected))
         .cursor_pointer()
         .hover((s) => s.bg(t.hover))
@@ -399,15 +422,7 @@ export default class Agents extends View {
           else if (this.hovered === key) this.hovered = null;
           cx.notify();
         })
-        .on_click(() => run("pane.focus", { pane: pane.pane }))
-        .child(image(`icons/${w.agent}.svg`).w(16).h(16).flex_none().opacity(hovered || pane.focused ? 1 : 0.6))
-        .child(h_flex().flex_1().min_w(0).gap(5).items_center()
-          .child(div().min_w(0).max_w(more ? 120 : 200).truncate().text_color(t.foreground).child(name))
-          .when(Boolean(more), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))))
-        .when(hovered, (el) => el.child(h_flex().flex_none().gap(1).items_center()
-          .child(button(`resume-run-${w.address}`, PLAY_ICON, `Resume ${agent}`, (cx) => this.resumeAction("resume", [w.address], cx)))
-          .child(button(`resume-dismiss-${w.address}`, X_ICON, "Dismiss: forget this session, keep the shell", (cx) => this.resumeAction("forget", [w.address], cx)))))
-        .when(!hovered && Boolean(w.active), (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(duration(now - w.active))));
+        .on_click(() => run("pane.focus", { pane: pane.pane }));
     };
     return [header, ...waiting.map(row)];
   }
@@ -662,19 +677,19 @@ export default class Agents extends View {
     };
     return v_flex()
       .w_full()
-      .p(5)
-      .gap(MENU_GAP)
+      .p(MENU.pad)
+      .gap(MENU.gap)
       .bg(t.popover)
       .text_size(12.8)
       .children((p.machines ? machineItems(p.rowMenu) : menuItems(p.rowMenu, p)).map((it, i) => it.heading
-        ? div().px(8).pt(8).h(26).flex_none().text_size(11).text_color(t.dim).child(it.heading)
+        ? div().px(8).pt(8).h(MENU.heading).flex_none().text_size(11).text_color(t.dim).child(it.heading)
         : h_flex()
           .id(`menu-${i}`)
-          .h(MENU_ROW)
+          .h(MENU.row)
           .px(8)
           .gap(9)
           .flex_none()
-          .rounded(7)
+          .rounded(MENU.radius)
           .items_center()
           .text_color(t.foreground)
           .hover((el) => el.bg(t.hover))
@@ -758,9 +773,10 @@ export default class Agents extends View {
     const on = k.address === shown;
     return h_flex()
       .id(`sub-${k.address}`)
-      .pl(52)
-      .pr(8)
-      .rounded(8)
+      // The tree line hangs from the middle of the parent's icon.
+      .pl(GRID.rowPx + GRID.icon / 2 - 1)
+      .pr(GRID.rowPx)
+      .rounded(GRID.radius)
       .h(26)
       .flex_none()
       .gap(0)
@@ -778,23 +794,17 @@ export default class Agents extends View {
       .child(this.status(t, { status: st }));
   }
 
-  // Every status fits one 18px slot, so a change never moves the name.
+  // Every status fits the grid's status slot, so a change never moves the name.
   status(t, a) {
-    return h_flex().w(18).h(18).flex_none().items_center().justify_center()
+    return statusSlot(UI, this.glyph(t, a))
       .when(Boolean(a.unreported), (el) => el.id(`unreported-${a.address}`).opacity(0.5)
-        .tooltip("Not reporting to Herdr; status read from its title"))
-      .child(this.glyph(t, a));
+        .tooltip("Not reporting to Herdr; status read from its title"));
   }
 
   glyph(t, a) {
     // A slow, dim spinner: the agent itself waits on its helpers.
-    if (a.waiting) return div().id(`waiting-${a.address}`).tooltip("Waiting on helpers")
-      .child(svg("mods/workspace-chrome/spinner.svg").size(12).text_color(t.dim).spin(1800));
-    if (a.status === "working") return svg("mods/workspace-chrome/spinner.svg").size(12).text_color(t.working).spin(900);
-    if (a.status === "blocked") return div().size(14).rounded(4).bg(t.blocked + "26").text_size(10.5).font_bold().text_color(t.blocked).flex().items_center().justify_center().child("!");
-    // Idle: a ring; done: a dot.
-    if (a.status === "idle") return div().size(7).rounded(4).border(1.5).border_color(t.idle ?? t.dim);
-    return div().size(7).rounded(4).bg(a.status === "done" ? t.done ?? t.dim : t.dim + "00");
+    if (a.waiting) return div().id(`waiting-${a.address}`).tooltip("Waiting on helpers").child(statusGlyph(UI, t, a.status, true));
+    return statusGlyph(UI, t, a.status);
   }
 
   render(cx) {
@@ -838,7 +848,10 @@ export default class Agents extends View {
     const projects = shared(PROJECT_LIST) ?? [];
     const projectOf = agentProjects(list, allSpaces, allPanes, this.terms, projects, shared(PROJECT_PENDING), now);
     const favicons = shared(PROJECT_FAVICONS) ?? {};
-    const rowPic = (a) => drawRowIcon(rowIcon(a, projectOf, projects, favicons), 16, t);
+    const rowPic = (a) => {
+      const spec = rowIcon(a, projectOf, projects, favicons);
+      return drawRowIcon(spec, rowIconSize(spec), t);
+    };
     const shelved = (kind) => list.filter((a) => this.shelf.get(a.address)?.kind === kind);
     const snoozed = shelved("snoozed").sort((x, y) => this.shelf.get(x.address).wake - this.shelf.get(y.address).wake);
     const settled = shelved("settled").sort((x, y) => this.shelf.get(y.address).at - this.shelf.get(x.address).at);
@@ -848,8 +861,13 @@ export default class Agents extends View {
     list = groups.flatMap((g) => g.members);
     this.activeOrder = list;
     this.parked = settled;
-    this.rows = new Set([...list, ...snoozed, ...settled].map((a) => a.address));
-    setAgentOrder([...list, ...snoozed, ...settled].map((a) => a.address));
+    // Handed to Herdr only when it changes, not on every draw.
+    const order = [...list, ...snoozed, ...settled].map((a) => a.address);
+    const orderKey = order.join("\n");
+    if (orderKey !== this.orderKey) {
+      this.orderKey = orderKey;
+      setAgentOrder(order);
+    }
 
     const withKids = (a, i) => {
       const subs = collapsed ? [] : this.tree(all, a.address);
@@ -858,11 +876,12 @@ export default class Agents extends View {
       return [r, ...subs.map((s) => this.subRow(t, s, inView))];
     };
 
-    // A fixed slot before the icon; with helpers, a chevron that folds them.
+    // With helpers, a chevron that folds them, just left of the status slot (where
+    // a project row has its count), so icons line up with the projects list.
     // Folded, it takes the colour of the most urgent helper.
     const caret = (a, subs) => {
-      const slot = div().id(`fold-${a.address}`).w(10).h(18).flex_none().flex().items_center().justify_center();
-      if (!subs.length) return slot;
+      if (!subs.length) return null;
+      const slot = div().id(`fold-${a.address}`).w(14).h(18).flex_none().flex().items_center().justify_center();
       const top = subs.map((s) => kidStatus(s.t, this.listed)).reduce((m, s) => ((RANK[s] ?? 0) > (RANK[m] ?? 0) ? s : m), null);
       const open = !this.folded.has(a.address);
       return slot.rounded(3).cursor_pointer()
@@ -885,7 +904,6 @@ export default class Agents extends View {
     }
 
     const row = (a, i, subs = []) => {
-      const pic = rowPic(a);
       const more = detail.get(a.address);
       // An agent on another machine (`vps/t7`) says which.
       const machine = a.address.includes("/") ? a.address.split("/")[0] : null;
@@ -909,26 +927,19 @@ export default class Agents extends View {
       const woke = this.woke.has(a.address);
       // An automatic tab number says nothing, so such a row goes by its program.
       const name = more ?? (DIGITS_RE.test(label(a)) ? a.program?.name || label(a) : label(a));
-      return h_flex()
-        .id(`ag-${a.address}`)
-        .pl(2)
-        .pr(8)
-        .h(30)
-        .flex_none()
-        .rounded(8)
-        .items_center()
-        .gap(9)
+      // On the sidebar grid, as the projects list draws its rows.
+      return gridRow(UI, {
+        id: `ag-${a.address}`,
+        icon: rowPic(a),
+        name: div().min_w(0).max_w(200).truncate().text_color(woke ? t.accent : idle ? t.muted : t.foreground).child(name),
+        details: [machine && div().text_size(10).text_color(t.dim).child(machine), caret(a, subs)],
+        slot: this.status(t, { ...shown, unreported: a.unreported }),
+      })
         .when(a.focused, (el) => el.bg(t.selected))
         .cursor_pointer()
         .hover((s) => s.bg(t.hover))
         .on_click(() => run("pane.focus", { pane: a.pane }))
-        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.openMenu(a); })
-        .child(caret(a, subs))
-        .when(Boolean(pic), el => el.child(pic))
-        .child(h_flex().flex_1().min_w(0).gap(5).items_center()
-          .child(div().min_w(0).max_w(200).truncate().text_color(woke ? t.accent : idle ? t.muted : t.foreground).child(name)))
-        .when(Boolean(machine), el => el.child(div().text_size(10).text_color(t.dim).child(machine)))
-        .child(this.status(t, { ...shown, unreported: a.unreported }));
+        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.openMenu(a); });
     };
 
     if (snoozed.length) groups.push({ id: "inbox-snoozed", label: "Snoozed", status: null, members: snoozed, shelf: true });
@@ -958,14 +969,15 @@ export default class Agents extends View {
           cx.notify();
         })
         .child(svg(UNDO_ICON).size(13));
-      return h_flex()
-        .id(`shelf-${a.address}`)
-        .px(8)
-        .h(30)
-        .flex_none()
-        .rounded(8)
-        .items_center()
-        .gap(9)
+      return gridRow(UI, {
+        id: `shelf-${a.address}`,
+        icon: pic && div().opacity(a.focused || hovered ? 1 : 0.5).child(pic),
+        name: h_flex().flex_1().min_w(0).gap(5).items_center()
+          .child(div().min_w(0).max_w(120).truncate().text_color(t.muted).child(a.space_name || name))
+          .when(Boolean(a.space_name) && !DIGITS_RE.test(name), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`· ${name}`))),
+        details: [hovered ? back : div().text_size(11).text_color(t.dim)
+          .child(info.kind === "settled" ? duration(now - info.at) : wakeLabel(info.wake, now))],
+      })
         .when(a.focused, (el) => el.bg(t.selected))
         .cursor_pointer()
         .hover((s) => s.bg(t.hover))
@@ -975,13 +987,7 @@ export default class Agents extends View {
           cx.notify();
         })
         .on_click(() => run("pane.focus", { pane: a.pane }))
-        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.openMenu(a); })
-        .when(Boolean(pic), (el) => el.child(div().opacity(a.focused || hovered ? 1 : 0.5).child(pic)))
-        .child(h_flex().flex_1().min_w(0).gap(5).items_center()
-          .child(div().min_w(0).max_w(120).truncate().text_color(t.muted).child(a.space_name || name))
-          .when(Boolean(a.space_name) && !DIGITS_RE.test(name), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${name}`))))
-        .child(hovered ? back : div().flex_none().text_size(11).text_color(t.dim)
-          .child(info.kind === "settled" ? duration(now - info.at) : wakeLabel(info.wake, now)));
+        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.openMenu(a); });
     };
 
     const header = (g) => {
@@ -989,9 +995,9 @@ export default class Agents extends View {
       const top = g.members.reduce((m, a) => ((RANK[a.status] ?? 0) > (RANK[m] ?? 0) ? a.status : m), null);
       return h_flex()
         .id(g.id)
-        .px(8)
+        .px(GRID.rowPx)
         .pt(8)
-        .h(30)
+        .h(GRID.rowH)
         .flex_none()
         .gap(6)
         .items_center()
@@ -1004,6 +1010,8 @@ export default class Agents extends View {
           cx.notify();
         })
         .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
+        // Folded: a chevron after the name, so the right column stays count, then status.
+        .when(!open, (el) => el.child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)))
         .child(div().flex_1())
         .when(g.id === "inbox-settled", (el) => el.child(div()
           .id("inbox-clear")
@@ -1014,10 +1022,9 @@ export default class Agents extends View {
           .tooltip("Close the panes of parked agents")
           .on_click((_e, cx) => { cx.stop_propagation(); this.askClear(g.members); })
           .child("Clear")))
-        // At the right, as in the projects sidebar: the most urgent status, then the count.
-        .when(!g.shelf && top && top !== "idle", (el) => el.child(this.status(t, { status: top })))
-        .child(div().flex_none().text_color(t.dim).child(String(g.members.length)))
-        .when(!open, (el) => el.child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)));
+        // As on every row of the sidebar: the count, then the status slot at the right edge.
+        .child(gridTrail(UI, [div().text_color(t.dim).child(String(g.members.length))],
+          !g.shelf && top && top !== "idle" ? statusGlyph(UI, t, top) : null));
     };
     const rows = collapsed
       ? list.flatMap(withKids)
@@ -1038,32 +1045,33 @@ export default class Agents extends View {
       .text_size(13)
       .when(!collapsed, (el) =>
         el.child(
+          // As the projects list's title row: the title where row content starts,
+          // the button centred over the status column, and 10 more above it.
           h_flex()
-            .px(16)
-            .h(41)
-            .pt(14)
-            .pb(5)
+            .pl(GRID.listPx + GRID.rowPx)
+            .pr(GRID.listPx + GRID.rowPx + GRID.status / 2 - 13)
+            .pt(10)
+            .h(GRID.sectionH + 10)
             .flex_none()
             .items_center()
             .justify_between()
             .child(div().text_size(11.5).font_medium().text_color(t.dim).child("Agents"))
-            .child(
-              h_flex().gap(10).items_center()
-                .child(div().id("agents-overview").text_color(t.dim).cursor_pointer()
-                  .hover((s) => s.text_color(t.foreground))
-                  .tooltip("Open all agent sessions").accessibility_label("Open all agent sessions")
-                  .on_click((_e, cx) => this.overview(cx)).child(svg(ICON).size(14)))
-            ),
+            .child(div().id("agents-overview").size(26).flex_none().flex().items_center().justify_center().rounded(6)
+              .text_color(t.dim).cursor_pointer()
+              .hover((s) => s.bg(t.hover).text_color(t.foreground))
+              .tooltip("Open all agent sessions").accessibility_label("Open all agent sessions")
+              .on_click((_e, cx) => this.overview(cx)).child(svg(ICON).size(14))),
         ),
       )
       .when(list.length === 0 && !collapsed && !resumable.length, (el) =>
-        el.child(div().px(12).text_size(12).text_color(t.dim).child("No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not.")),
+        el.child(div().px(GRID.listPx + GRID.rowPx).text_size(12).text_color(t.dim).child("No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not.")),
       )
-      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).gap(1).overflow_y_scrollbar().mode("always").children([...resumable, ...rows]))
+      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : GRID.listPx).pb(collapsed ? 0 : GRID.listEnd).gap(GRID.rowGap)
+        .overflow_y_scrollbar().mode("always").children([...resumable, ...rows]))
       .when(Boolean(undo) && !collapsed, (el) => el.child(h_flex()
-        .mx(8)
+        .mx(GRID.listPx)
         .mb(6)
-        .px(10)
+        .px(GRID.rowPx)
         .h(30)
         .flex_none()
         .rounded(8)

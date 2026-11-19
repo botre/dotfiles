@@ -1,7 +1,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, terminals, focused, run, openOverlay, theme, window, shared, setShared, layout, settings, nextCommand } from "herdr";
-import { GENERAL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, liveProjects, tabProjects, projectTabs, mainChild } from "./projects.js";
+import { GENERAL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, GRID, liveProjects, tabProjects, projectTabs, mainChild } from "./projects.js";
 
 // The agents list snoozes or parks an agent with a label on its terminal,
 // and shares what it just wrote until hc has it (agent-list/inbox.js).
@@ -45,16 +45,19 @@ function focusedTab(allSpaces) {
   return focused()?.tab ?? allSpaces.find((s) => s.active)?.tabs.find((t) => t.active)?.id ?? null;
 }
 
+// One read of the host's lists: every call copies the whole list.
+function snapshot() {
+  return { allSpaces: spaces(), allPanes: panes(), terms: new Map(terminals().map((k) => [k.address, k])) };
+}
+
 // The selected project's tabs now, hidden ones included.
-function selectedTabs() {
-  const allSpaces = spaces();
-  const terms = new Map(terminals().map((k) => [k.address, k]));
-  return projectBarTabs(allSpaces, panes(), terms, shared(PROJECT_LIST) ?? [], shared(PROJECT_SELECTED) ?? GENERAL, focusedTab(allSpaces), shared(PROJECT_PENDING));
+function selectedTabs({ allSpaces, allPanes, terms } = snapshot()) {
+  return projectBarTabs(allSpaces, allPanes, terms, shared(PROJECT_LIST) ?? [], shared(PROJECT_SELECTED) ?? GENERAL, focusedTab(allSpaces), shared(PROJECT_PENDING));
 }
 
 // What the bar shows now: the selected project's visible tabs.
-function barTabs(tabs = selectedTabs()) {
-  return visibleTabs(tabs);
+function barTabs(snap = snapshot(), tabs = selectedTabs(snap)) {
+  return visibleTabs(tabs, snap.allPanes, snap.terms);
 }
 
 // Shows a tab from any space: its space first, then the tab.
@@ -183,8 +186,16 @@ export default class Tabs extends View {
 
   render() {
     const t = theme();
-    const tabs = selectedTabs();
-    const shown = barTabs(tabs);
+    const snap = snapshot();
+    const tabs = selectedTabs(snap);
+    const shown = barTabs(snap, tabs);
+    // Each tab's program and whether it is the Agents overview, from the one pane read.
+    const programs = new Map(), overviews = new Set();
+    for (const p of snap.allPanes) {
+      if (p.mod === "agent-list") overviews.add(p.tab);
+      const have = programs.get(p.tab);
+      if (!have || (!have.agent && p.program?.agent)) programs.set(p.tab, { program: p.program, agent: Boolean(p.program?.agent) });
+    }
     // Keep the active tab in view: index into the tabs the bar shows.
     const active = shown.findIndex(tab => tab.active);
     const selected = shown[active]?.id;
@@ -197,8 +208,8 @@ export default class Tabs extends View {
     const button = (id, label, action) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const item = (c, i) => {
-      const overview = panes().some(p => p.tab === c.id && p.mod === "agent-list");
-      const program = panes().find(p => p.tab === c.id && p.program?.agent)?.program ?? panes().find(p => p.tab === c.id)?.program;
+      const overview = overviews.has(c.id);
+      const program = programs.get(c.id)?.program;
       const name = c.named ? c.name : program?.name ?? "Terminal";
       return h_flex().id(`tab-${c.id}`).h(29).px(10).gap(7).rounded(7).items_center().flex_none().text_size(12.8)
         // A rename or status dot on this or an earlier tab can push the active one out.
@@ -217,8 +228,8 @@ export default class Tabs extends View {
         .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
         .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(t.muted)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
-        .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(12).flex_none().text_color(t.working).spin(900)))
-        .when(c.status === "blocked" || c.status === "done", el => el.child(div().size(6).rounded(3).bg(t[c.status])))
+        .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(GRID.spinner).flex_none().text_color(t.working).spin(900)))
+        .when(c.status === "blocked" || c.status === "done", el => el.child(div().size(GRID.dot).flex_none().rounded(4).bg(t[c.status])))
         .when(c.active, el => el.child(div().id(`close-${c.id}`).text_color(t.dim).on_mouse_down("left", stop).on_click((_e, cx) => { cx.stop_propagation(); run("tab.close", { id: c.id }); }).child(svg("mods/pane/close.svg").size(12))));
     };
     const root = layout(), sidebar = find(root, "sidebar"), w = window();

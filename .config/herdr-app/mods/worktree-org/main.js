@@ -138,7 +138,7 @@ export default class Worktree extends View {
     this.text = props()?.branch ?? "";
     this.list = undefined; // open: the checkouts, once read
     this.at = 0;
-    this.input = InputState.new({ value: this.text, placeholder: this.opening ? "filter worktrees" : "branch name" });
+    this.input = InputState.new({ value: this.text, placeholder: this.opening ? "Filter worktrees" : "Branch name" });
     this.input.on("change", (_e, cx) => { this.text = this.input.value(); this.error = ""; this.at = 0; cx.notify(); });
     this.input.on("submit", (_e, cx) => this.go(cx));
     this.inputFocused = true;
@@ -173,7 +173,7 @@ export default class Worktree extends View {
         this.repo = repo;
         cx.notify();
         // The list (and with it the filter input) only mounts once loading is
-        // done, so the keyboard must move there now — a focus call made while
+        // done, so the keyboard must move there now: a focus call made while
         // loading lands on nothing and the dialog stays keyboard-dead.
         this.handle.focus();
         if (props().action !== "remove") cx.timer.after(100, () => this.input.focus());
@@ -325,7 +325,7 @@ export default class Worktree extends View {
                   .size_full()
                   .overflow_y_scroll()
                   .children(rows.map(row))
-                  .when(rows.length === 0, (el) => el.child(div().p(10).text_color(t.dim).child("No matching worktrees."))),
+                  .when(rows.length === 0, (el) => el.child(div().p(10).text_color(t.dim).child("No matching worktrees"))),
               )
               .child(Scrollbar.vertical("wt-list").absolute().inset_0()),
           ),
@@ -386,7 +386,7 @@ export default class Worktree extends View {
           .text_color(t.dim)
           .gap(6)
           .when(this.busy, (el) => el.child(div().frames(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"], 90)))
-          .child(this.busy ? "working…" : blocked ? "esc close" : remove ? "↵ remove · esc cancel" : "↵ create · esc cancel"),
+          .child(this.busy ? "Working…" : blocked ? "esc close" : remove ? "↵ remove · esc cancel" : "↵ create · esc cancel"),
       );
   }
 }

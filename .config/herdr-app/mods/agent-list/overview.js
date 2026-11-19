@@ -36,7 +36,7 @@ export function overview(expanded = new Set()) {
       .child(h_flex().gap(12).items_center()
         .child(svg(ICON).size(22).flex_none().text_color(t.muted))
         .child(div().flex_1().text_size(20).font_semibold().text_color(t.foreground).child("Agents"))
-        .child(div().text_size(12).text_color(t.muted).child(`${groups.length} sessions`))
+        .child(div().text_size(12).text_color(t.muted).child(`${groups.length} session${groups.length === 1 ? "" : "s"}`))
         .child(div().id("overview-recaps").px(8).py(5).rounded(4).border(1).border_color(t.border)
           .text_size(11).text_color(t.muted).cursor_pointer().hover((el) => el.bg(t.hover))
           .tooltip("Recaps send conversation history to the session's existing provider, OpenAI or Anthropic.")
@@ -52,7 +52,7 @@ export function overview(expanded = new Set()) {
           .child(h_flex().gap(8).items_center()
             .child(icon(row.program))
             .child(div().flex_1().min_w(0).truncate().tooltip(row.name).child(row.name))
-            .child(div().size(6).flex_none().rounded(3).bg(t[row.status] ?? t.dim)))
+            .child(div().size(7).flex_none().rounded(4).bg(t[row.status] ?? t.dim)))
           .when(row.helpers > 0, (el) => el.child(h_flex().id(`overview-helpers-${row.address}`).gap(4).items_center()
             .text_size(11).text_color(t.muted).cursor_pointer().hover((el) => el.text_color(t.foreground))
             .accessibility_label(`${expanded.has(row.address) ? "Hide" : "Show"} ${row.helpers} helpers`)
@@ -82,7 +82,7 @@ export function overview(expanded = new Set()) {
         .child(cell(row.activityAt ? duration(now - row.activityAt) : "—", 3, true))
         .child(cell(row.startedAt ? duration(now - row.startedAt) : "—", 4, true))
         .child(cell(row.updatedAt ? clock(row.updatedAt, now) : "—", 5, true))))
-      .when(groups.length === 0, (el) => el.child(div().p(20).text_color(t.dim).child("No active agent sessions.")))))
+      .when(groups.length === 0, (el) => el.child(div().p(20).text_color(t.dim).child("No active agent sessions")))))
     .child(div().px(28).py(12).flex_none().text_size(11).text_color(t.dim)
       .child("Session length includes idle time since launch or resume. Click a session to open it."));
 }
