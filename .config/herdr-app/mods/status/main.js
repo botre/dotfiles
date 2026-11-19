@@ -121,9 +121,10 @@ export default class WorkspaceStatus extends View {
           .child(BRAND[program.key] ? svg(BRAND[program.key][0]).size(13).text_color(BRAND[program.key][1]) : program.tint ? svg(program.icon).size(13).text_color(t.muted) : image(program.icon).w(13).h(13))))
         .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer")))
       .when(Boolean(space?.branch), el => el.child(h_flex().gap(10).items_center().child(label("branch", space.branch)).when(Boolean(pr), (e) => e.child(pr))))
+      .child(div().flex_1())
+      // The left side describes the focused pane; the right side is window-wide.
       .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} agent${list.length === 1 ? "" : "s"}`)
         .when(needs > 0, el => el.child(div().text_color(t.blocked).child(`· ${needs} needs you`))))
-      .child(div().flex_1())
       .child(div().id("palette").text_color(t.dim).on_click(() => run("app.palette")).child(this.hint(t)));
   }
 }
