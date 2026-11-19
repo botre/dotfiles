@@ -218,12 +218,13 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   const items = [];
   items.push({ kind: "rename", icon: chrome("square-pen"), label: "Rename…", hint: keys().find((k) => k.action === "tab.rename")?.keys });
   items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference" });
+  // The tab menu's items come first, in its order; the agent's own follow.
+  if (whereIs(address).pane) items.push({ kind: "project", icon: chrome("folder"), label: "Move to project…" });
+  if (machineChoices(machines(), machineOf(address)).length) items.push({ kind: "machine", icon: chrome("server"), label: "Move to machine…" });
   // Parking keeps its old names inside (kind, label key), so parked agents stay parked.
   if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Bring back" });
   else if (finished) items.push({ kind: "settle", icon: PARK_ICON, label: "Park" });
   if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
-  if (whereIs(address).pane) items.push({ kind: "project", icon: chrome("folder"), label: "Move to project…" });
-  if (machineChoices(machines(), machineOf(address)).length) items.push({ kind: "machine", icon: chrome("server"), label: "Move to machine…" });
   const targets = moveTargets(address);
   if (targets.length) items.push({ heading: "Move to" });
   for (const s of targets) items.push({ kind: "move", preset: s.id, icon: chrome("layers"), label: s.name });
@@ -232,6 +233,11 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
     items.push({ heading: "Snooze until" });
     for (const p of presets()) items.push({ kind: "snooze", preset: p.id, icon: chrome("clock"), label: p.label, hint: wakeLabel(p.wake) });
   }
+  // Last and set apart, as in the tab menu.
+  if (whereIs(address).pane) {
+    items.push({ divider: true });
+    items.push({ kind: "close", icon: chrome("x"), label: "Close", hint: keys().find((k) => k.section === "global" && k.action === "tab.close")?.keys });
+  }
   return items;
 }
 
@@ -239,7 +245,9 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
 const machineItems = (address) => machineChoices(machines(), machineOf(address))
   .map((m) => ({ kind: "machine", preset: m.name ?? "", icon: `mods/workspace-chrome/${m.name ? "server" : "monitor"}.svg`, label: m.label }));
 
-const menuHeight = (items) => MENU.pad * 2 + items.reduce((h, it) => h + (it.heading ? MENU.heading : MENU.row), 0) + MENU.gap * Math.max(0, items.length - 1);
+// A divider is a 1px line with 4px above and below.
+const DIVIDER = 9;
+const menuHeight = (items) => MENU.pad * 2 + items.reduce((h, it) => h + (it.divider ? DIVIDER : it.heading ? MENU.heading : MENU.row), 0) + MENU.gap * Math.max(0, items.length - 1);
 
 // Agent programs a terminal can run while Herdr lists it only once it reports a status.
 const AGENT_PROGRAMS = new Set(["claude", "codex"]);
@@ -671,6 +679,16 @@ export default class Agents extends View {
   rowMenu(t) {
     const p = props();
     const act = (it) => {
+      // Close ends the agent: its tab when it's alone there, else just its pane.
+      if (it.kind === "close") {
+        const { pane } = whereIs(p.rowMenu);
+        closeOverlay(p.overlay);
+        if (!pane) return;
+        const alone = panes().filter((x) => x.tab === pane.tab).length === 1;
+        if (alone) run("tab.close", { id: pane.tab });
+        else run("pane.close", { pane: pane.pane });
+        return;
+      }
       // The picker is a popup of its own; the projects sidebar does the move.
       if (it.kind === "project") {
         const tab = whereIs(p.rowMenu).pane?.tab;
@@ -691,7 +709,9 @@ export default class Agents extends View {
       .gap(MENU.gap)
       .bg(t.popover)
       .text_size(12.8)
-      .children((p.machines ? machineItems(p.rowMenu) : menuItems(p.rowMenu, p)).map((it, i) => it.heading
+      .children((p.machines ? machineItems(p.rowMenu) : menuItems(p.rowMenu, p)).map((it, i) => it.divider
+        ? div().mx(7).my(4).h(1).flex_none().bg(t.border)
+        : it.heading
         ? div().px(8).pt(8).h(MENU.heading).flex_none().text_size(11).text_color(t.dim).child(it.heading)
         : h_flex()
           .id(`menu-${i}`)

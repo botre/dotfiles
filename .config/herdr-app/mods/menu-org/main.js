@@ -65,10 +65,12 @@ function items(p, git) {
     }
     case "tab": {
       const terminal = tabTerminal(tg.id);
+      // An agent's tab is about that agent, so it offers no New tab.
+      const agentTab = panes().some((p) => p.tab === tg.id && p.program?.agent);
       return [
         ["Rename…", "tab.rename", { id: tg.id }],
         ...(terminal ? [["Reference", "reference", { terminal }], ["Move to project…", "project-move", { tab: tg.id }]] : []),
-        ["New tab", "tab.new", { space: tg.space }],
+        ...(agentTab ? [] : [["New tab", "tab.new", { space: tg.space }]]),
         ["Close", "tab.close", { id: tg.id }],
       ];
     }

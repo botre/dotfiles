@@ -84,6 +84,13 @@ describe("agents list: move to project", () => {
     assert.ok(items.some((it) => it.kind === "project" && it.label === "Move to project…"));
   });
 
+  it("orders the row menu like the tab menu and ends it with Close", () => {
+    const { evaluate } = setup();
+    const items = plain(evaluate('menuItems("t1", {})'));
+    assert.deepEqual(items.slice(0, 3).map((it) => it.label), ["Rename…", "Reference", "Move to project…"]);
+    assert.deepEqual(items.slice(-2).map((it) => it.divider ? "divider" : it.label), ["divider", "Close"]);
+  });
+
   it("opens the picker for the agent's tab instead of acting from the menu", () => {
     const { evaluate, overlays, closed, store } = setup();
     const tree = evaluate("Agents.prototype.rowMenu.call(Agents.prototype, {})");

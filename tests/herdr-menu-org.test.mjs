@@ -39,6 +39,14 @@ describe("menu-org", () => {
     assert.deepEqual(plain(calls), [["agent-list.act"]]);
   });
 
+  it("leaves New tab out of an agent's tab menu", () => {
+    const names = (panes) => plain(loadMod("menu-org", { panes: () => panes })('items({ tab: "tab", target: { id: "tb1" } })')).map((it) => it[0]);
+    assert.ok(names([{ tab: "tb1", terminal: "t1" }]).includes("New tab"));
+    const agent = names([{ tab: "tb1", terminal: "t1", program: { agent: true } }]);
+    assert.ok(!agent.includes("New tab"));
+    assert.equal(agent.at(-1), "Close");
+  });
+
   it("offers Move to project for a tab with a terminal, opening the projects picker", () => {
     const overlays = [], closed = [], ran = [], store = {};
     const projects = [{ id: "github.com/o/one", name: "One" }, { id: "github.com/o/gone", name: "Gone", deleted: true }];
