@@ -1,6 +1,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
-import { spaces, panes, terminals, run, openOverlay, theme, window, shared, layout, settings, nextCommand } from "herdr";
+import { spaces, panes, terminals, focused, run, openOverlay, theme, window, shared, layout, settings, nextCommand } from "herdr";
+import { GENERAL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, liveProjects, tabProjects, projectTabs } from "./projects.js";
 
 // The agents list snoozes or parks an agent with a label on its terminal,
 // and shares what it just wrote until hc has it (agent-list/inbox.js).
@@ -30,12 +31,40 @@ function settledNow(pane, terms, pending, now) {
   return (terms.get(pane.terminal)?.turn ?? 0) <= Number(m[2]);
 }
 
+// The selected project's tabs, from every space on every machine, each with
+// its space; `active` marks the tab in focus (each space has its own active tab).
+// A label naming a project that is gone counts as General.
+export function projectBarTabs(allSpaces, allPanes, terms, projects, selected, focusedTab, pending = null, now = Date.now()) {
+  const known = new Set(liveProjects(projects).map((p) => p.id));
+  const project = selected === GENERAL || known.has(selected) ? selected : GENERAL;
+  return projectTabs(allSpaces, project, tabProjects(allSpaces, allPanes, terms, known, pending, now), focusedTab);
+}
+
+// The tab in focus: focused().tab, else the shown space's active tab.
+function focusedTab(allSpaces) {
+  return focused()?.tab ?? allSpaces.find((s) => s.active)?.tabs.find((t) => t.active)?.id ?? null;
+}
+
+// What the bar shows now: the selected project's visible tabs.
+function barTabs() {
+  const allSpaces = spaces(), allPanes = panes();
+  const terms = new Map(terminals().map((k) => [k.address, k]));
+  const tabs = projectBarTabs(allSpaces, allPanes, terms, shared(PROJECT_LIST) ?? [], shared(PROJECT_SELECTED) ?? GENERAL, focusedTab(allSpaces), shared(PROJECT_PENDING));
+  return visibleTabs(tabs, allPanes, terms);
+}
+
+// Shows a tab from any space: its space first, then the tab.
+function selectTab(tab) {
+  if (!spaces().find((s) => s.id === tab.space)?.active) run("space.select", { id: tab.space });
+  run("tab.select", { id: tab.id });
+}
+
 // The tabs the bar shows: all but those whose every agent is snoozed or
 // parked. The tab in view always shows, and a tab without an agent never
 // hides. A put-away terminal counts as an agent even while it reports no
 // status (Herdr marks a program as an agent only once it does).
-export function visibleTabs(space, all = panes(), terms = new Map(terminals().map((k) => [k.address, k])), pending = shared(PENDING), now = Date.now()) {
-  return (space?.tabs ?? []).filter((tab) => {
+export function visibleTabs(tabs, all = panes(), terms = new Map(terminals().map((k) => [k.address, k])), pending = shared(PENDING), now = Date.now()) {
+  return (tabs ?? []).filter((tab) => {
     if (tab.active) return true;
     const mine = all.filter((p) => p.tab === tab.id && p.terminal);
     const away = new Set(mine.filter((p) => snoozedNow(p.terminal, terms, pending, now) || settledNow(p, terms, pending, now)).map((p) => p.terminal));
@@ -101,23 +130,23 @@ export default class Tabs extends View {
     cx.spawn(async (cx) => {
       for (;;) {
         const command = await nextCommand();
-        const tab = tabFor(command, visibleTabs(spaces().find((s) => s.active)));
-        if (tab) run("tab.select", { id: tab.id });
+        const tab = tabFor(command, barTabs());
+        if (tab) selectTab(tab);
         cx.notify();
       }
     });
   }
 
-  // The side panel is remembered per space: switching shows that space's choice
+  // The side panel is remembered per project: switching shows that project's choice
   // (closed if it never had one), and opening or closing it records it.
-  syncPanel(space, panel, body, enabled) {
-    if (!space || !panel) return;
+  syncPanel(key, panel, body, enabled) {
+    if (!key || !panel) return;
     const now = panel.hidden ? null : body?.active ?? null;
-    if (space.id !== this.space) {
-      const first = this.space === undefined;
-      this.space = space.id; this.pending = null;
-      if (!(first && !(space.id in this.panels))) {
-        const stored = this.panels[space.id] ?? null, want = enabled.includes(stored) ? stored : null;
+    if (key !== this.panelKey) {
+      const first = this.panelKey === undefined;
+      this.panelKey = key; this.pending = null;
+      if (!(first && !(key in this.panels))) {
+        const stored = this.panels[key] ?? null, want = enabled.includes(stored) ? stored : null;
         if (want !== now) {
           this.pending = { want, until: Date.now() + 1000 };
           if (want) { run("layout.select", { stack: "panel-body", child: want }); run("layout.show", { id: "panel" }); }
@@ -131,15 +160,14 @@ export default class Tabs extends View {
       if (this.pending.want !== now && Date.now() < this.pending.until) return;
       this.pending = null;
     }
-    if (this.panels[space.id] === now) return;
-    this.panels[space.id] = now;
+    if (this.panels[key] === now) return;
+    this.panels[key] = now;
     localStorage.setItem("panels", JSON.stringify(this.panels));
   }
 
   render() {
     const t = theme();
-    const space = spaces().find(p => p.active);
-    const shown = visibleTabs(space);
+    const shown = barTabs();
     // Keep the active tab in view: index into the tabs the bar shows.
     const active = shown.findIndex(tab => tab.active);
     const selected = shown[active]?.id;
@@ -163,10 +191,12 @@ export default class Tabs extends View {
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
         .on_mouse_up("left", () => {
           const from = this.pressed; this.pressed = null;
-          if (from !== null && from !== i) run("tab.move", { id: shown[from].id, index: space.tabs.findIndex(x => x.id === c.id) + 1 });
-          else run("tab.select", { id: c.id });
+          // Tabs only move within their own space.
+          const space = spaces().find((s) => s.id === c.space);
+          if (from !== null && from !== i && shown[from]?.space === c.space && space) run("tab.move", { id: shown[from].id, index: space.tabs.findIndex(x => x.id === c.id) + 1 });
+          else selectTab(c);
         })
-        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu-org", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: space.id } } }); })
+        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu-org", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: c.space } } }); })
         .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
         .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(t.muted)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
@@ -181,7 +211,7 @@ export default class Tabs extends View {
       : 10;
     const panel = find(root, "panel"), body = find(root, "panel-body");
     const enabled = shared("workspace.panels") ?? ["files", "changes"];
-    this.syncPanel(space, panel, body, enabled);
+    this.syncPanel(shared(PROJECT_SELECTED) ?? GENERAL, panel, body, enabled);
     const panelButton = (id, label, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)
@@ -197,7 +227,7 @@ export default class Tabs extends View {
       .on_scroll_wheel(e => {
         const step = wheelStep(this.swipe, e);
         const tab = step && tabFor(step, shown);
-        if (tab) run("tab.select", { id: tab.id });
+        if (tab) selectTab(tab);
       })
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().track_scroll(this.scroll)
         .on_size_change((_size, cx) => { if (active >= 0) { this.scroll.scroll_to_item(active); cx.notify(); } })

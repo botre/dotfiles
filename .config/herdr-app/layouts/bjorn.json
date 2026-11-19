@@ -26,10 +26,10 @@
           "type": "column",
           "children": [
             {
-              "id": "spaces",
+              "id": "projects",
               "type": "block",
               "content": {
-                "mod": "spaces-plain"
+                "mod": "projects"
               },
               "size": {
                 "weight": 1
@@ -64,7 +64,7 @@
         }
       ],
       "size": {
-        "px": 268
+        "px": 366
       },
       "min": 44,
       "max": 480,

@@ -375,4 +375,33 @@ describe("agent-list", () => {
       assert.match(notes.at(-1).body, /hc attach t1/);
     });
   });
+
+  describe("projects", () => {
+    const evaluate = loadMods(["agent-list/projects.js", "agent-list/inbox.js", "agent-list/main.js"]);
+    it("groups agents by their tab's project, General first, then by name", () => {
+      const spaces = [
+        { id: "sp1", tabs: [{ id: "a" }, { id: "b" }] },
+        { id: "vps/sp1", machine: "vps", tabs: [{ id: "vps/c" }, { id: "vps/d" }] },
+      ];
+      const panes = [{ tab: "a", terminal: "t1" }, { tab: "b", terminal: "t2" }, { tab: "vps/c", terminal: "vps/t3" }, { tab: "vps/d", terminal: "vps/t4" }];
+      const terms = new Map([
+        ["t1", { address: "t1", labels: { project: "github.com/o/zulu" } }],
+        ["vps/t3", { address: "vps/t3", labels: { project: "github.com/o/alpha" } }],
+        ["vps/t4", { address: "vps/t4", labels: { project: "github.com/o/zulu" } }],
+      ]);
+      const projects = [{ id: "github.com/o/zulu", name: "Zulu" }, { id: "github.com/o/alpha", name: "Alpha" }];
+      const list = [{ address: "t1", tab: "a" }, { address: "t2", tab: "b" }, { address: "vps/t3", tab: "vps/c" }, { address: "vps/t4", tab: "vps/d" }, { address: "t9", tab: null }];
+      const groups = plain(evaluate("projectGroups(list, agentProjects(list, spaces, panes, terms, projects), projects)", { list, spaces, panes, terms, projects }));
+      assert.deepEqual(groups.map((g) => [g.id, g.label, g.members.map((a) => a.address)]), [
+        ["pj-general", "General", ["t2", "t9"]],
+        ["pj-github.com/o/alpha", "Alpha", ["vps/t3"]],
+        ["pj-github.com/o/zulu", "Zulu", ["t1", "vps/t4"]],
+      ]);
+    });
+
+    it("has no sort menu: grouped by project is the only view", () => {
+      const source = readFileSync(new URL("../.config/herdr-app/mods/agent-list/main.js", import.meta.url), "utf8");
+      assert.doesNotMatch(source, /sortMenu|agents\.sort|Grouped by space/);
+    });
+  });
 });
