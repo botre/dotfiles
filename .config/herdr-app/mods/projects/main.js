@@ -16,7 +16,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
-import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects } from "./membership.js";
+import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects, MAIN_STACK, MAIN_START, MAIN_TAB } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
 
@@ -296,6 +296,14 @@ export default class Projects extends View {
     const sp = spaces(), ps = panes();
     const tabProject = tabProjects(sp, ps, new Map(terminals().map((k) => [k.address, k])), this.known(), shared(PROJECT_PENDING));
     const tabs = projectTabs(sp, id, tabProject, focused()?.tab);
+    // The main area flips now, not when the tab bar next draws: the start page
+    // for a project with no tab, its tabs otherwise.
+    const stacked = JSON.stringify(layout() ?? {}).includes(`"${MAIN_STACK}"`);
+    if (stacked) run("layout.select", { stack: MAIN_STACK, child: tabs.length ? MAIN_TAB : MAIN_START });
+    if (!tabs.length) {
+      if (stacked) setShared(PROJECT_START_SHOWN, Date.now());
+      return;
+    }
     if (tabs.some((t) => t.active)) return;
     const tab = tabToShow(tabs, (shared(PROJECT_LAST_TAB) ?? {})[id]);
     if (!tab) return;
@@ -659,30 +667,25 @@ export default class Projects extends View {
         cx.stop_propagation();
         cx.notify();
       })
-      // A third of the way down reads better than dead centre on a tall pane.
-      .child(div().flex_1().max_h(220))
-      .child(v_flex().w_full().max_w(460).flex_none().rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_md().overflow_hidden()
-        .child(h_flex().gap(12).items_center().px(20).py(16)
-          .child(this.icon(proj, t, 36))
-          .child(v_flex().flex_1().min_w(0).gap(4)
-            .child(div().truncate().text_size(18).font_semibold().text_color(t.foreground).child(proj.name))
-            .when(!general, (el) => el.child(line("git-branch", repo.join("/") || proj.id, repo.length ? host : null)))
-            .when(place.known, (el) => el.child(line("folder", tilde(place.folder), place.machine ? `on ${place.machine}` : null)))))
-        .child(div().h(1).flex_none().bg(t.border))
-        .child(v_flex().px(10).py(10).gap(2)
-          .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).h(36).px(10).gap(10).flex_none().rounded(8).items_center()
-            .cursor_pointer()
-            .when(i === this.at, (el) => el.bg(t.hover))
-            .hover((s) => s.bg(t.hover))
-            .on_mouse_move(() => { this.at = i; })
-            .on_click((_e, cx) => { this.at = i; this.chooseStart(it, place); cx.notify(); })
-            .child(icon(it))
-            .child(div().flex_none().text_color(t.foreground).child(it.label))
-            .child(div().flex_1().min_w(0).truncate().text_right().text_size(12).text_color(t.dim).child(it.hint ?? "")))))
-        .when(!place.known, (el) => el.child(div().px(20).pb(12).text_size(12).text_color(t.dim)
-          .child("No folder for this project on a connected machine, so these start in your home folder.")))
-        .child(h_flex().px(20).py(9).border_t(1).border_color(t.border).text_size(11).text_color(t.dim)
-          .child("\u2191\u2193 choose \u00b7 \u21b5 start")))
+      // A quiet launcher, no card: the project's name, then one pill per action.
+      .child(div().flex_1())
+      .child(v_flex().items_center().gap(6).flex_none()
+        .child(h_flex().gap(8).items_center()
+          .child(this.icon(proj, t, 20))
+          .child(div().text_size(16).font_semibold().text_color(t.foreground).child(proj.name)))
+        .when(!general, (el) => el.child(div().text_size(12).text_color(t.dim).child(repo.join("/") || proj.id)))
+        .when(!place.known, (el) => el.child(div().max_w(320).text_center().text_size(12).text_color(t.dim)
+          .child("No folder for this project on a connected machine, so these start in your home folder."))))
+      .child(v_flex().items_center().gap(8).pt(20).flex_none()
+        .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).w(240).h(38).px(16).gap(10).flex_none().items_center()
+          .rounded(19).border(1).border_color(t.border).cursor_pointer().text_color(t.muted)
+          .when(i === this.at, (el) => el.bg(t.hover).text_color(t.foreground))
+          .hover((s) => s.bg(t.hover).text_color(t.foreground))
+          .on_mouse_move(() => { this.at = i; })
+          .on_click((_e, cx) => { this.at = i; this.chooseStart(it, place); cx.notify(); })
+          .child(icon(it))
+          .child(div().flex_1().min_w(0).truncate().child(it.label)))))
+      .child(div().flex_1())
       .child(div().flex_1());
   }
 
@@ -771,10 +774,12 @@ export default class Projects extends View {
     const folders = editing ? Object.entries(shared(PROJECT_DIRS) ?? {}).filter(([, d]) => d?.[p.project]).map(([m, d]) => [m || "This computer", tilde(d[p.project])]) : [];
     const [host, ...repo] = (p.project ?? "").split("/");
     const header = editing
-      ? h_flex().gap(12).items_start()
-        .child(proj ? this.icon(proj, t, 36) : div().size(36))
-        .child(v_flex().flex_1().min_w(0).gap(3)
-          .child(div().truncate().text_size(15).font_semibold().text_color(t.foreground).child(proj?.name ?? p.project))
+      // The icon sits on the title's line; the details line up under the title.
+      ? v_flex().gap(5)
+        .child(h_flex().gap(8).items_center()
+          .child(proj ? this.icon(proj, t, 20) : div().size(20))
+          .child(div().flex_1().min_w(0).truncate().text_size(15).font_semibold().text_color(t.foreground).child(proj?.name ?? p.project)))
+        .child(v_flex().pl(28).gap(3)
           .child(h_flex().gap(6).items_center().text_size(12).text_color(t.muted)
             .child(svg("mods/workspace-chrome/git-branch.svg").size(12).flex_none())
             .child(div().truncate().child(repo.join("/") || p.project))
