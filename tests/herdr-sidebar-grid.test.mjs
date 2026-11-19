@@ -128,7 +128,9 @@ describe("sidebar grid", () => {
     const tree = agentRows();
     assert.equal(value(byId(tree, "ag-list"), "gap"), grid.rowGap);
     // "Agents" starts where row content does; its 26px button sits centred over the status column.
-    const title = findIn(tree, (el) => has(el, "justify_between") && has(el, "pt", 10));
+    // Its own card now, so the title row is as tall as the projects list's, with no extra top.
+    const title = findIn(tree, (el) => has(el, "justify_between") && has(el, "h", grid.sectionH));
+    assert.equal(value(title, "pt"), undefined);
     assert.equal(value(title, "pl"), grid.listPx + grid.rowPx);
     assert.equal(value(title, "pr") + 13, grid.listPx + grid.rowPx + grid.status / 2);
     assert.equal(value(byId(tree, "agents-overview"), "size"), 26);

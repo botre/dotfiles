@@ -1,7 +1,10 @@
 // Herdr's workspace-status (0.1.11), plus the pull request of the shown
 // branch: its number, then checks and review state. A click opens it in the
 // browser. Asks `gh`, read-only, every two minutes and when the space or
-// branch changes.
+// branch changes. The icon tints follow the islands layout's workspace-status
+// clone (MIT, Copyright (c) 2026 Cody Packer): the machine in `working`, the
+// branch in `accent`, the agents dot `done` while agents run, `blocked` when
+// one needs you. The bar paints no fill: its row in the layout is the card.
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
@@ -36,6 +39,11 @@ function checks(rollup) {
   if (states.some((s) => FAILED.has(s))) return "fail";
   if (rollup.some((c) => (c.status && c.status !== "COMPLETED") || PENDING.has(c.state))) return "pending";
   return "pass";
+}
+
+// The agents count's dot: blocked when one needs you, done while any run.
+export function agentsDot(t, needs, count) {
+  return needs > 0 ? t.blocked : count > 0 ? t.done : t.dim;
 }
 
 export default class WorkspaceStatus extends View {
@@ -108,16 +116,16 @@ export default class WorkspaceStatus extends View {
     const space = spaces().find(s => s.active);
     const list = agents();
     const needs = list.filter(a => a.status === "blocked").length;
-    const label = (icon, text) => h_flex().gap(6).items_center().child(svg(`mods/workspace-chrome/${icon}.svg`).size(13)).child(text);
+    const label = (icon, text, color) => h_flex().gap(6).items_center().child(svg(`mods/workspace-chrome/${icon}.svg`).size(13).text_color(color)).child(text);
     const pr = space?.branch ? this.prItem(t) : null;
     const program = focusedAgentProgram(focused(), panes(), list);
-    return h_flex().size_full().px(14).gap(16).items_center().bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
+    return h_flex().size_full().px(14).gap(16).items_center().text_size(11.8).text_color(t.muted)
       .child(h_flex().gap(10).items_center()
         .when(Boolean(program), (el) => el.child(div().id("agent-program").flex_none().tooltip(program.name)
           .child(program.tint ? svg(program.icon).size(13).text_color(t.muted) : image(program.icon).w(13).h(13))))
-        .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer")))
-      .when(Boolean(space?.branch), el => el.child(h_flex().gap(10).items_center().child(label("branch", space.branch)).when(Boolean(pr), (e) => e.child(pr))))
-      .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} agent${list.length === 1 ? "" : "s"}`)
+        .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer", t.working)))
+      .when(Boolean(space?.branch), el => el.child(h_flex().gap(10).items_center().child(label("branch", space.branch, t.accent)).when(Boolean(pr), (e) => e.child(pr))))
+      .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(agentsDot(t, needs, list.length))).child(`${list.length} agent${list.length === 1 ? "" : "s"}`)
         .when(needs > 0, el => el.child(div().text_color(t.blocked).child(`· ${needs} needs you`))))
       .child(div().flex_1())
       .child(div().id("palette").text_color(t.dim).on_click(() => run("app.palette")).child(this.hint(t)));

@@ -126,3 +126,21 @@ Manual tab names take precedence. Clear a name to restore automatic titles.
 Temporary status titles such as "Action Required" are rejected.
 
 Quota details open on hover.
+
+## Islands look
+
+The `bjorn` layout borrows the look of the islands layout by Cody Packer (MIT).
+Every panel is its own card with 14 px corners and a 1 px `border`. The cards float
+on a flat `canvas`, 12 px from the window edge and 12 px apart. The tab bar has no
+fill, and its tabs, + and panel buttons are pills. The active tab and an open
+panel's button switch their border and text to `accent`. Terminals paint no
+background (`terminal_opacity: 0`), so the pane card's rounded fill shows through.
+
+Herdr doesn't clip a mod to its block's radius. Each mod that fills its card rounds
+itself to 13 px instead: `projects`, `agent-list`, the start page, the pane header
+and the overview. `sidebar-chrome` is Herdr's `workspace-chrome` with that change,
+for the brand row and the footer. `status` and `quota` paint no fill, since the
+status row is the card. The status bar tints its machine icon `working`, its branch
+icon `accent`, and the agents dot `done` or `blocked`. Popups keep Herdr's own frame,
+because no layout field reaches it. `tests/herdr-layout.test.mjs` checks the card
+values.
