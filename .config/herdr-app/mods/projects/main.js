@@ -425,7 +425,7 @@ export default class Projects extends View {
         .child(div().id("project-new").size(26).flex_none().flex().items_center().justify_center().rounded(6)
           .tooltip("New project").hover((s) => s.bg(t.hover).text_color(t.foreground))
           .on_click(() => this.create()).child(svg("mods/workspace-chrome/plus.svg").size(14))))
-      .when(!collapsed, (el) => el.child(h_flex().id("project-search").mx(8).mt(6).mb(8).h(26).flex_none().px(8).gap(6).items_center().rounded(6)
+      .when(!collapsed, (el) => el.child(h_flex().id("project-search").mx(8).mt(0).mb(12).h(26).flex_none().px(8).gap(6).items_center().rounded(6)
         .border(1).border_color(t.border).text_color(t.dim)
         .on_key_down((e, cx) => {
           if (e.key !== "escape") return;
