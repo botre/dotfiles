@@ -8,26 +8,25 @@
 // times. Copies opened with props { menu, project } or { dialog: "create" | "edit",
 // project? } are the right-click menu and the create/edit dialog; they hand
 // their result to the sidebar copy (shared PROJECT_ACTION + "projects.act"),
-// since a popup's tasks end when it closes. The copy with props { start: true }
+// since a popup's tasks end when it closes. The copy with props { picker: tab }
+// is the Move to project popup, which hands over a "move" the same way.
+// The copy with props { start: true }
 // is the start page in the layout's main stack (start.js).
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
-import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents } from "./membership.js";
+import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
-import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, initial } from "./store.js";
+import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
 
 // Changes made on another machine show up within this long.
 const POLL = 60000;
-const FAVICONS = "projects.favicons";
 // The picture a project's icon comes from, when it has a favicon. An emoji draws as text.
 const iconUrl = (p) => p.icon?.favicon ?? null;
 // A favicon that failed to download is tried again after this long.
 const FAVICON_RETRY = 600000;
 const RAIL_CELL = 32;
-// Letter tiles: one strong color per hue, light and dark alike (as spaces-plain).
-const TILES = ["#22a99a", "#e3814f", "#5b8def", "#8b7cf6", "#3fae6a", "#d9649a"];
 const SELECT_RE = /^select-([1-9])$/;
 // The agents each machine reported last, as the new-tab menu keeps them.
 const KNOWN_AGENTS = "new-menu.agents";
@@ -61,13 +60,6 @@ export function followFocus(tab, before, tabProject, freshTabs, selected) {
   if (!tab || tab === before || freshTabs.has(tab)) return null;
   const project = tabProject.get(tab);
   return project && project !== selected ? project : null;
-}
-
-// A letter tile's color: the same for a project on every machine.
-export function tileColor(id) {
-  let hash = 0;
-  for (const ch of String(id)) hash = (hash * 31 + ch.codePointAt(0)) >>> 0;
-  return TILES[hash % TILES.length];
 }
 
 // What the create/edit dialog's icon field means: a URL is a favicon, anything else an emoji.
@@ -122,6 +114,7 @@ export default class Projects extends View {
       this.at = 0;
       return;
     }
+    if (p.picker) return this.initPicker(p, cx);
     if (p.dialog) return this.initDialog(p, cx);
     if (p.start) return this.initStart(cx);
     this.projects = mergeProjects(shared(PROJECT_LIST) ?? []);
@@ -220,7 +213,7 @@ export default class Projects extends View {
         if (!file) throw new Error("no icon");
         this.favicons[url] = { path: `${FAVICON_DIR}/${file}` };
         // Dialogs are other copies of this mod; they read the paths from here.
-        setShared(FAVICONS, Object.fromEntries(Object.entries(this.favicons).filter(([, v]) => v.path).map(([k, v]) => [k, v.path])));
+        setShared(PROJECT_FAVICONS, Object.fromEntries(Object.entries(this.favicons).filter(([, v]) => v.path).map(([k, v]) => [k, v.path])));
       } catch { this.favicons[url] = { failed: Date.now() }; }
       cx.notify();
     }
@@ -261,6 +254,7 @@ export default class Projects extends View {
     if (!a || Date.now() - a.at > 10000) return;
     setShared(PROJECT_ACTION, null);
     if (a.kind === "select") return this.select(a.id);
+    if (a.kind === "move") return this.moveTab(a.tab, a.id);
     if (a.kind === "show") this.projects = upsert(this.projects, a.id, { shown: a.shown });
     else if (a.kind === "delete") {
       this.projects = remove(this.projects, a.id);
@@ -298,6 +292,24 @@ export default class Projects extends View {
     if (!tab) return;
     run("space.select", { id: tab.space });
     run("tab.select", { id: tab.id });
+  }
+
+  // Moves a tab to a project: every terminal in it gets the project's label
+  // (General: none). The selection stays, so a tab moved elsewhere leaves the bar.
+  async moveTab(tab, id) {
+    const target = pickerProjects(this.projects).find((p) => p.id === id);
+    const commands = target ? moveCommands(panes(), tab, id) : [];
+    if (!commands.length) return;
+    let pending = shared(PROJECT_PENDING);
+    for (const [, address] of commands) pending = withProjectPending(pending, address, id === GENERAL ? "" : id);
+    setShared(PROJECT_PENDING, pending);
+    let failed = null;
+    for (const args of commands) {
+      const r = await hc(args).catch((e) => ({ code: 1, stderr: String(e) }));
+      if (r.code !== 0) failed = r.stderr?.trim() || "hc label failed.";
+    }
+    if (failed) notify({ title: `Couldn't move it to ${target.name}`, body: failed, level: "error" });
+    else notify({ title: `Moved to ${target.name}`, level: "success", timeout: 3000 });
   }
 
   known() {
@@ -364,12 +376,13 @@ export default class Projects extends View {
     if (p.id === GENERAL) return h_flex().size(size).flex_none().items_center().justify_center().text_color(t.muted)
       .child(svg("mods/workspace-chrome/layers.svg").size(size - 4));
     const src = iconUrl(p);
-    const fav = src && (this.favicons?.[src]?.path ?? shared(FAVICONS)?.[src]);
-    if (fav) return image(fav).size(size).flex_none().rounded(4);
-    if (p.icon?.emoji) return h_flex().size(size).flex_none().items_center().justify_center()
-      .text_size(size - 3).line_height(size).text_color(t.foreground).child(p.icon.emoji);
-    return h_flex().size(size).flex_none().rounded(5).bg(tileColor(p.id)).items_center().justify_center()
-      .text_size(size * 0.58).font_bold().text_color("#ffffff").child(initial(p.name));
+    const own = src && this.favicons?.[src]?.path;
+    const pic = projectIcon(p, own ? { [src]: own } : shared(PROJECT_FAVICONS));
+    if (pic.favicon) return image(pic.favicon).size(size).flex_none().rounded(4);
+    if (pic.emoji) return h_flex().size(size).flex_none().items_center().justify_center()
+      .text_size(size - 3).line_height(size).text_color(t.foreground).child(pic.emoji);
+    return h_flex().size(size).flex_none().rounded(5).bg(pic.color).items_center().justify_center()
+      .text_size(size * 0.58).font_bold().text_color("#ffffff").child(pic.letter);
   }
 
   row(p, t, on, status, count) {
@@ -408,6 +421,7 @@ export default class Projects extends View {
   render(cx) {
     const p = props() ?? {};
     if (p.menu) return this.renderMenu(p);
+    if (p.picker) return this.renderPicker(p);
     if (p.dialog) return this.renderDialog(p);
     if (p.start) return this.renderStart(cx);
     const t = theme();
@@ -496,6 +510,59 @@ export default class Projects extends View {
           .on_click(() => this.chooseMenu(it, p))
           .child(svg(`mods/workspace-chrome/${it.icon}.svg`).size(14).flex_none().text_color(t.muted))
           .child(div().flex_1().child(it.label)))));
+  }
+
+  // --- Move to project picker ---------------------------------------------
+
+  // The picker's projects and the one the tab is in now.
+  pickerModel(tab) {
+    const list = shared(PROJECT_LIST) ?? [];
+    const known = new Set(liveProjects(list).map((x) => x.id));
+    const terms = new Map(terminals().map((k) => [k.address, k]));
+    const current = tabProjects(spaces(), panes(), terms, known, shared(PROJECT_PENDING)).get(tab) ?? GENERAL;
+    return { items: pickerProjects(list), current };
+  }
+
+  initPicker(p, cx) {
+    this.handle = cx.focus_handle();
+    this.handle.focus();
+    const { items, current } = this.pickerModel(p.picker);
+    this.at = Math.max(0, items.findIndex((x) => x.id === current));
+  }
+
+  // The sidebar copy relabels the tab, since this popup's tasks end when it closes.
+  choosePicker(proj, current, p) {
+    closeOverlay(p.overlay);
+    if (!proj || proj.id === current) return;
+    setShared(PROJECT_ACTION, { kind: "move", tab: p.picker, id: proj.id, at: Date.now() });
+    run("projects.act");
+  }
+
+  renderPicker(p) {
+    const t = theme();
+    const { items, current } = this.pickerModel(p.picker);
+    this.at = Math.min(this.at, Math.max(0, items.length - 1));
+    return v_flex().id("project-picker").track_focus(this.handle).size_full().min_h(0).p(5).gap(2).bg(t.popover).text_size(12.8)
+      .on_key_down((e, cx) => {
+        if (e.key === "down") this.at = (this.at + 1) % items.length;
+        else if (e.key === "up") this.at = (this.at + items.length - 1) % items.length;
+        else if (e.key === "enter") this.choosePicker(items[this.at], current, p);
+        else if (e.key === "escape") closeOverlay(p.overlay);
+        else return;
+        cx.stop_propagation();
+        cx.notify();
+      })
+      .child(div().px(8).pt(8).h(26).flex_none().text_size(11).text_color(t.dim).child("Move to project"))
+      .child(v_flex().id("picker-list").flex_1().min_h(0).gap(2).overflow_y_scrollbar()
+        .children(items.map((proj, i) => h_flex().id(`pk-${proj.id}`).h(31).px(8).gap(9).flex_none().rounded(7).items_center()
+          .cursor_pointer()
+          .text_color(t.foreground)
+          .when(i === this.at, (el) => el.bg(t.selected))
+          .hover((s) => s.bg(t.hover))
+          .on_click(() => this.choosePicker(proj, current, p))
+          .child(this.icon(proj, t, 16))
+          .child(div().flex_1().min_w(0).truncate().child(proj.name))
+          .when(proj.id === current, (el) => el.child(svg("mods/workspace-chrome/check.svg").size(13).flex_none().text_color(t.accent))))));
   }
 
   // --- Start page ---------------------------------------------------------

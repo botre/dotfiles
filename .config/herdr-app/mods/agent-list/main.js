@@ -9,7 +9,7 @@ import { agents, terminals, panes, focused, spaces, run, theme, shared, setShare
 import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { ICON } from "./ui.js";
-import { GENERAL, PROJECT_LIST, PROJECT_PENDING, liveProjects, projectRank, tabProjects } from "./projects.js";
+import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, liveProjects, projectRank, tabProjects, projectIcon, pickerOverlay } from "./projects.js";
 import { overview } from "./overview.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
 
@@ -199,6 +199,7 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Bring back" });
   else if (finished) items.push({ kind: "settle", icon: PARK_ICON, label: "Park" });
   if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
+  if (whereIs(address).pane) items.push({ kind: "project", icon: chrome("folder"), label: "Move to project…" });
   const targets = moveTargets(address);
   if (targets.length) items.push({ heading: "Move to" });
   for (const s of targets) items.push({ kind: "move", preset: s.id, icon: chrome("layers"), label: s.name });
@@ -248,6 +249,25 @@ export function unreportedAgents(listed, all, allPanes, allSpaces, titles = new 
 function icon(p, size, color) {
   if (!p?.icon) return null;
   return p.tint ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
+}
+
+// What an agent's row draws in its icon slot: its project's icon (projectIcon),
+// or { program } in General and for a project that is gone. Helpers keep their
+// program's icon, and so does the Agents overview.
+export function rowIcon(a, projectOf, projects, favicons) {
+  const id = projectOf?.get(a.address);
+  const proj = id && id !== GENERAL ? liveProjects(projects).find((p) => p.id === id) : null;
+  return (proj && projectIcon(proj, favicons)) ?? { program: a.program };
+}
+
+// A rowIcon drawn at `size`; an emoji is text, never a picture.
+function drawRowIcon(spec, size, t) {
+  if (spec.program) return icon(spec.program, size, t.foreground);
+  if (spec.favicon) return image(spec.favicon).w(size).h(size).flex_none().rounded(3);
+  if (spec.emoji) return h_flex().w(size).h(size).flex_none().items_center().justify_center()
+    .text_size(size - 3).line_height(size).text_color(t.foreground).child(spec.emoji);
+  return h_flex().w(size).h(size).flex_none().rounded(4).bg(spec.color).items_center().justify_center()
+    .text_size(size * 0.6).font_bold().text_color("#ffffff").child(spec.letter);
 }
 
 export default class Agents extends View {
@@ -605,6 +625,13 @@ export default class Agents extends View {
   rowMenu(t) {
     const p = props();
     const act = (it) => {
+      // The picker is a popup of its own; the projects sidebar does the move.
+      if (it.kind === "project") {
+        const tab = whereIs(p.rowMenu).pane?.tab;
+        closeOverlay(p.overlay);
+        if (tab) openOverlay(pickerOverlay(tab, shared(PROJECT_LIST) ?? []));
+        return;
+      }
       setShared(ACTION, { kind: it.kind, address: p.rowMenu, preset: it.preset, at: Date.now() });
       run("agent-list.act");
       closeOverlay(p.overlay);
@@ -786,6 +813,8 @@ export default class Agents extends View {
     list = [...list].sort((x, y) => (spaceAt.get(x.space) ?? 0) - (spaceAt.get(y.space) ?? 0) || byName(x, y));
     const projects = shared(PROJECT_LIST) ?? [];
     const projectOf = agentProjects(list, allSpaces, allPanes, this.terms, projects, shared(PROJECT_PENDING), now);
+    const favicons = shared(PROJECT_FAVICONS) ?? {};
+    const rowPic = (a) => drawRowIcon(rowIcon(a, projectOf, projects, favicons), 16, t);
     const shelved = (kind) => list.filter((a) => this.shelf.get(a.address)?.kind === kind);
     const snoozed = shelved("snoozed").sort((x, y) => this.shelf.get(x.address).wake - this.shelf.get(y.address).wake);
     const settled = shelved("settled").sort((x, y) => this.shelf.get(y.address).at - this.shelf.get(x.address).at);
@@ -832,7 +861,7 @@ export default class Agents extends View {
     }
 
     const row = (a, i, subs = []) => {
-      const pic = icon(a.program, 16, t.foreground);
+      const pic = rowPic(a);
       const more = detail.get(a.address);
       // An agent on another machine (`vps/t7`) says which.
       const machine = a.address.includes("/") ? a.address.split("/")[0] : null;
@@ -886,7 +915,7 @@ export default class Agents extends View {
     const shelfRow = (a) => {
       const info = this.shelf.get(a.address);
       const hovered = this.hovered === a.address;
-      const pic = icon(a.program, 16, t.foreground);
+      const pic = rowPic(a);
       const name = label(a);
       const key = info.kind === "settled" ? SETTLED : SNOOZED;
       const back = div()

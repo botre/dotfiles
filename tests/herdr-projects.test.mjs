@@ -168,10 +168,11 @@ describe("projects", () => {
     assert.equal(run('worktreeFolder(dirs, "z", null)', { dirs }), null);
   });
 
-  it("keeps the tab bar's and agents list's copies of membership.js identical", () => {
+  it("keeps the tab bar's, agents list's and suggestion strip's copies of membership.js identical", () => {
     const source = mods("projects/membership.js");
     assert.equal(mods("agent-tabs/projects.js"), source);
     assert.equal(mods("agent-list/projects.js"), source);
+    assert.equal(mods("project-suggest/projects.js"), source);
   });
 
   it("binds ctrl+1..9 to projects and leaves the other keys", () => {
