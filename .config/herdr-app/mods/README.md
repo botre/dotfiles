@@ -47,6 +47,13 @@ The sidebar lists the projects marked "Show in list", or else the five most rece
 active ones. Search finds the rest. Right-click a project for New worktree, Show or
 Hide, Edit and Delete. The agents list groups agents by project, General first.
 
+A project without tabs shows a start page in the main area. It offers Claude Code,
+Codex and a terminal in the project's folder, plus New worktree and Open worktree.
+General starts at home, and a project without a known folder starts there too.
+The page sits in the layout's `main-stack` beside the tab block. The tab bar
+switches that stack, so no placeholder tab exists. New tabs join the selected
+project, and the page goes once the project has a tab.
+
 Each machine keeps the list in `~/.local/state/herdr/projects.json`. Every minute,
 and after each change, the sidebar merges the files of all connected machines and
 writes the result back. The newest edit wins, and deletes stay as tombstones.

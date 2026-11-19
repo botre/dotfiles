@@ -8,12 +8,14 @@
 // times. Copies opened with props { menu, project } or { dialog: "create" | "edit",
 // project? } are the right-click menu and the create/edit dialog; they hand
 // their result to the sidebar copy (shared PROJECT_ACTION + "projects.act"),
-// since a popup's tasks end when it closes.
+// since a popup's tasks end when it closes. The copy with props { start: true }
+// is the start page in the layout's main stack (start.js).
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window } from "herdr";
-import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents } from "./membership.js";
+import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
+import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents } from "./membership.js";
+import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, initial } from "./store.js";
 
 // Changes made on another machine show up within this long.
@@ -26,6 +28,8 @@ const RAIL_CELL = 32;
 // Letter tiles: one strong color per hue, light and dark alike (as spaces-plain).
 const TILES = ["#22a99a", "#e3814f", "#5b8def", "#8b7cf6", "#3fae6a", "#d9649a"];
 const SELECT_RE = /^select-([1-9])$/;
+// The agents each machine reported last, as the new-tab menu keeps them.
+const KNOWN_AGENTS = "new-menu.agents";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -118,6 +122,7 @@ export default class Projects extends View {
       return;
     }
     if (p.dialog) return this.initDialog(p, cx);
+    if (p.start) return this.initStart(cx);
     this.projects = mergeProjects(shared(PROJECT_LIST) ?? []);
     this.dirs = shared(PROJECT_DIRS) ?? {};
     this.favicons = {}; // url -> { path } once downloaded, { failed: ms } after a failure
@@ -413,6 +418,7 @@ export default class Projects extends View {
     const p = props() ?? {};
     if (p.menu) return this.renderMenu(p);
     if (p.dialog) return this.renderDialog(p);
+    if (p.start) return this.renderStart(cx);
     const t = theme();
     const collapsed = narrow();
     const tabProject = this.observe(cx);
@@ -499,6 +505,103 @@ export default class Projects extends View {
           .on_click(() => this.chooseMenu(it, p))
           .child(svg(`mods/workspace-chrome/${it.icon}.svg`).size(14).flex_none().text_color(t.muted))
           .child(div().flex_1().child(it.label)))));
+  }
+
+  // --- Start page ---------------------------------------------------------
+
+  initStart(cx) {
+    this.handle = cx.focus_handle();
+    this.handle.focus();
+    this.at = 0;
+    this.shownAt = shared(PROJECT_START_SHOWN);
+    this.agentLists = { ...(shared(KNOWN_AGENTS) ?? {}) };
+    this.asked = new Set();
+  }
+
+  // Asks a machine once which agents it has; the cached list shows meanwhile.
+  loadAgents(machine, cx) {
+    const where = machine ?? "";
+    if (this.asked.has(where) || checking()) return;
+    this.asked.add(where);
+    cx.spawn(async (cx) => {
+      try {
+        this.agentLists[where] = await knownAgents({ on: machine });
+        setShared(KNOWN_AGENTS, { ...(shared(KNOWN_AGENTS) ?? {}), [where]: this.agentLists[where] });
+      } catch { /* the cached list stays */ }
+      cx.notify();
+    });
+  }
+
+  startModel() {
+    const selected = shared(PROJECT_SELECTED) ?? GENERAL;
+    const proj = liveProjects(shared(PROJECT_LIST) ?? []).find((x) => x.id === selected) ?? generalProject();
+    const inView = spaces().find((s) => s.active)?.machine ?? null;
+    const place = startPlace(shared(PROJECT_DIRS) ?? {}, proj.id, inView, readyMachines(), home());
+    const items = startActions(proj.id, place, startAgents(this.agentLists?.[place.machine ?? ""]));
+    return { proj, place, items };
+  }
+
+  chooseStart(it, place) {
+    if (!it) return;
+    if (it.kind === "worktree") openOverlay(worktreeOverlay(it, place));
+    else run(...startCommand(it, place, spaces()));
+  }
+
+  renderStart(cx) {
+    const t = theme();
+    const { proj, place, items } = this.startModel();
+    this.loadAgents(place.machine, cx);
+    // The tab bar marks each turn to the page; the page then takes the keyboard
+    // from the tab hidden behind it.
+    const shownAt = shared(PROJECT_START_SHOWN);
+    if (shownAt !== this.shownAt) {
+      this.shownAt = shownAt;
+      this.at = 0;
+      this.handle.focus();
+    }
+    this.at = Math.min(this.at, Math.max(0, items.length - 1));
+    const general = proj.id === GENERAL;
+    const tilde = (path) => (path === home() ? "~" : path.startsWith(`${home()}/`) ? `~${path.slice(home().length)}` : path);
+    const [host, ...repo] = proj.id.split("/");
+    const line = (icon, text, extra) => h_flex().gap(6).items_center().text_size(12).text_color(t.muted)
+      .child(svg(`mods/workspace-chrome/${icon}.svg`).size(12).flex_none())
+      .child(div().truncate().child(text))
+      .when(Boolean(extra), (el) => el.child(div().flex_none().text_color(t.dim).child(extra)));
+    const icon = (it) => {
+      if (it.kind !== "agent") return svg(`mods/workspace-chrome/${it.icon}.svg`).size(14).flex_none().text_color(t.muted);
+      if (!it.agent.icon) return div().size(14).flex_none();
+      return it.agent.tint ? svg(it.agent.icon).size(14).flex_none().text_color(t.foreground) : image(it.agent.icon).size(14).flex_none();
+    };
+    return v_flex().id("project-start").track_focus(this.handle).size_full().items_center().justify_center().px(16)
+      .bg(t.background).text_size(13)
+      .on_mouse_down("left", () => this.handle.focus())
+      .on_key_down((e, cx) => {
+        if (!items.length || e.modifiers.control || e.modifiers.platform || e.modifiers.alt) return;
+        if (e.key === "down") this.at = (this.at + 1) % items.length;
+        else if (e.key === "up") this.at = (this.at + items.length - 1) % items.length;
+        else if (e.key === "enter") this.chooseStart(items[this.at], place);
+        else return;
+        cx.stop_propagation();
+        cx.notify();
+      })
+      .child(v_flex().w_full().max_w(420).gap(16)
+        .child(h_flex().gap(14).items_start().px(8)
+          .child(this.icon(proj, t, 40))
+          .child(v_flex().flex_1().min_w(0).gap(4)
+            .child(div().truncate().text_size(17).font_semibold().text_color(t.foreground).child(proj.name))
+            .when(!general, (el) => el.child(line("git-branch", repo.join("/") || proj.id, repo.length ? host : null)))
+            .when(place.known, (el) => el.child(line("folder", tilde(place.folder), place.machine ? `on ${place.machine}` : null)))))
+        .child(div().h(1).flex_none().bg(t.border))
+        .child(v_flex().gap(2)
+          .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).h(31).px(8).gap(9).flex_none().rounded(7).items_center()
+            .cursor_pointer().text_color(t.foreground)
+            .when(i === this.at, (el) => el.bg(t.selected))
+            .hover((s) => s.bg(t.hover))
+            .on_click((_e, cx) => { this.at = i; this.chooseStart(it, place); cx.notify(); })
+            .child(icon(it))
+            .child(div().flex_1().min_w(0).truncate().child(it.label)))))
+        .when(!place.known, (el) => el.child(div().px(8).text_size(12).text_color(t.dim)
+          .child("No folder for this project on a connected machine, so these start in your home folder."))));
   }
 
   // --- Create and edit dialog --------------------------------------------

@@ -95,33 +95,48 @@
               "type": "column",
               "children": [
                 {
-                  "id": "main",
-                  "type": "block",
-                  "content": {
-                    "tab": "active",
-                    "pane": {
-                      "header": {
-                        "content": {
-                          "mod": "agent-pane"
-                        },
-                        "reveal": "always",
-                        "height": 30,
-                        "position": "top"
-                      },
+                  "id": "main-stack",
+                  "type": "stack",
+                  "children": [
+                    {
+                      "id": "main",
+                      "type": "block",
+                      "content": {
+                        "tab": "active",
+                        "pane": {
+                          "header": {
+                            "content": {
+                              "mod": "agent-pane"
+                            },
+                            "reveal": "always",
+                            "height": 30,
+                            "position": "top"
+                          },
+                          "background": "background",
+                          "border": {
+                            "width": 1,
+                            "color": "border"
+                          },
+                          "focus": {
+                            "width": 1,
+                            "color": "accent"
+                          },
+                          "radius": 10,
+                          "gap": 8,
+                          "lone": true
+                        }
+                      }
+                    },
+                    {
+                      "id": "project-start",
+                      "type": "block",
+                      "content": { "mod": "projects", "props": { "start": true } },
                       "background": "background",
-                      "border": {
-                        "width": 1,
-                        "color": "border"
-                      },
-                      "focus": {
-                        "width": 1,
-                        "color": "accent"
-                      },
-                      "radius": 10,
-                      "gap": 8,
-                      "lone": true
+                      "border": { "width": 1, "color": "border" },
+                      "radius": 10
                     }
-                  }
+                  ],
+                  "active": "main"
                 },
                 {
                   "id": "commands",

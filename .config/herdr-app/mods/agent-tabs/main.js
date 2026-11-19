@@ -1,7 +1,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
-import { spaces, panes, terminals, focused, run, openOverlay, theme, window, shared, layout, settings, nextCommand } from "herdr";
-import { GENERAL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, liveProjects, tabProjects, projectTabs } from "./projects.js";
+import { spaces, panes, terminals, focused, run, openOverlay, theme, window, shared, setShared, layout, settings, nextCommand } from "herdr";
+import { GENERAL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, liveProjects, tabProjects, projectTabs, mainChild } from "./projects.js";
 
 // The agents list snoozes or parks an agent with a label on its terminal,
 // and shares what it just wrote until hc has it (agent-list/inbox.js).
@@ -45,12 +45,16 @@ function focusedTab(allSpaces) {
   return focused()?.tab ?? allSpaces.find((s) => s.active)?.tabs.find((t) => t.active)?.id ?? null;
 }
 
-// What the bar shows now: the selected project's visible tabs.
-function barTabs() {
-  const allSpaces = spaces(), allPanes = panes();
+// The selected project's tabs now, hidden ones included.
+function selectedTabs() {
+  const allSpaces = spaces();
   const terms = new Map(terminals().map((k) => [k.address, k]));
-  const tabs = projectBarTabs(allSpaces, allPanes, terms, shared(PROJECT_LIST) ?? [], shared(PROJECT_SELECTED) ?? GENERAL, focusedTab(allSpaces), shared(PROJECT_PENDING));
-  return visibleTabs(tabs, allPanes, terms);
+  return projectBarTabs(allSpaces, panes(), terms, shared(PROJECT_LIST) ?? [], shared(PROJECT_SELECTED) ?? GENERAL, focusedTab(allSpaces), shared(PROJECT_PENDING));
+}
+
+// What the bar shows now: the selected project's visible tabs.
+function barTabs(tabs = selectedTabs()) {
+  return visibleTabs(tabs);
 }
 
 // Shows a tab from any space: its space first, then the tab.
@@ -165,9 +169,22 @@ export default class Tabs extends View {
     localStorage.setItem("panels", JSON.stringify(this.panels));
   }
 
+  // The main area shows the start page while the selected project has no tab.
+  // Layouts without the main stack keep showing the tab.
+  syncMain(stack, want, now = Date.now()) {
+    if (!stack?.children?.some((c) => c.id === want)) return;
+    if ((stack.active ?? stack.children[0]?.id) === want) { this.mainWant = null; return; }
+    // The layout follows a moment later; until then, renders don't ask again.
+    if (this.mainWant?.want === want && now < this.mainWant.until) return;
+    this.mainWant = { want, until: now + 1000 };
+    run("layout.select", { stack: MAIN_STACK, child: want });
+    if (want === MAIN_START) setShared(PROJECT_START_SHOWN, now);
+  }
+
   render() {
     const t = theme();
-    const shown = barTabs();
+    const tabs = selectedTabs();
+    const shown = barTabs(tabs);
     // Keep the active tab in view: index into the tabs the bar shows.
     const active = shown.findIndex(tab => tab.active);
     const selected = shown[active]?.id;
@@ -212,6 +229,7 @@ export default class Tabs extends View {
     const panel = find(root, "panel"), body = find(root, "panel-body");
     const enabled = shared("workspace.panels") ?? ["files", "changes"];
     this.syncPanel(shared(PROJECT_SELECTED) ?? GENERAL, panel, body, enabled);
+    this.syncMain(find(root, MAIN_STACK), mainChild(tabs));
     const panelButton = (id, label, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)
