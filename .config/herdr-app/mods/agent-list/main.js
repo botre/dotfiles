@@ -24,6 +24,8 @@ const X_ICON = "mods/workspace-chrome/x.svg";
 const RESUME_WAITING = "resume.waiting";
 const RESUME_ACTION = "resume.action";
 const MENU_ROW = 31;
+// Space between menu rows, matching the other menus.
+const MENU_GAP = 2;
 
 // What an agent puts before its title: a status glyph or spinner and the
 // separator after it ("✦  Working", "⠋ - Thinking"). It stops at an opening
@@ -208,7 +210,7 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   return items;
 }
 
-const menuHeight = (items) => 10 + items.reduce((h, it) => h + (it.heading ? 26 : MENU_ROW), 0);
+const menuHeight = (items) => 10 + items.reduce((h, it) => h + (it.heading ? 26 : MENU_ROW), 0) + MENU_GAP * Math.max(0, items.length - 1);
 
 // Agent programs a terminal can run while Herdr lists it only once it reports a status.
 const AGENT_PROGRAMS = new Set(["claude", "codex"]);
@@ -610,6 +612,7 @@ export default class Agents extends View {
     return v_flex()
       .w_full()
       .p(5)
+      .gap(MENU_GAP)
       .bg(t.popover)
       .text_size(12.8)
       .children(menuItems(p.rowMenu, p).map((it, i) => it.heading
@@ -948,7 +951,8 @@ export default class Agents extends View {
           cx.notify();
         })
         .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
-        .when(!open || g.shelf, (el) => el.child(div().text_color(t.dim).child(String(g.members.length))))
+        // Every group counts its agents, as the projects sidebar does.
+        .child(div().text_color(t.dim).child(String(g.members.length)))
         .child(div().flex_1())
         .when(g.id === "inbox-settled", (el) => el.child(div()
           .id("inbox-clear")
@@ -1003,7 +1007,7 @@ export default class Agents extends View {
       .when(list.length === 0 && !collapsed && !resumable.length, (el) =>
         el.child(div().px(12).text_size(12).text_color(t.dim).child("No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not.")),
       )
-      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).overflow_y_scrollbar().mode("always").children([...resumable, ...rows]))
+      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).gap(1).overflow_y_scrollbar().mode("always").children([...resumable, ...rows]))
       .when(Boolean(undo) && !collapsed, (el) => el.child(h_flex()
         .mx(8)
         .mb(6)

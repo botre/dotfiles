@@ -13,8 +13,8 @@
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder } from "herdr";
-import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus } from "./membership.js";
-import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconFile, initial } from "./store.js";
+import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents } from "./membership.js";
+import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, initial } from "./store.js";
 
 // Changes made on another machine show up within this long.
 const POLL = 60000;
@@ -195,26 +195,55 @@ export default class Projects extends View {
     await this.fetchFavicons(cx);
   }
 
+  // A favicon URL can name an image or a site. For a site, the page's own
+  // <link rel="icon"> tags are tried first, then /favicon.ico. Anything but a
+  // PNG is turned into one when ImageMagick is there, since .ico may not draw.
   async fetchFavicons(cx) {
     // image() resolves against the app folder, so favicons live under it.
     const dir = `${appHome()}/${FAVICON_DIR}`;
     for (const p of liveProjects(this.projects)) {
       const url = p.icon?.favicon;
-      const file = url && faviconFile(url);
-      if (!file) continue;
+      const base = url && faviconBase(url);
+      if (!base) continue;
       const have = this.favicons[url];
       if (have?.path || (have?.failed && Date.now() - have.failed < FAVICON_RETRY)) continue;
-      const path = `${dir}/${file}`;
       try {
-        if ((await exec("test", ["-s", path])).code !== 0) {
-          await exec("mkdir", ["-p", dir]);
-          const r = await exec("curl", ["-fsSL", "--max-time", "15", "-o", `${path}.tmp`, faviconSource(url)], { timeout: 20000 });
-          if (r.code !== 0 || (await exec("mv", [`${path}.tmp`, path])).code !== 0) throw new Error(r.stderr);
-        }
+        const saved = (await exec("sh", ["-c", 'ls "$1"/"$2".* 2>/dev/null | head -n 1', "_", dir, base])).stdout?.trim();
+        const file = saved ? saved.split("/").pop() : await this.downloadFavicon(url, dir, base);
+        if (!file) throw new Error("no icon");
         this.favicons[url] = { path: `${FAVICON_DIR}/${file}` };
       } catch { this.favicons[url] = { failed: Date.now() }; }
       cx.notify();
     }
+  }
+
+  // Downloads the first icon that works into dir/base.<ext>; returns its file name.
+  async downloadFavicon(url, dir, base) {
+    await exec("mkdir", ["-p", dir]);
+    const curl = (src, out) => exec("curl", ["-fsSL", "--max-time", "15", "-A", "Mozilla/5.0", "-o", out, src], { timeout: 20000 });
+    let candidates = [];
+    if (imageExt(url)) candidates = [url];
+    else {
+      const page = `${dir}/${base}.html`;
+      if ((await curl(url, page)).code === 0) candidates = iconCandidates(await readTextFile(page).catch(() => ""), url);
+      await exec("rm", ["-f", page]);
+      candidates.push(faviconSource(url));
+    }
+    const magick = (await exec("sh", ["-c", "command -v magick || command -v convert"])).stdout?.trim();
+    for (const src of candidates) {
+      const tmp = `${dir}/${base}.download`;
+      if ((await curl(src, tmp)).code !== 0) continue;
+      const ext = imageExt(src) ?? "ico";
+      if (ext !== "png" && magick) {
+        // [0]: an .ico holds several sizes; the first is enough at sidebar size.
+        const r = await exec(magick, [`${tmp}[0]`, "-background", "none", "-resize", "64x64", `${dir}/${base}.png`]);
+        await exec("rm", ["-f", tmp]);
+        if (r.code === 0) return `${base}.png`;
+        continue;
+      }
+      if ((await exec("mv", [tmp, `${dir}/${base}.${ext}`])).code === 0) return `${base}.${ext}`;
+    }
+    return null;
   }
 
   // --- Commands and actions -------------------------------------------
@@ -382,12 +411,12 @@ export default class Projects extends View {
     const selected = this.selected();
     const searching = !collapsed && this.query.trim() !== "";
     const list = searching ? searchProjects(this.projects, this.query) : listedProjects(this.projects, shared(PROJECT_ACTIVE) ?? {});
-    const sp = spaces();
+    const sp = spaces(), running = agents();
     const rows = list.map((proj) => {
       const tabs = projectTabs(sp, proj.id, tabProject);
       const status = projectStatus(tabs);
       const on = proj.id === selected;
-      return collapsed ? this.compact(proj, t, on, status) : this.row(proj, t, on, status, tabs.length);
+      return collapsed ? this.compact(proj, t, on, status) : this.row(proj, t, on, status, projectAgents(running, tabs));
     });
     return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
       .child(h_flex().h(31).flex_none().pl(16).pr(10).items_center().justify_between().text_size(11.5).text_color(t.dim)
@@ -396,7 +425,7 @@ export default class Projects extends View {
         .child(div().id("project-new").size(26).flex_none().flex().items_center().justify_center().rounded(6)
           .tooltip("New project").hover((s) => s.bg(t.hover).text_color(t.foreground))
           .on_click(() => this.create()).child(svg("mods/workspace-chrome/plus.svg").size(14))))
-      .when(!collapsed, (el) => el.child(h_flex().id("project-search").mx(8).mb(4).h(26).flex_none().px(8).gap(6).items_center().rounded(6)
+      .when(!collapsed, (el) => el.child(h_flex().id("project-search").mx(8).mt(6).mb(8).h(26).flex_none().px(8).gap(6).items_center().rounded(6)
         .border(1).border_color(t.border).text_color(t.dim)
         .on_key_down((e, cx) => {
           if (e.key !== "escape") return;
@@ -442,7 +471,7 @@ export default class Projects extends View {
   renderMenu(p) {
     const t = theme();
     const items = this.menuItems(p);
-    return v_flex().id("project-menu").track_focus(this.handle).w_full().min_h(0).p(5).bg(t.popover).text_size(12.8)
+    return v_flex().id("project-menu").track_focus(this.handle).w_full().min_h(0).p(5).gap(2).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
         if (!items.length) return;
         if (e.key === "down") this.at = (this.at + 1) % items.length;

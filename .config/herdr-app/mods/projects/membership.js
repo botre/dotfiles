@@ -69,6 +69,13 @@ export function projectTabs(spaces, project, tabProject, focusedTab = null) {
     .map((tab) => ({ ...tab, active: tab.id === focusedTab, space: s.id, machine: s.machine ?? null })));
 }
 
+// How many agents run in a project's tabs. Plain shells don't count, and
+// sub-agents without a tab of their own fold under their parent.
+export function projectAgents(agents, tabs) {
+  const ids = new Set((tabs ?? []).map((t) => t.id));
+  return (agents ?? []).filter((a) => ids.has(a.tab)).length;
+}
+
 // The most urgent status among a project's tabs.
 const STATUS_RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
 export function projectStatus(tabs) {

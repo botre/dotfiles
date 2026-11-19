@@ -151,7 +151,8 @@ export function touchActive(active, ids, now = Date.now(), gap = 60000) {
   return next;
 }
 
-// Where to download a favicon from: an image URL as given, else the site's /favicon.ico.
+// Where to download a favicon from when nothing better is found: an image URL
+// as given, else the site's /favicon.ico. Null for a URL that isn't http(s).
 // No URL class: the mod runtime may not have one.
 const IMAGE_RE = /\.(png|ico|svg|jpe?g|gif|webp)$/i;
 export function faviconSource(url) {
@@ -160,14 +161,45 @@ export function faviconSource(url) {
   return IMAGE_RE.test(m[2]) ? m[0] : `${m[1]}/favicon.ico`;
 }
 
-// A stable file name for a favicon URL (FNV-1a), keeping its image extension.
-export function faviconFile(url) {
-  const src = faviconSource(url);
-  if (!src) return null;
+// A stable file name stem for a favicon URL (FNV-1a), the same with or without
+// a trailing slash.
+export function faviconBase(url) {
+  const src = String(url ?? "").trim().replace(/\/+$/, "");
+  if (!faviconSource(src)) return null;
   let hash = 2166136261;
   for (const ch of src) hash = Math.imul(hash ^ ch.codePointAt(0), 16777619);
-  const ext = IMAGE_RE.exec(src.replace(/[?#].*$/, ""))?.[1]?.toLowerCase() ?? "ico";
-  return `${(hash >>> 0).toString(16).padStart(8, "0")}.${ext}`;
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+// The image extension of a URL, if its path names one.
+export const imageExt = (url) => IMAGE_RE.exec(String(url ?? "").replace(/[?#].*$/, ""))?.[1]?.toLowerCase().replace("jpeg", "jpg") ?? null;
+
+// Icons a page declares in its <link rel="...icon..."> tags, best first:
+// apple-touch-icon (large PNG), then PNG or SVG icons, then the rest. Each
+// href is made absolute against the page URL.
+export function iconCandidates(html, pageUrl) {
+  const page = /^(https?:)\/\/([^/?#\s]+)([^?#\s]*)/i.exec(String(pageUrl ?? "").trim());
+  if (!page) return [];
+  const [, scheme, host, path] = page;
+  const dir = path.replace(/[^/]*$/, "") || "/";
+  const attr = (tag, name) => new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i").exec(tag)?.slice(1).find((v) => v !== undefined);
+  const found = [];
+  for (const tag of String(html ?? "").match(/<link\b[^>]*>/gi) ?? []) {
+    const rel = (attr(tag, "rel") ?? "").toLowerCase();
+    const href = attr(tag, "href");
+    if (!href || !/\bicon\b/.test(rel) || rel.includes("mask")) continue;
+    const abs = /^https?:\/\//i.test(href) ? href
+      : href.startsWith("//") ? `${scheme}${href}`
+      : href.startsWith("/") ? `${scheme}//${host}${href}`
+      : /^[a-z][a-z0-9+.-]*:/i.test(href) ? null
+      : `${scheme}//${host}${dir}${href}`;
+    if (!abs) continue;
+    const ext = imageExt(abs);
+    const rank = rel.includes("apple-touch-icon") ? 0 : ext === "png" || ext === "svg" ? 1 : 2;
+    found.push({ abs, rank });
+  }
+  const seen = new Set();
+  return found.sort((a, b) => a.rank - b.rank).map((f) => f.abs).filter((u) => !seen.has(u) && seen.add(u));
 }
 
 // The first letter of a name, for a project without an icon.
