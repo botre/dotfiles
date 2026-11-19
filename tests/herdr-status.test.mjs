@@ -53,7 +53,7 @@ describe("status: the agent's program", () => {
   it("puts the focused agent's program icon before This computer", () => {
     const panes = [{ terminal: "t1", tab: "tb1", program: CLAUDE }];
     const text = render({ tab: "tb1", terminal: "t1", agent: null }, panes, [{ address: "t1", program: CLAUDE }]);
-    assert.match(text, /image icons\/claude\.svg.*This computer/);
+    assert.match(text, /svg mods\/agent-list\/icons\/claude\.svg.*This computer/);
     assert.match(text, /"tooltip","Claude Code"/);
   });
 

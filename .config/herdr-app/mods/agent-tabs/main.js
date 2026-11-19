@@ -3,6 +3,10 @@ import { h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, terminals, focused, run, openOverlay, theme, window, shared, setShared, layout, settings, nextCommand } from "herdr";
 import { GENERAL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, GRID, liveProjects, tabProjects, projectTabs, mainChild } from "./projects.js";
 
+// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
+// sprite that blurs when scaled and a logo on a white square.
+const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+
 // The agents list snoozes or parks an agent with a label on its terminal,
 // and shares what it just wrote until hc has it (agent-list/inbox.js).
 const SNOOZED = "inbox.snoozed";
@@ -225,7 +229,7 @@ export default class Tabs extends View {
           else selectTab(c);
         })
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu-org", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: c.space } } }); })
-        .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
+        .when(Boolean(program?.icon), el => el.child(BRAND[program.key] ? svg(BRAND[program.key][0]).size(14).text_color(BRAND[program.key][1]) : program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
         .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(t.muted)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
         .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(GRID.spinner).flex_none().text_color(t.working).spin(900)))

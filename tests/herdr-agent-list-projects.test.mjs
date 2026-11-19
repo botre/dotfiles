@@ -57,7 +57,7 @@ describe("agents list: project icons", () => {
     assert.doesNotMatch(emoji, /image/);
     assert.match(draw({ favicon: "data/projects/favicons/two.png" }), /^\[\{"kind":"image data\/projects\/favicons\/two\.png"\},\["w",16\],\["h",16\]/);
     assert.match(draw({ letter: "T", color: "#22a99a" }), /\["w",16\],\["h",16\].*"bg","#22a99a".*"child","T"/);
-    assert.match(draw({ program: CLAUDE }), /^\[\{"kind":"image icons\/claude\.svg"\},\["w",16\],\["h",16\]/);
+    assert.match(draw({ program: CLAUDE }), /^\[\{"kind":"svg mods\/agent-list\/icons\/claude\.svg"\},\["size",16\]/);
   });
 });
 

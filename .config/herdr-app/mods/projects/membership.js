@@ -158,7 +158,7 @@ export function projectIconView(ui, t, pic, size = GRID.icon) {
   // An emoji glyph draws wider and lower than its font size, so it gets a
   // smaller size and a line box a little shorter than the slot to sit centred.
   if (pic.emoji) return ui.h_flex().w(size).h(size).flex_none().items_center().justify_center()
-    .child(ui.div().text_size(Math.round(size * 0.72)).line_height(`${Math.round(size * 0.8)}px`).pb(Math.max(1, Math.round(size / 9))).text_color(t.foreground).child(pic.emoji));
+    .child(ui.div().text_size(Math.round(size * 0.68)).line_height(`${Math.round(size * 0.8)}px`).pb(Math.max(2, Math.round(size / 7))).text_color(t.foreground).child(pic.emoji));
   return ui.h_flex().w(size).h(size).flex_none().rounded(Math.round(size * 0.25)).bg(pic.color).items_center().justify_center()
     .text_size(Math.round(size * 0.6)).line_height(`${size}px`).font_bold().text_color("#ffffff").child(pic.letter);
 }
