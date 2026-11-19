@@ -951,8 +951,6 @@ export default class Agents extends View {
           cx.notify();
         })
         .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
-        // Every group counts its agents, as the projects sidebar does.
-        .child(div().text_color(t.dim).child(String(g.members.length)))
         .child(div().flex_1())
         .when(g.id === "inbox-settled", (el) => el.child(div()
           .id("inbox-clear")
@@ -963,9 +961,10 @@ export default class Agents extends View {
           .tooltip("Close the panes of parked agents")
           .on_click((_e, cx) => { cx.stop_propagation(); this.askClear(g.members); })
           .child("Clear")))
-        .when(!open, (el) => el
-          .when(!g.shelf && top && top !== "idle", (el) => el.child(this.status(t, { status: top })))
-          .child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)));
+        // At the right, as in the projects sidebar: the most urgent status, then the count.
+        .when(!g.shelf && top && top !== "idle", (el) => el.child(this.status(t, { status: top })))
+        .child(div().flex_none().text_color(t.dim).child(String(g.members.length)))
+        .when(!open, (el) => el.child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)));
     };
     const rows = collapsed
       ? list.flatMap(withKids)

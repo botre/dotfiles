@@ -12,12 +12,14 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder } from "herdr";
+import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window } from "herdr";
 import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents } from "./membership.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, initial } from "./store.js";
 
 // Changes made on another machine show up within this long.
 const POLL = 60000;
+const FAVICONS = "projects.favicons";
+const EMOJI_FONT = { macos: "Apple Color Emoji", windows: "Segoe UI Emoji" };
 // A favicon that failed to download is tried again after this long.
 const FAVICON_RETRY = 600000;
 const RAIL_CELL = 32;
@@ -212,6 +214,8 @@ export default class Projects extends View {
         const file = saved ? saved.split("/").pop() : await this.downloadFavicon(url, dir, base);
         if (!file) throw new Error("no icon");
         this.favicons[url] = { path: `${FAVICON_DIR}/${file}` };
+        // Dialogs are other copies of this mod; they read the paths from here.
+        setShared(FAVICONS, Object.fromEntries(Object.entries(this.favicons).filter(([, v]) => v.path).map(([k, v]) => [k, v.path])));
       } catch { this.favicons[url] = { failed: Date.now() }; }
       cx.notify();
     }
@@ -361,9 +365,13 @@ export default class Projects extends View {
   icon(p, t, size = 18) {
     if (p.id === GENERAL) return h_flex().size(size).flex_none().items_center().justify_center().text_color(t.muted)
       .child(svg("mods/workspace-chrome/layers.svg").size(size - 4));
-    const fav = p.icon?.favicon && this.favicons?.[p.icon.favicon]?.path;
+    const fav = p.icon?.favicon && (this.favicons?.[p.icon.favicon]?.path ?? shared(FAVICONS)?.[p.icon.favicon]);
     if (fav) return image(fav).size(size).flex_none().rounded(4);
-    if (p.icon?.emoji) return h_flex().size(size).flex_none().items_center().justify_center().text_size(size - 4).child(p.icon.emoji);
+    // The colour emoji font by name: otherwise a monochrome symbol font that has
+    // the same glyph can win the fallback and draw it grey.
+    if (p.icon?.emoji) return h_flex().size(size).flex_none().items_center().justify_center()
+      .font_family(EMOJI_FONT[window()?.platform] ?? "Noto Color Emoji").text_size(size - 3).line_height(size).text_color(t.foreground)
+      .child(p.icon.emoji);
     return h_flex().size(size).flex_none().rounded(5).bg(tileColor(p.id)).items_center().justify_center()
       .text_size(size * 0.58).font_bold().text_color("#ffffff").child(initial(p.name));
   }
@@ -398,7 +406,7 @@ export default class Projects extends View {
   }
 
   create() {
-    openOverlay({ mod: "projects", kind: "dialog", width: 460, height: 380, props: { dialog: "create" } });
+    openOverlay({ mod: "projects", kind: "dialog", width: 480, height: 400, props: { dialog: "create" } });
   }
 
   render(cx) {
@@ -464,7 +472,7 @@ export default class Projects extends View {
       act({ kind: "select" });
       openOverlay({ mod: "worktree-org", kind: "dialog", width: 440, height: 260, props: { folder: it.where.folder, machine: it.where.machine, action: "new" } });
     } else if (it.id === "show") act({ kind: "show", shown: it.shown });
-    else if (it.id === "edit") openOverlay({ mod: "projects", kind: "dialog", width: 460, height: 260, props: { dialog: "edit", project: p.project } });
+    else if (it.id === "edit") openOverlay({ mod: "projects", kind: "dialog", width: 480, height: 330, props: { dialog: "edit", project: p.project } });
     else if (it.id === "delete") act({ kind: "delete" });
   }
 
@@ -559,10 +567,40 @@ export default class Projects extends View {
   renderDialog(p) {
     const t = theme();
     const editing = p.dialog === "edit";
+    const proj = editing ? liveProjects(shared(PROJECT_LIST) ?? []).find((x) => x.id === p.project) : null;
     const machineNames = editing ? [] : [null, ...readyMachines()];
-    const input = (state) => Input.new(state).h(32).px(10).items_center().rounded(6).border(1).border_color(t.input).bg(t.background).text_color(t.foreground);
-    const label = (text) => div().text_size(11.5).text_color(t.dim).child(text);
-    return v_flex().id("project-dialog").track_focus(this.handle).size_full().p(16).gap(8).bg(t.popover).text_size(13)
+    const input = (state) => Input.new(state).h(32).px(10).items_center().rounded(6).border(1)
+      .border_color(this.focusedField === state ? t.accent : t.border).bg(t.background).text_color(t.foreground);
+    const label = (text) => div().w(56).flex_none().text_size(12).text_color(t.muted).child(text);
+    const row = (name, field) => h_flex().gap(10).items_center().child(label(name)).child(div().flex_1().min_w(0).child(field));
+    const hint = (text) => h_flex().gap(10).child(div().w(56).flex_none()).child(div().flex_1().text_size(11.5).text_color(t.dim).child(text));
+    const button = (id, text, primary, onClick) => div().id(id).px(12).h(30).flex().items_center().rounded(6).cursor_pointer()
+      .when(primary, (el) => el.bg(t.solid).text_color(t.solid_foreground))
+      .when(!primary, (el) => el.bg(t.raised).text_color(t.foreground).hover((s) => s.bg(t.hover)))
+      .on_click((_e, cx) => onClick(cx)).child(text);
+    const iconField = this.fields[editing ? 1 : 2];
+    const tilde = (path) => (path.startsWith(home()) ? `~${path.slice(home().length)}` : path);
+    // Where the project's checkouts are known: one line per machine.
+    const folders = editing ? Object.entries(this.dirs ?? {}).filter(([, d]) => d?.[p.project]).map(([m, d]) => [m || "This computer", tilde(d[p.project])]) : [];
+    const [host, ...repo] = (p.project ?? "").split("/");
+    const header = editing
+      ? h_flex().gap(12).items_start()
+        .child(proj ? this.icon(proj, t, 36) : div().size(36))
+        .child(v_flex().flex_1().min_w(0).gap(3)
+          .child(div().truncate().text_size(15).font_semibold().text_color(t.foreground).child(proj?.name ?? p.project))
+          .child(h_flex().gap(6).items_center().text_size(12).text_color(t.muted)
+            .child(svg("mods/workspace-chrome/git-branch.svg").size(12).flex_none())
+            .child(div().truncate().child(repo.join("/") || p.project))
+            .when(repo.length > 0, (el) => el.child(div().flex_none().text_color(t.dim).child(host))))
+          .children(folders.map(([m, f]) => h_flex().gap(6).items_center().text_size(12).text_color(t.dim)
+            .child(svg("mods/workspace-chrome/folder.svg").size(12).flex_none())
+            .child(div().truncate().child(f))
+            .when(folders.length > 1 || m !== "This computer", (el) => el.child(div().flex_none().child(`on ${m}`))))))
+      : v_flex().gap(4)
+        .child(div().text_size(15).font_semibold().text_color(t.foreground).child("New project"))
+        .child(div().text_color(t.muted).text_size(12)
+          .child("A project is a git remote. The folder only tells which one; the same remote on any machine is the same project."));
+    return v_flex().id("project-dialog").track_focus(this.handle).size_full().p(18).gap(12).bg(t.popover).text_size(13)
       .on_key_down((e, cx) => {
         if (e.key === "escape") { closeOverlay(p.overlay); return; }
         if (e.key !== "tab") return;
@@ -572,35 +610,33 @@ export default class Projects extends View {
         this.focusedField = this.fields[next];
         this.fields[next].focus();
         cx.stop_propagation();
+        cx.notify();
       })
-      .child(div().font_semibold().text_color(t.foreground).child(editing ? `Edit ${p.project}` : "New project"))
-      .when(!editing, (el) => el.child(div().text_color(t.muted).text_size(12)
-        .child("A project is a git remote. Its folder only tells which remote; the same remote on any machine is the same project.")))
-      .child(label("Name"))
-      .child(input(this.fields[0]))
+      .child(header)
+      .child(div().h(1).flex_none().bg(t.border))
+      .child(row("Name", input(this.fields[0])))
       .when(!editing, (el) => el
-        .child(h_flex().gap(8).items_center()
-          .child(div().flex_1().child(label("Folder")))
-          .children(machineNames.length > 1 ? machineNames.map((m) => div().id(`pd-machine-${m ?? "local"}`).px(6).rounded(4).text_size(11)
+        .child(row("Folder", h_flex().gap(6).items_center()
+          .child(div().flex_1().min_w(0).child(input(this.fields[1])))
+          .when(!this.machine, (el) => el.child(button("pd-browse", "Browse", false, (cx) => cx.spawn(async (cx) => {
+            const folder = await pickFolder({ prompt: "Choose" });
+            if (folder) this.fields[1].set_value(folder);
+            cx.notify();
+          }))))))
+        .when(machineNames.length > 1, (el) => el.child(hint("").child(h_flex().gap(4)
+          .children(machineNames.map((m) => div().id(`pd-machine-${m ?? "local"}`).px(6).rounded(4).text_size(11)
             .text_color(this.machine === m ? t.foreground : t.dim).when(this.machine === m, (el) => el.bg(t.selected))
             .hover((s) => s.bg(t.hover)).on_click((_e, cx) => { this.machine = m; this.error = ""; cx.notify(); })
-            .child(m ?? "This computer")) : []))
-        .child(h_flex().gap(6).items_center()
-          .child(div().flex_1().min_w(0).child(input(this.fields[1])))
-          .when(!this.machine, (el) => el.child(div().id("pd-browse").px(8).h(32).flex().items_center().rounded(6).border(1).border_color(t.input)
-            .text_color(t.muted).hover((s) => s.bg(t.hover).text_color(t.foreground))
-            .on_click((_e, cx) => cx.spawn(async (cx) => {
-              const folder = await pickFolder({ prompt: "Choose" });
-              if (folder) this.fields[1].set_value(folder);
-              cx.notify();
-            }))
-            .child("Browse")))))
-      .child(label("Icon"))
-      .child(input(this.fields[editing ? 1 : 2]))
-      .when(Boolean(this.error), (el) => el.child(div().text_color(t.blocked).child(this.error)))
+            .child(m ?? "This computer")))))))
+      .child(row("Icon", input(iconField)))
+      .child(hint("An emoji, or a website such as https://www.skipr.co/ to use its favicon."))
+      .when(Boolean(this.error), (el) => el.child(hint(this.error).text_color(t.blocked)))
       .child(div().flex_1())
-      .child(h_flex().justify_end().gap(6).text_size(11).text_color(t.dim)
-        .when(this.busy, (el) => el.child(div().frames(["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"], 90)))
-        .child(this.busy ? "reading the folder…" : editing ? "↵ save · esc cancel" : "↵ create · esc cancel"));
+      .child(h_flex().gap(8).items_center()
+        .when(this.busy, (el) => el.child(div().text_color(t.dim).frames(["\u280b", "\u2819", "\u2839", "\u2838", "\u283c", "\u2834", "\u2826", "\u2827", "\u2807", "\u280f"], 90))
+          .child(div().text_size(12).text_color(t.dim).child("Reading the folder\u2026")))
+        .child(div().flex_1())
+        .child(button("pd-cancel", "Cancel", false, () => closeOverlay(p.overlay)))
+        .child(button("pd-save", editing ? "Save" : "Create", true, (cx) => this.save(cx))));
   }
 }
