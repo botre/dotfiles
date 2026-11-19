@@ -107,13 +107,12 @@ describe("project start page render", () => {
     return { text: JSON.stringify(tree.calls), tree, view, cx, ran, overlays, focused: () => focused, shared };
   };
 
-  it("draws a project with its repo, folder and every action", () => {
+  it("draws a project with its repo and every action as a pill", () => {
     const list = [{ id: ID, name: "Repo", icon: { emoji: "\u{1F680}" }, updated_at: 1 }];
     const { text } = render({ selected: ID, list, dirs: { "": { [ID]: "/home/me/code/repo" } } });
-    for (const s of ["Repo", "o/repo", "github.com", "~/code/repo", "Start Claude Code", "Start Codex", "New terminal", "New worktree…", "Open worktree…"]) assert.ok(text.includes(JSON.stringify(s)), s);
-    assert.match(text, /"max_w",460/);
-    assert.match(text, /"h",36\],\["px",10\],\["gap",10\]/);
-    assert.match(text, /"rounded",8/);
+    for (const s of ["Repo", "o/repo", "Start Claude Code", "Start Codex", "New terminal", "New worktree…", "Open worktree…"]) assert.ok(text.includes(JSON.stringify(s)), s);
+    assert.match(text, /"w",240\],\["h",38\]/);
+    assert.match(text, /"rounded",19\],\["border",1\]/);
     assert.match(text, /svg mods\/workspace-chrome\/terminal\.svg/);
     assert.doesNotMatch(text, /No folder/);
   });
@@ -121,7 +120,6 @@ describe("project start page render", () => {
   it("draws General at home without a repo or worktrees", () => {
     const { text } = render({ selected: "general" });
     assert.ok(text.includes('"General"'));
-    assert.ok(text.includes('"~"'));
     assert.doesNotMatch(text, /worktree|git-branch|No folder/);
     assert.ok(text.includes('"New terminal"'));
   });
