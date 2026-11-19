@@ -913,7 +913,9 @@ export default class Agents extends View {
         return h_flex()
           .id(`ag-${a.address}`)
           .h(26)
-          .px(8)
+          .px(3)
+          .mx(5)
+          .rounded(6)
           .flex_none()
           .items_center()
           .gap(4)
@@ -1039,19 +1041,19 @@ export default class Agents extends View {
     return v_flex()
       .size_full()
       .min_h(0)
+      // Its own 14 px card, as the projects list: rounded inside the border, no divider.
+      .rounded(13)
+      .overflow_hidden()
       .bg(t.chrome)
-      .border_t(1)
-      .border_color(t.border)
       .text_size(13)
       .when(!collapsed, (el) =>
         el.child(
           // As the projects list's title row: the title where row content starts,
-          // the button centred over the status column, and 10 more above it.
+          // the button centred over the status column.
           h_flex()
             .pl(GRID.listPx + GRID.rowPx)
             .pr(GRID.listPx + GRID.rowPx + GRID.status / 2 - 13)
-            .pt(10)
-            .h(GRID.sectionH + 10)
+            .h(GRID.sectionH)
             .flex_none()
             .items_center()
             .justify_between()

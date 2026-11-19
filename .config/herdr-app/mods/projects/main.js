@@ -454,7 +454,9 @@ export default class Projects extends View {
       const on = proj.id === selected;
       return collapsed ? this.compact(proj, t, on, status) : this.row(proj, t, on, status, projectAgents(running, tabs));
     });
-    return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
+    // The block is a 14 px card with a 1 px border and Herdr doesn't clip a mod
+    // to it, so the list rounds itself to stay inside the corners.
+    return v_flex().size_full().min_h(0).rounded(13).overflow_hidden().bg(t.chrome).text_size(13)
       // The title starts where row content does; the + sits centred over the status column.
       .child(h_flex().h(GRID.sectionH).flex_none().pl(GRID.listPx + GRID.rowPx).pr(GRID.listPx + GRID.rowPx + GRID.status / 2 - 13)
         .items_center().justify_between().text_size(11.5).font_medium().text_color(t.dim)
@@ -656,7 +658,7 @@ export default class Projects extends View {
       return h_flex().size(18).flex_none().items_center().justify_center().child(inner);
     };
     return v_flex().id("project-start").track_focus(this.handle).size_full().items_center().px(16)
-      .bg(t.background).text_size(13)
+      .rounded(13).overflow_hidden().bg(t.background).text_size(13)
       .on_mouse_down("left", () => this.handle.focus())
       .on_key_down((e, cx) => {
         if (!items.length || e.modifiers.control || e.modifiers.platform || e.modifiers.alt) return;

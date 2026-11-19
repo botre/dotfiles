@@ -12,7 +12,9 @@ import { terminals, focused, hc, run, theme, props, notify } from "herdr";
 
 const EVERY = 1500;
 const ROW = 30;
-const PAD = 8;
+// The strip is a card under the main area: the layout's 12 px gap above it,
+// and the work column's gap below.
+const GAP = 12;
 const MAX = 5;
 // Claude indents its replies, so a suggestion starts after spaces; a command
 // that ran (bash mode) starts at the edge.
@@ -104,7 +106,7 @@ export default class Commands extends View {
 
   fit() {
     const shown = Math.min(this.commands.length, MAX);
-    const height = shown ? PAD * 2 + shown * ROW + (shown - 1) * 2 : 0;
+    const height = shown ? GAP + shown * ROW + (shown - 1) * 2 : 0;
     if (height === this.height) return;
     this.height = height;
     run("layout.resize", { id: props()?.block ?? "commands", px: height });
@@ -151,9 +153,7 @@ export default class Commands extends View {
     const more = this.commands.length - shown.length;
     return v_flex()
       .size_full()
-      .py(PAD)
-      .px(4)
-      .bg(t.canvas)
+      .pt(GAP)
       .children(shown.map((command, i) => h_flex()
         .id(`command-${i}`)
         .h(ROW)
@@ -162,7 +162,7 @@ export default class Commands extends View {
         .pr(4)
         .gap(8)
         .items_center()
-        .rounded(8)
+        .rounded(14)
         .bg(t.raised)
         .border_1()
         .border_color(t.border)

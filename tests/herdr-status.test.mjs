@@ -69,3 +69,15 @@ describe("status: the agent's program", () => {
     assert.equal(evaluate("focusedAgentProgram(f, panes, [])", { f: { agent: "t3", terminal: "t9" }, panes })?.name, "Claude Code");
   });
 });
+
+describe("status: icon tints", () => {
+  const evaluate = loadMods(["status/main.js"]);
+  const t = { blocked: "B", done: "D", dim: "M" };
+  const dot = (needs, count) => evaluate("agentsDot(t, needs, count)", { t, needs, count });
+
+  it("colors the agents dot blocked when one needs you, done while any run, dim with none", () => {
+    assert.equal(dot(1, 3), "B");
+    assert.equal(dot(0, 2), "D");
+    assert.equal(dot(0, 0), "M");
+  });
+});

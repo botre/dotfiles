@@ -11,7 +11,9 @@ import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_ACTION, PROJECT_FAVICON
 
 const EVERY = 1500;
 const ROW = 30;
-const PAD = 8;
+// The strip is a card under the main area: the layout's 12 px gap above it,
+// and the work column's gap below.
+const GAP = 12;
 // A folder's remote is read again after this long.
 const REMOTE_TTL = 5 * 60 * 1000;
 
@@ -120,7 +122,7 @@ export default class ProjectSuggest extends View {
     if (key === (this.key ?? "")) return;
     this.key = key;
     this.shown = next;
-    const height = next ? PAD * 2 + ROW : 0;
+    const height = next ? GAP + ROW : 0;
     if (height !== this.height) {
       this.height = height;
       run("layout.resize", { id: props()?.block ?? "project-suggest", px: height });
@@ -157,9 +159,7 @@ export default class ProjectSuggest extends View {
     const name = s.proj.name;
     return h_flex()
       .size_full()
-      .py(PAD)
-      .px(4)
-      .bg(t.canvas)
+      .pt(GAP)
       .child(h_flex()
         .id("project-suggest")
         .flex_1()
@@ -168,7 +168,7 @@ export default class ProjectSuggest extends View {
         .pr(4)
         .gap(8)
         .items_center()
-        .rounded(8)
+        .rounded(14)
         .bg(t.raised)
         .border_1()
         .border_color(t.border)

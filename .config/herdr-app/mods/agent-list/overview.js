@@ -31,7 +31,8 @@ export function overview(expanded = new Set()) {
     ? (p.tint ? svg(p.icon).size(15).text_color(t.muted) : image(p.icon).size(15))
     : svg(ICON).size(15).text_color(t.muted);
 
-  return v_flex().size_full().min_h(0).bg(t.background).text_size(13)
+  // A pane card's lower half (the header sits on top), so round its bottom corners.
+  return v_flex().size_full().min_h(0).rounded_b(13).overflow_hidden().bg(t.background).text_size(13)
     .child(v_flex().px(28).py(24).gap(5).flex_none()
       .child(h_flex().gap(12).items_center()
         .child(svg(ICON).size(22).flex_none().text_color(t.muted))
