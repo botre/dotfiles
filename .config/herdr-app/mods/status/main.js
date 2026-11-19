@@ -6,10 +6,15 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, agents, panes, focused, theme, run, window, keys, exec } from "herdr";
+import { programIcon } from "./program-icons.js";
 
-// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
-// sprite that blurs when scaled and a logo on a white square.
-const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+// A program's icon, cropped to fill its slot (program-icons.js).
+function mark(p, size, color) {
+  const pic = programIcon(p);
+  if (!pic) return null;
+  return pic.tint ? svg(pic.path).size(size).flex_none().text_color(pic.color ?? color) : image(pic.path).w(size).h(size).flex_none();
+}
+
 
 const EVERY = 2 * 60 * 1000;
 const FAILED = new Set(["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]);
@@ -118,7 +123,7 @@ export default class WorkspaceStatus extends View {
     return h_flex().size_full().px(14).gap(16).items_center().bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .child(h_flex().gap(10).items_center()
         .when(Boolean(program), (el) => el.child(div().id("agent-program").flex_none().tooltip(program.name)
-          .child(BRAND[program.key] ? svg(BRAND[program.key][0]).size(13).text_color(BRAND[program.key][1]) : program.tint ? svg(program.icon).size(13).text_color(t.muted) : image(program.icon).w(13).h(13))))
+          .child(mark(program, 13, t.muted))))
         .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer")))
       .when(Boolean(space?.branch), el => el.child(h_flex().gap(10).items_center().child(label("branch", space.branch)).when(Boolean(pr), (e) => e.child(pr))))
       .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} agent${list.length === 1 ? "" : "s"}`)

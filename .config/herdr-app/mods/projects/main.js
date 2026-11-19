@@ -19,10 +19,15 @@ import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, hom
 import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects, MAIN_STACK, MAIN_START, MAIN_TAB } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
+import { programIcon } from "./program-icons.js";
 
-// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
-// sprite that blurs when scaled and a logo on a white square.
-const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+// A program's icon, cropped to fill its slot (program-icons.js).
+function mark(p, size, color) {
+  const pic = programIcon(p);
+  if (!pic) return null;
+  return pic.tint ? svg(pic.path).size(size).flex_none().text_color(pic.color ?? color) : image(pic.path).w(size).h(size).flex_none();
+}
+
 
 // Changes made on another machine show up within this long.
 const POLL = 60000;
@@ -656,8 +661,7 @@ export default class Projects extends View {
       const inner = it.kind !== "agent"
         ? svg(`mods/workspace-chrome/${it.icon}.svg`).size(16).text_color(t.muted)
         : !it.agent.icon ? div()
-        : BRAND[it.agent.key] ? svg(BRAND[it.agent.key][0]).size(16).text_color(BRAND[it.agent.key][1])
-        : it.agent.tint ? svg(it.agent.icon).size(16).text_color(t.foreground) : image(it.agent.icon).size(16);
+        : mark(it.agent, 16, t.foreground) ?? div();
       return h_flex().size(18).flex_none().items_center().justify_center().child(inner);
     };
     return v_flex().id("project-start").track_focus(this.handle).size_full().items_center().px(16)

@@ -13,10 +13,15 @@ import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS,
 import { overview } from "./overview.js";
 import { machineChoices, machineOf, moveAgent } from "./move.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
+import { programIcon } from "./program-icons.js";
 
-// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
-// sprite that blurs when scaled and a logo on a white square.
-const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+// A program's icon, cropped to fill its slot (program-icons.js).
+function mark(p, size, color) {
+  const pic = programIcon(p);
+  if (!pic) return null;
+  return pic.tint ? svg(pic.path).size(size).flex_none().text_color(pic.color ?? color) : image(pic.path).w(size).h(size).flex_none();
+}
+
 
 // A run that stops stays with Working this long, so a quick follow-up doesn't move it twice.
 const GRACE = 2000;
@@ -274,10 +279,7 @@ export function unreportedAgents(listed, all, allPanes, allSpaces, titles = new 
 }
 
 function icon(p, size, color) {
-  const brand = BRAND[p?.key];
-  if (brand) return svg(brand[0]).size(size).flex_none().text_color(brand[1]);
-  if (!p?.icon) return null;
-  return p.tint ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
+  return mark(p, size, color);
 }
 
 // What an agent's row draws in its icon slot: its project's icon (projectIcon),
@@ -298,8 +300,8 @@ function drawRowIcon(spec, size, t) {
 
 // A program's logo fills its whole box, so it sits 2px smaller in the icon slot
 // than a project's picture, and both read the same size.
-const programIcon = () => GRID.icon - 2;
-const rowIconSize = (spec) => (spec.program ? programIcon() : GRID.icon);
+const programIconSize = () => GRID.icon - 2;
+const rowIconSize = (spec) => (spec.program ? programIconSize() : GRID.icon);
 
 export default class Agents extends View {
   init(_props, cx) {
@@ -410,7 +412,7 @@ export default class Agents extends View {
       const agent = w.agent === "codex" ? "Codex" : "Claude";
       return gridRow(UI, {
         id: `resume-${w.address}`,
-        icon: image(`icons/${w.agent}.svg`).w(programIcon()).h(programIcon()).flex_none().opacity(hovered || pane.focused ? 1 : 0.6),
+        icon: image(`icons/${w.agent}.svg`).w(programIconSize()).h(programIconSize()).flex_none().opacity(hovered || pane.focused ? 1 : 0.6),
         name: h_flex().flex_1().min_w(0).gap(5).items_center()
           .child(div().min_w(0).max_w(more ? 120 : 200).truncate().text_color(t.foreground).child(name))
           .when(Boolean(more), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))),
