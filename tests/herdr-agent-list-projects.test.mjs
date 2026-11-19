@@ -24,7 +24,8 @@ const element = (kind) => {
 };
 
 describe("agents list: project icons", () => {
-  const evaluate = loadMods(["agent-list/projects.js", "agent-list/inbox.js", "agent-list/main.js"], {
+  const evaluate = loadMods(["agent-list/projects.js", "agent-list/inbox.js", "agent-list/move.js", "agent-list/main.js"], {
+    machines: () => [],
     div: () => element("div"), h_flex: () => element("h_flex"), v_flex: () => element("v_flex"),
     svg: (path) => element(`svg ${path}`), image: (path) => element(`image ${path}`),
   });
@@ -63,7 +64,8 @@ describe("agents list: project icons", () => {
 describe("agents list: move to project", () => {
   const setup = () => {
     const overlays = [], closed = [], store = { "projects.list": PROJECTS };
-    const evaluate = loadMods(["agent-list/projects.js", "agent-list/inbox.js", "agent-list/main.js"], {
+    const evaluate = loadMods(["agent-list/projects.js", "agent-list/inbox.js", "agent-list/move.js", "agent-list/main.js"], {
+    machines: () => [],
       div: () => element("div"), h_flex: () => element("h_flex"), v_flex: () => element("v_flex"),
       svg: (path) => element(`svg ${path}`), image: (path) => element(`image ${path}`),
       terminals: () => [{ address: "t1", labels: {} }],

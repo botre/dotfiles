@@ -5,12 +5,13 @@
 
 import { View, div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout, hc, notify, nextCommand, home, keys } from "herdr";
+import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout, hc, notify, nextCommand, home, keys, machines, exec } from "herdr";
 import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { ICON } from "./ui.js";
-import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, liveProjects, projectRank, tabProjects, projectIcon, pickerOverlay } from "./projects.js";
+import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, liveProjects, projectRank, tabProjects, projectIcon, pickerOverlay } from "./projects.js";
 import { overview } from "./overview.js";
+import { machineChoices, machineOf, moveAgent } from "./move.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
 
 // A run that stops stays with Working this long, so a quick follow-up doesn't move it twice.
@@ -200,6 +201,7 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   else if (finished) items.push({ kind: "settle", icon: PARK_ICON, label: "Park" });
   if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
   if (whereIs(address).pane) items.push({ kind: "project", icon: chrome("folder"), label: "Move to project…" });
+  if (machineChoices(machines(), machineOf(address)).length) items.push({ kind: "machine", icon: chrome("server"), label: "Move to machine…" });
   const targets = moveTargets(address);
   if (targets.length) items.push({ heading: "Move to" });
   for (const s of targets) items.push({ kind: "move", preset: s.id, icon: chrome("layers"), label: s.name });
@@ -210,6 +212,10 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   }
   return items;
 }
+
+// The machine picker's entries ("" stands for this computer).
+const machineItems = (address) => machineChoices(machines(), machineOf(address))
+  .map((m) => ({ kind: "machine", preset: m.name ?? "", icon: `mods/workspace-chrome/${m.name ? "server" : "monitor"}.svg`, label: m.label }));
 
 const menuHeight = (items) => 10 + items.reduce((h, it) => h + (it.heading ? 26 : MENU_ROW), 0) + MENU_GAP * Math.max(0, items.length - 1);
 
@@ -424,6 +430,8 @@ export default class Agents extends View {
     if (kind === "wake") return this.write(address, { [SNOOZED]: "" });
     if (kind === "reference") return this.reference(address, cx);
     if (kind === "move") return this.move(address, act.preset, cx);
+    // A move can take minutes, so other commands don't wait for it.
+    if (kind === "machine") return void (act.preset == null ? this.pickMachine(address) : this.moveToMachine(address, act.preset || null, cx));
     // Without a name, Herdr asks for one, as the tab's own Rename does.
     if (kind === "rename") { const tab = whereIs(address).pane?.tab; if (tab) run("tab.rename", { id: tab }); }
   }
@@ -454,6 +462,22 @@ export default class Agents extends View {
     if (back) run("space.select", { id: back });
     if (!landed) return fail(`It still runs, without a pane: hc attach ${address}`);
     notify({ title: `Moved to ${to.name}`, level: "success", timeout: 3000 });
+  }
+
+  // The row menu again, listing the machines to move the agent to.
+  pickMachine(address) {
+    const items = machineItems(address);
+    if (items.length) openOverlay({ mod: "agent-list", kind: "popup", width: 250, height: menuHeight(items), props: { rowMenu: address, machines: true } });
+  }
+
+  // Carries the agent to another machine (move.js); one move at a time.
+  async moveToMachine(address, to, cx) {
+    if (this.moving) { notify({ title: "A move is already running", level: "warning", timeout: 3000 }); return; }
+    this.moving = true;
+    try {
+      await moveAgent({ exec, hc, notify, run, agents, terminals, panes, spaces, dirs: shared(PROJECT_DIRS) ?? {}, sleep: (ms) => cx.sleep(ms) }, address, to);
+    } catch (e) { notify({ title: "Couldn't move the agent", body: String(e), level: "error" }); }
+    finally { this.moving = false; }
   }
 
   // Writes labels on an agent's terminal, shown at once as pending.
@@ -642,7 +666,7 @@ export default class Agents extends View {
       .gap(MENU_GAP)
       .bg(t.popover)
       .text_size(12.8)
-      .children(menuItems(p.rowMenu, p).map((it, i) => it.heading
+      .children((p.machines ? machineItems(p.rowMenu) : menuItems(p.rowMenu, p)).map((it, i) => it.heading
         ? div().px(8).pt(8).h(26).flex_none().text_size(11).text_color(t.dim).child(it.heading)
         : h_flex()
           .id(`menu-${i}`)
