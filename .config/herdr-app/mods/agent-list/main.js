@@ -15,6 +15,7 @@ import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf,
 const GRACE = 2000;
 const UNDO_MS = 5000;
 const UNDO_ICON = "mods/agent-list/undo.svg";
+const PARK_ICON = "mods/agent-list/park.svg";
 const PLAY_ICON = "mods/agent-list/play.svg";
 const X_ICON = "mods/workspace-chrome/x.svg";
 // Shared by the resume mod: sessions that a restart left waiting in their tab.
@@ -175,7 +176,7 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference" });
   // Parking keeps its old names inside (kind, label key), so parked agents stay parked.
   if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Bring back" });
-  else if (finished) items.push({ kind: "settle", icon: chrome("check"), label: "Park" });
+  else if (finished) items.push({ kind: "settle", icon: PARK_ICON, label: "Park" });
   if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
   const targets = moveTargets(address);
   if (targets.length) items.push({ heading: "Move to" });
