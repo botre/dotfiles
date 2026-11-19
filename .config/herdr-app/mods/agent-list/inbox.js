@@ -1,4 +1,4 @@
-// Settle and snooze, kept as labels on each agent's terminal so they last as
+// Park (stored as "settled") and snooze, kept as labels on each agent's terminal so they last as
 // long as the terminal and every window can read them:
 //   inbox.settled=<ms>:<turn>  put away by hand; a later turn brings it back
 //   inbox.snoozed=<wake ms>    put away until then
