@@ -95,7 +95,10 @@ describe("agents list: move to project", () => {
     // The recorded call holds the handler; run it.
     click[1]();
     assert.deepEqual(closed, ["m1"]);
-    assert.deepEqual(plain(overlays), [plain(evaluate('pickerOverlay("tb1", list)', { list: PROJECTS }))]);
+    // The projects sidebar opens the picker once it has read the tab's repository.
+    assert.deepEqual(plain(overlays), []);
+    assert.equal(store["projects.action"].kind, "pick");
+    assert.equal(store["projects.action"].tab, "tb1");
     assert.equal(store["agent-list.action"], undefined);
   });
 });

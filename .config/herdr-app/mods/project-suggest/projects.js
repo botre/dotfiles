@@ -207,9 +207,13 @@ export const pickerProjects = (list) => [generalProject(), ...[...liveProjects(l
 // Menus and pickers: popup padding, row height, the gap between rows, a heading's height.
 export const MENU = Object.freeze({ pad: 5, row: 31, gap: 2, heading: 26, radius: 7 });
 
-const PICKER_ROWS = 10;
-// The picker popup for a tab, sized to its list (it scrolls past ten projects).
-export function pickerOverlay(tab, list) {
-  const rows = Math.min(pickerProjects(list).length, PICKER_ROWS);
-  return { mod: "projects", kind: "popup", width: 260, height: MENU.pad * 2 + MENU.heading + rows * MENU.row + (rows - 1) * MENU.gap, props: { picker: tab } };
+export const PICKER_ROWS = 10;
+// The picker's height for this many rows: the top padding, the heading, the rows and the
+// gaps between them, a bottom padding as wide as those gaps, and the 1px border on each side.
+export const pickerHeight = (rows) => MENU.pad + MENU.heading + rows * MENU.row + rows * MENU.gap + 2;
+// The picker popup for a tab, sized to its list (it scrolls past ten projects). `create` is the
+// tab's repository when no project has its remote yet; it adds a "New project from this tab" row.
+export function pickerOverlay(tab, list, create = null) {
+  const rows = Math.min(pickerProjects(list).length, PICKER_ROWS) + (create ? 1 : 0);
+  return { mod: "projects", kind: "popup", width: 260, height: pickerHeight(rows), props: create ? { picker: tab, create } : { picker: tab } };
 }

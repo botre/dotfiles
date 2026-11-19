@@ -10,7 +10,7 @@ import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { OBSERVATIONS } from "./conversations.js";
 import { ICON } from "./ui.js";
-import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, gridTrail, liveProjects, projectRank, tabProjects, projectIcon, pickerOverlay } from "./projects.js";
+import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, gridTrail, liveProjects, projectRank, tabProjects, projectIcon, PROJECT_ACTION } from "./projects.js";
 import { overview } from "./overview.js";
 import { machineChoices, machineOf, moveAgent } from "./move.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
@@ -675,7 +675,10 @@ export default class Agents extends View {
       if (it.kind === "project") {
         const tab = whereIs(p.rowMenu).pane?.tab;
         closeOverlay(p.overlay);
-        if (tab) openOverlay(pickerOverlay(tab, shared(PROJECT_LIST) ?? []));
+        if (tab) {
+          setShared(PROJECT_ACTION, { kind: "pick", tab, at: Date.now() });
+          run("projects.act");
+        }
         return;
       }
       setShared(ACTION, { kind: it.kind, address: p.rowMenu, preset: it.preset, at: Date.now() });

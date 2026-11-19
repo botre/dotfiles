@@ -51,16 +51,22 @@ describe("move to project helpers", () => {
     assert.deepEqual(run("pickerProjects(list).map((p) => p.name)", { list: LIST }), ["General", "One", "Two"]);
     const o = run("pickerOverlay('tb1', list)", { list: LIST });
     assert.deepEqual(o, { mod: "projects", kind: "popup", width: 260, height: o.height, props: { picker: "tb1" } });
-    assert.equal(o.height, 10 + 26 + 3 * 31 + 2 * 2);
+    // Top padding, heading, rows with a gap after each (the last is the bottom padding), border.
+    assert.equal(o.height, 5 + 26 + 3 * 31 + 3 * 2 + 2);
     const many = Array.from({ length: 30 }, (_, i) => ({ id: `h/o/${i}`, name: `P${i}`, updated_at: 1 }));
-    assert.equal(run("pickerOverlay('tb1', many).height", { many }), 10 + 26 + 10 * 31 + 9 * 2);
+    assert.equal(run("pickerOverlay('tb1', many).height", { many }), 5 + 26 + 10 * 31 + 10 * 2 + 2);
+    // A repository without a project adds the "New project from this tab" row.
+    const create = { id: "github.com/o/new", dir: "/srv/new", machine: null };
+    const withRow = run("pickerOverlay('tb1', list, create)", { list: LIST, create });
+    assert.deepEqual(withRow.props, { picker: "tb1", create });
+    assert.equal(withRow.height, o.height + 31 + 2);
   });
 });
 
 describe("move to project", () => {
-  const setup = ({ panes = [{ tab: "tb1", terminal: "t1" }, { tab: "tb1", terminal: "vps/t2" }], fail = false, labels = {} } = {}) => {
+  const setup = ({ panes = [{ tab: "tb1", terminal: "t1" }, { tab: "tb1", terminal: "vps/t2" }], fail = false, labels = {}, git = { code: 1, stdout: "", stderr: "" } } = {}) => {
     const shared = { "projects.list": LIST, "projects.selected": TWO, "projects.favicons": {} };
-    const hcCalls = [], notes = [], ran = [], closed = [];
+    const hcCalls = [], notes = [], ran = [], closed = [], opened = [], execs = [];
     const evaluate = loadMods(["projects/membership.js", "projects/store.js", "projects/start.js", "projects/main.js"], {
       div: () => element("div"), h_flex: () => element("h_flex"), v_flex: () => element("v_flex"),
       svg: (path) => element(`svg ${path}`), image: (path) => element(`image ${path}`),
@@ -70,10 +76,12 @@ describe("move to project", () => {
       hc: async (args) => { hcCalls.push(args); return fail ? { code: 1, stderr: "nope" } : { code: 0 }; },
       notify: (n) => { notes.push(n); }, run: (...args) => { ran.push(args); }, closeOverlay: (id) => { closed.push(id); },
       home: () => "/home/me", checking: () => true,
+      openOverlay: (o) => { opened.push(o); return "o2"; },
+      exec: async (cmd, args, opts) => { execs.push([cmd, args, opts]); return git; },
     });
     const view = evaluate("Object.create(Projects.prototype)");
     view.projects = LIST;
-    return { evaluate, view, shared, hcCalls, notes, ran, closed };
+    return { evaluate, view, shared, hcCalls, notes, ran, closed, opened, execs };
   };
 
   it("relabels every terminal of the tab, keeps the selection, and says where it went", async () => {
@@ -144,5 +152,46 @@ describe("move to project", () => {
     assert.deepEqual(closed, ["o1", "o1"]);
     assert.equal(shared["projects.action"], undefined);
     assert.deepEqual(ran, []);
+  });
+
+  it("offers a new project from the tab only when no project has its remote", async () => {
+    const agentPane = [{ tab: "tb1", terminal: "t1", cwd: "/srv/new/src", program: { agent: true } }];
+    const fresh = setup({ panes: agentPane, git: { code: 0, stdout: "/srv/new\ngit@github.com:o/new.git\n", stderr: "" } });
+    await fresh.view.openPicker("tb1");
+    assert.deepEqual(plain(fresh.execs[0][1].slice(-1)), ["/srv/new/src"]);
+    assert.deepEqual(plain(fresh.opened[0].props), { picker: "tb1", create: { id: "github.com/o/new", dir: "/srv/new", machine: null } });
+    const known = setup({ panes: agentPane, git: { code: 0, stdout: "/srv/one\nhttps://github.com/o/one.git\n", stderr: "" } });
+    await known.view.openPicker("tb1");
+    assert.deepEqual(plain(known.opened[0].props), { picker: "tb1" });
+    const plainFolder = setup({ panes: agentPane });
+    await plainFolder.view.openPicker("tb1");
+    assert.deepEqual(plain(plainFolder.opened[0].props), { picker: "tb1" });
+  });
+
+  it("opens the filled-in create dialog from the new project row", () => {
+    const { view, closed, opened } = setup();
+    const p = { picker: "tb1", overlay: "o1", create: { id: "github.com/o/new", dir: "/srv/new", machine: "vps" } };
+    view.initPicker(p, { focus_handle: () => ({ focus() {} }) });
+    const tree = view.renderPicker(p);
+    assert.ok(JSON.stringify(tree.calls).includes(JSON.stringify("New project from this tab…")));
+    const handler = tree.calls.find((c) => c[0] === "on_key_down")[1];
+    const cx = { stop_propagation() {}, notify() {} };
+    // General, One, Two, then the new project row.
+    for (let i = 0; i < 3; i++) handler({ key: "down" }, cx);
+    handler({ key: "enter" }, cx);
+    assert.deepEqual(closed, ["o1"]);
+    assert.deepEqual(plain(opened), [{ mod: "projects", kind: "dialog", width: 480, height: 400, props: { dialog: "create", folder: "/srv/new", machine: "vps", tab: "tb1" } }]);
+  });
+
+  it("moves the tab into a project created from its picker", async () => {
+    const { view, shared, hcCalls } = setup();
+    view.publish = () => {};
+    view.sync = async () => {};
+    view.saveDir = async () => {};
+    view.select = (id) => { shared["projects.selected"] = id; };
+    shared["projects.action"] = { kind: "save", id: "github.com/o/new", name: "new", icon: {}, create: true, tab: "tb1", at: Date.now() };
+    await view.act({ notify() {} });
+    assert.deepEqual(plain(hcCalls.slice(0, 2)), [["label", "t1", "project=github.com/o/new"], ["label", "vps/t2", "project=github.com/o/new"]]);
+    assert.equal(shared["projects.selected"], "github.com/o/new");
   });
 });
