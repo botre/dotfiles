@@ -155,8 +155,10 @@ export const GRID = Object.freeze({
 export function projectIconView(ui, t, pic, size = GRID.icon) {
   if (!pic) return ui.div().w(size).h(size).flex_none();
   if (pic.favicon) return ui.image(pic.favicon).w(size).h(size).flex_none().rounded(Math.round(size * 0.2));
+  // An emoji glyph draws wider and lower than its font size, so it gets a
+  // smaller size and a line box a little shorter than the slot to sit centred.
   if (pic.emoji) return ui.h_flex().w(size).h(size).flex_none().items_center().justify_center()
-    .text_size(size - 3).line_height(`${size}px`).text_color(t.foreground).child(pic.emoji);
+    .child(ui.div().text_size(Math.round(size * 0.72)).line_height(`${Math.round(size * 0.8)}px`).pb(Math.max(1, Math.round(size / 9))).text_color(t.foreground).child(pic.emoji));
   return ui.h_flex().w(size).h(size).flex_none().rounded(Math.round(size * 0.25)).bg(pic.color).items_center().justify_center()
     .text_size(Math.round(size * 0.6)).line_height(`${size}px`).font_bold().text_color("#ffffff").child(pic.letter);
 }

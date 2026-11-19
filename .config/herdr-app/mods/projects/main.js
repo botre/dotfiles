@@ -392,14 +392,14 @@ export default class Projects extends View {
   }
 
   // A row on the sidebar grid (membership.js), as the agents list draws its rows:
-  // the agent count just left of the status slot. Idle shows no glyph.
+  // the agent count just left of the status slot. Idle shows its ring, like an agent row.
   row(p, t, on, status, count) {
     return gridRow(UI, {
       id: `project-${p.id}`,
       icon: this.icon(p, t),
       name: div().flex_1().min_w(0).truncate().text_color(on ? t.foreground : t.muted).child(p.name),
       details: [count > 0 && div().text_size(11).text_color(t.dim).child(String(count))],
-      glyph: status === "idle" ? null : statusGlyph(UI, t, status),
+      glyph: count > 0 && status ? statusGlyph(UI, t, status) : null,
     })
       .when(on, (el) => el.bg(t.selected))
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
@@ -496,7 +496,7 @@ export default class Projects extends View {
       act({ kind: "select" });
       openOverlay({ mod: "worktree-org", kind: "dialog", width: 440, height: 260, props: { folder: it.where.folder, machine: it.where.machine, action: "new" } });
     } else if (it.id === "show") act({ kind: "show", shown: it.shown });
-    else if (it.id === "edit") openOverlay({ mod: "projects", kind: "dialog", width: 480, height: 330, props: { dialog: "edit", project: p.project } });
+    else if (it.id === "edit") openOverlay({ mod: "projects", kind: "dialog", width: 480, height: 300, props: { dialog: "edit", project: p.project } });
     else if (it.id === "delete") act({ kind: "delete" });
   }
 
@@ -628,7 +628,8 @@ export default class Projects extends View {
     if (shownAt !== this.shownAt) {
       this.shownAt = shownAt;
       this.at = 0;
-      this.handle.focus();
+      // Focus can't move during a draw, so it moves right after it.
+      cx.spawn(async () => this.handle.focus());
     }
     this.at = Math.min(this.at, Math.max(0, items.length - 1));
     const general = proj.id === GENERAL;
@@ -638,13 +639,13 @@ export default class Projects extends View {
       .child(svg(`mods/workspace-chrome/${icon}.svg`).size(12).flex_none())
       .child(div().truncate().child(text))
       .when(Boolean(extra), (el) => el.child(div().flex_none().text_color(t.dim).child(extra)));
-    // Each action's icon sits in a small tile, like a launcher.
+    // Each action's icon sits right before its label, as in the menus.
     const icon = (it) => {
       const inner = it.kind !== "agent"
-        ? svg(`mods/workspace-chrome/${it.icon}.svg`).size(15).text_color(t.muted)
+        ? svg(`mods/workspace-chrome/${it.icon}.svg`).size(16).text_color(t.muted)
         : !it.agent.icon ? div()
         : it.agent.tint ? svg(it.agent.icon).size(16).text_color(t.foreground) : image(it.agent.icon).size(16);
-      return h_flex().size(30).flex_none().items_center().justify_center().rounded(8).bg(t.raised).child(inner);
+      return h_flex().size(18).flex_none().items_center().justify_center().child(inner);
     };
     return v_flex().id("project-start").track_focus(this.handle).size_full().items_center().px(16)
       .bg(t.background).text_size(13)
@@ -661,25 +662,23 @@ export default class Projects extends View {
       // A third of the way down reads better than dead centre on a tall pane.
       .child(div().flex_1().max_h(220))
       .child(v_flex().w_full().max_w(460).flex_none().rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_md().overflow_hidden()
-        .child(h_flex().gap(14).items_center().px(20).py(18)
-          .child(this.icon(proj, t, 44))
+        .child(h_flex().gap(12).items_center().px(20).py(16)
+          .child(this.icon(proj, t, 36))
           .child(v_flex().flex_1().min_w(0).gap(4)
             .child(div().truncate().text_size(18).font_semibold().text_color(t.foreground).child(proj.name))
             .when(!general, (el) => el.child(line("git-branch", repo.join("/") || proj.id, repo.length ? host : null)))
             .when(place.known, (el) => el.child(line("folder", tilde(place.folder), place.machine ? `on ${place.machine}` : null)))))
         .child(div().h(1).flex_none().bg(t.border))
-        .child(v_flex().px(10).py(8).gap(2)
-          .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).h(46).px(10).gap(12).flex_none().rounded(8).items_center()
+        .child(v_flex().px(10).py(10).gap(2)
+          .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).h(36).px(10).gap(10).flex_none().rounded(8).items_center()
             .cursor_pointer()
             .when(i === this.at, (el) => el.bg(t.hover))
             .hover((s) => s.bg(t.hover))
             .on_mouse_move(() => { this.at = i; })
             .on_click((_e, cx) => { this.at = i; this.chooseStart(it, place); cx.notify(); })
             .child(icon(it))
-            .child(v_flex().flex_1().min_w(0).gap(1)
-              .child(div().truncate().text_color(t.foreground).child(it.label))
-              .when(Boolean(it.hint), (el) => el.child(div().truncate().text_size(11.5).text_color(t.dim).child(it.hint))))
-            .when(i === this.at, (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child("\u21b5"))))))
+            .child(div().flex_none().text_color(t.foreground).child(it.label))
+            .child(div().flex_1().min_w(0).truncate().text_right().text_size(12).text_color(t.dim).child(it.hint ?? "")))))
         .when(!place.known, (el) => el.child(div().px(20).pb(12).text_size(12).text_color(t.dim)
           .child("No folder for this project on a connected machine, so these start in your home folder.")))
         .child(h_flex().px(20).py(9).border_t(1).border_color(t.border).text_size(11).text_color(t.dim)
@@ -705,6 +704,8 @@ export default class Projects extends View {
     this.fields = editing
       ? [field("Name", proj?.name ?? ""), field("Emoji or favicon URL", proj?.icon?.favicon ?? proj?.icon?.emoji ?? "")]
       : [field("Name (default: the repository's name)", ""), field("Folder in a git repository", cwd), field("Emoji or favicon URL", "")];
+    // A prefilled field starts with the cursor after its text, not with the text selected.
+    for (const f of this.fields) { const n = f.value().length; f.set_selected_range({ start: n, end: n }); }
     this.handle = cx.focus_handle();
     this.handle.focus();
     this.busy = false;
