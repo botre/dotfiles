@@ -79,6 +79,20 @@ def valid_id(value):
     return isinstance(value, str) and UUID.fullmatch(value) is not None
 
 
+def codex_subagent(path):
+    """Whether a Codex rollout belongs to a sub-agent rather than the session itself."""
+    try:
+        with path.open("rb") as file:
+            # The first line carries the whole system prompt, so it can be long.
+            first = parse_json(file.readline(4_000_000).decode("utf-8", "replace"), {})
+    except OSError:
+        return False
+    meta = first.get("payload") if first.get("type") == "session_meta" else None
+    if not isinstance(meta, dict):
+        return False
+    return bool(meta.get("parent_thread_id")) or isinstance(meta.get("source"), dict)
+
+
 def resolve(request):
     pid = request.get("pid")
     if not isinstance(pid, int) or pid <= 0:
@@ -116,6 +130,9 @@ def resolve(request):
                      and Path(line[1:]).name.startswith("rollout-") and line.endswith(".jsonl")
                      and Path(line[1:]).is_relative_to(config)]
         paths = list(dict.fromkeys(paths))
+        # Codex keeps its sub-agents' transcripts open too (the auto-review
+        # "guardian", say); their first line names a parent thread.
+        paths = [path for path in paths if not codex_subagent(path)]
         if valid_id(recorded):
             matches = [path for path in paths if path.name.endswith(f"{recorded}.jsonl")]
             if matches:
@@ -187,6 +204,19 @@ def host(url):
     return match[1] if match else short(scrub(str(url or "")), 50) or "a page"
 
 
+def first_command(text):
+    """The text up to the first ; && || or | outside quotes."""
+    quote = None
+    for i, ch in enumerate(text):
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+        elif ch in ";|" or text.startswith("&&", i):
+            return text[:i].strip()
+    return text.strip()
+
+
 def command_phrase(command):
     if isinstance(command, list):
         command = command[-1] if len(command) >= 3 and command[-2] in {"-lc", "-c"} else " ".join(map(str, command))
@@ -194,8 +224,10 @@ def command_phrase(command):
     text = lines[0] if lines else ""
     while CD_PREFIX.match(text):
         text = CD_PREFIX.sub("", text, count=1)
+    # Only the first command of a chain or pipe: enough to say what runs, and it fits one line.
+    text = first_command(text)
     text = scrub(text)
-    return f"Running {short(text, 70)}" if text else "Running a command"
+    return f"Running {short(text, 60)}" if text else "Running a command"
 
 
 def patch_phrase(text):

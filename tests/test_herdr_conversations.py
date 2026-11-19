@@ -168,6 +168,11 @@ class HerdrLiveActivityTests(unittest.TestCase):
     def live(self, lines):
         return PROBE["conversation"](self.write(lines), live=True)["live"]
 
+    def test_command_phrase_keeps_the_first_command(self):
+        self.assertEqual(PROBE["command_phrase"]("tail -8 a.log; tail -4 b.log"), "Running tail -8 a.log")
+        self.assertEqual(PROBE["command_phrase"]("cd /x && npm test | tee out.log"), "Running npm test")
+        self.assertEqual(PROBE["command_phrase"]('echo "a;b" && ls'), 'Running echo "a;b"')
+
     def test_claude_tool_phrases(self):
         cases = [
             ("Bash", {"command": "cd /srv/api && node --test --test-isolation=none tests/*.test.mjs\necho done"},

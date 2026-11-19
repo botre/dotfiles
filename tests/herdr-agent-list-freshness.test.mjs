@@ -200,10 +200,10 @@ describe("agent-list goals and names", () => {
   const seen = (extra = {}) => ({ ...observed, ...extra });
   const goal = (t, r = {}, o = null, tab = null) => call("goalState", t, r, o, tab);
   const name = (t, o, r) => call("sessionName", t, o, r);
-  it("takes the goal from the report, then the session title, the recap, and the first prompt", () => {
+  it("takes the goal from the report, then the recap and the first prompt, never the title", () => {
     const o = seen({ recap: { goal: "Recap goal" }, firstPrompt: "Please fix the login page" });
     assert.equal(goal(base, { goal: "Report goal" }, o), "Report goal");
-    assert.equal(goal({ ...base, title: "✦ Login fix | api" }, {}, o), "Login fix");
+    assert.equal(goal({ ...base, title: "✦ Login fix | api", labels: { "session.title": "Login fix" } }, {}, o), "Recap goal");
     assert.equal(goal({ ...base, title: "Claude Code" }, {}, o), "Recap goal");
     assert.equal(goal(base, {}, seen({ firstPrompt: "Please fix the login page" })), "Please fix the login page");
     assert.equal(goal(base, {}, { ...o, pid: 7 }), "No goal update yet");

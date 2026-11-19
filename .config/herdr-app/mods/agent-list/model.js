@@ -4,7 +4,6 @@ const CONTROL = /[\u0000-\u001f\u007f]/g;
 const INSPECTION_TTL = 90000;
 const RECAP_PENDING = 180000;
 const RECAP_INTERVAL = 900000;
-const AGENT_NAMES = new Set(["claude", "claude code", "codex"]);
 
 export const text = (value) => typeof value === "string" ? value.replace(CONTROL, " ").trim().slice(0, 240) : "";
 export const goalTitle = (value) => text(value).replace(PREFIX, "").split(" | ")[0].trim();
@@ -43,13 +42,6 @@ export function recapWantsTitle(terminal, observation) {
 export function helperName(terminal, observation) {
   return sessionName(terminal, observation)
     || terminal.name || terminal.template || terminal.program?.name || terminal.address;
-}
-
-// The conversation title the agent shows in its terminal title, without
-// placeholders such as "Claude Code" before it has one.
-function terminalTitle(terminal) {
-  const title = goalTitle(terminal.title);
-  return title && !AGENT_NAMES.has(title.toLowerCase()) ? title : "";
 }
 
 export function isAgent(terminal) {
@@ -182,12 +174,11 @@ export function activityState(terminal, record, observation, now = Date.now()) {
   };
 }
 
-// A session's goal: the agent's own, its session title, the recap's, then the
-// first line of the first prompt.
-export function goalState(terminal, record, observation, tab) {
+// A session's goal: the agent's own, the recap's, then the first request. Not the
+// session title: the Session column shows that already, so it would only repeat.
+export function goalState(terminal, record, observation) {
   const seen = ownObservation(terminal, observation);
-  return text(record.goal) || ownLabel(terminal, "session.title", "session.title.pid") || terminalTitle(terminal)
-    || text(tab?.name) || text(seen?.recap?.goal) || text(seen?.firstPrompt) || "No goal update yet";
+  return text(record.goal) || text(seen?.recap?.goal) || text(seen?.firstPrompt) || "No goal update yet";
 }
 
 // Recaps fill a missing goal or title. They wait for a quiet transcript after a
