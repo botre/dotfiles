@@ -10,10 +10,10 @@ const mods = (path) => readFileSync(new URL(`../.config/herdr-app/mods/${path}`,
 describe("projects", () => {
   it("names a project after its normalised remote", () => {
     const cases = {
-      "git@github.com:skiprco/monorepo.git": "github.com/skiprco/monorepo",
-      "https://github.com/skiprco/monorepo.git": "github.com/skiprco/monorepo",
-      "https://user:token@GitHub.com/skiprco/monorepo/": "github.com/skiprco/monorepo",
-      "ssh://git@github.com:22/skiprco/monorepo.git": "github.com/skiprco/monorepo",
+      "git@github.com:acme/monorepo.git": "github.com/acme/monorepo",
+      "https://github.com/acme/monorepo.git": "github.com/acme/monorepo",
+      "https://user:token@GitHub.com/acme/monorepo/": "github.com/acme/monorepo",
+      "ssh://git@github.com:22/acme/monorepo.git": "github.com/acme/monorepo",
       "git+ssh://git@gitlab.example.com/group/sub/repo": "gitlab.example.com/group/sub/repo",
       "github.com:org/repo": "github.com/org/repo",
       "/home/me/repo": null,
@@ -22,7 +22,7 @@ describe("projects", () => {
       "": null,
     };
     for (const [url, id] of Object.entries(cases)) assert.equal(evaluate("normalizeRemote(url)", { url }), id, url);
-    assert.equal(evaluate('nameOf("github.com/skiprco/monorepo")'), "monorepo");
+    assert.equal(evaluate('nameOf("github.com/acme/monorepo")'), "monorepo");
   });
 
   it("merges machines' lists: the newest entry wins and a delete stays as a tombstone", () => {
@@ -151,14 +151,14 @@ describe("projects", () => {
   });
 
   it("reads icons, favicon sources and worktree folders", () => {
-    assert.deepEqual(run('iconFrom(" https://skipr.co ")'), { favicon: "https://skipr.co" });
+    assert.deepEqual(run('iconFrom(" https://example.com ")'), { favicon: "https://example.com" });
     assert.deepEqual(run('iconFrom("🚀")'), { emoji: "🚀" });
     assert.deepEqual(run('iconFrom("")'), {});
-    assert.equal(evaluate('faviconSource("https://skipr.co/app?x=1")'), "https://skipr.co/favicon.ico");
+    assert.equal(evaluate('faviconSource("https://example.com/app?x=1")'), "https://example.com/favicon.ico");
     assert.equal(evaluate('faviconSource("https://cdn.x.io/logo.PNG")'), "https://cdn.x.io/logo.PNG");
     assert.equal(evaluate('faviconSource("javascript:alert(1)")'), null);
-    assert.match(evaluate('faviconBase("https://skipr.co")'), /^[0-9a-f]{8}$/);
-    assert.equal(evaluate('faviconBase("https://skipr.co")'), evaluate('faviconBase("https://skipr.co/")'));
+    assert.match(evaluate('faviconBase("https://example.com")'), /^[0-9a-f]{8}$/);
+    assert.equal(evaluate('faviconBase("https://example.com")'), evaluate('faviconBase("https://example.com/")'));
     assert.equal(evaluate('faviconBase("ftp://x")'), null);
     assert.equal(evaluate('initial(" monorepo")'), "M");
     const dirs = { "": { x: "/home/me/x" }, vps: { x: "/srv/x", y: "/srv/y" } };
@@ -204,10 +204,10 @@ describe("favicon from a site", () => {
       <link rel="mask-icon" href="/mask.svg">
       <link rel="stylesheet" href="/x.css">
       <link rel="icon" href="data:image/png;base64,AAAA"></head>`;
-    assert.deepEqual(iconCandidates(html, "https://www.skipr.co/en/"), [
-      "https://www.skipr.co/touch.png",
+    assert.deepEqual(iconCandidates(html, "https://www.example.com/en/"), [
+      "https://www.example.com/touch.png",
       "https://cdn.example.com/a/icon.png",
-      "https://www.skipr.co/en/favicon.svg",
+      "https://www.example.com/en/favicon.svg",
     ]);
     assert.deepEqual(iconCandidates("<link rel=icon href=//cdn.x.io/i.ico>", "http://a.b"), ["http://cdn.x.io/i.ico"]);
   });
@@ -215,7 +215,7 @@ describe("favicon from a site", () => {
   it("reads an image extension from a URL", async () => {
     const { imageExt } = await import("../.config/herdr-app/mods/projects/store.js");
     assert.equal(imageExt("https://x.io/logo.JPEG?v=2"), "jpg");
-    assert.equal(imageExt("https://www.skipr.co/"), null);
+    assert.equal(imageExt("https://www.example.com/"), null);
   });
 });
 

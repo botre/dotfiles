@@ -13,10 +13,10 @@ const CODEX = "01a1f2e2-aa00-79d1-acfe-2e69fa6ea031";
 describe("agent-list move to machine: planning", () => {
   it("encodes Claude Code's project folders as seen in ~/.claude/projects", () => {
     // Folder names observed on disk for these working folders.
-    assert.equal(move.claudeFolder("/home/bjorn/Development/skiprco/monorepo/.claude/worktrees/pr1558-operators"),
-      "-home-bjorn-Development-skiprco-monorepo--claude-worktrees-pr1558-operators");
-    assert.equal(move.claudeFolder("/home/bjorn/Development/website/.bare"), "-home-bjorn-Development-website--bare");
-    assert.equal(move.claudeFolder("/home/bjorn/Development/botre/dotfiles"), "-home-bjorn-Development-botre-dotfiles");
+    assert.equal(move.claudeFolder("/home/me/Development/acme/monorepo/.claude/worktrees/pr1558-operators"),
+      "-home-me-Development-acme-monorepo--claude-worktrees-pr1558-operators");
+    assert.equal(move.claudeFolder("/home/me/Development/website/.bare"), "-home-me-Development-website--bare");
+    assert.equal(move.claudeFolder("/home/me/Development/botre/dotfiles"), "-home-me-Development-botre-dotfiles");
   });
 
   it("normalizes remotes exactly as the projects mod does", () => {
