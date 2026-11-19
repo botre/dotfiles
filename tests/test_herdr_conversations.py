@@ -269,7 +269,7 @@ class HerdrLiveActivityTests(unittest.TestCase):
             lines.append(claude_line("user", f"Reply {index}"))
         text = PROBE["excerpt"](self.write(lines))
         self.assertLessEqual(len(text), 4000)
-        self.assertTrue(text.startswith("First user message:\nBuild the overview"))
+        self.assertTrue(text.startswith("First user message (the session may have moved on since):\nBuild the overview"))
         self.assertIn("Reply 29", text)
         self.assertIn("Tool: Reading f29.js", text)
         self.assertNotIn("Step 10 ", text)
