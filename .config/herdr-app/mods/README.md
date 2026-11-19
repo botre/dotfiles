@@ -101,6 +101,17 @@ minutes between attempts for one session. Each request has a two-minute timeout.
 Recaps stay in a private cache on the session's machine. Unsupported or ambiguous
 sessions show unavailable freshness instead of guessed summaries.
 
+Right-click an agent and pick Move to machine to carry it to another connected
+machine. Only an idle or done agent moves; a working or blocked one gets a toast
+and stays. The move commits every change as "WIP: moved to <machine>" (files over
+20 MB stay behind) and pushes the branch without force. On the target it checks
+the branch out in `~/.herdr/worktrees/<owner>/<repo>/<branch>`, from the
+project's folder there or a clone in `~/.herdr/repos/<owner>/<repo>`. It copies
+the Claude Code or Codex conversation with the old checkout's paths rewritten and
+resumes it in a new tab with the same project. The source pane closes last, so a
+failed step leaves the agent running where it was. `agent-list/move.js` holds the
+plan and the steps.
+
 Session length uses the foreground process age from `ps` and includes idle time.
 A dash means unavailable. Existing Codex processes keep their old routing until
 the user resumes them; the overview marks these sessions.

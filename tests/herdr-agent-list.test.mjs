@@ -301,9 +301,9 @@ describe("agent-list", () => {
         panes: [{ pane: "p1", terminal: "t1", tab: "tb1" }],
       };
       const commands = [], notes = [], store = {};
-      const evaluate = loadMods(["agent-list/inbox.js", "agent-list/main.js"], {
+      const evaluate = loadMods(["agent-list/inbox.js", "agent-list/move.js", "agent-list/main.js"], {
         spaces: () => state.spaces, panes: () => state.panes, terminals: () => [{ address: "t1", labels: {} }],
-        keys: () => [], shared: (key) => store[key], setShared: (key, value) => { store[key] = value; },
+        keys: () => [], machines: () => [{ name: null, layout: "ready" }], shared: (key) => store[key], setShared: (key, value) => { store[key] = value; },
         run: (command, args) => commands.push([command, args]), notify: (n) => notes.push(n),
         ...extra(state),
       });
@@ -341,6 +341,22 @@ describe("agent-list", () => {
       await view.command("act", cx);
       assert.deepEqual(plain(commands), [["tab.rename", { id: "tb1" }]]);
       assert.equal(store["agent-list.action"], null);
+    });
+
+    it("offers Move to machine only with another ready machine, and opens a picker of them", async () => {
+      const overlays = [];
+      const { evaluate, view, store, cx } = setup(() => ({
+        machines: () => [{ name: null, layout: "ready" }, { name: "vps", layout: "ready" }, { name: "gone", layout: "unavailable" }],
+        openOverlay: (spec) => overlays.push(spec),
+      }));
+      const items = plain(evaluate('menuItems("t1")'));
+      assert.deepEqual(items.filter((it) => it.kind === "machine").map((it) => it.label), ["Move to machine…"]);
+      assert.deepEqual(plain(evaluate('machineItems("t1")')).map((it) => [it.preset, it.label]), [["vps", "vps"]]);
+      assert.deepEqual(plain(evaluate('machineItems("vps/t2")')).map((it) => [it.preset, it.label]), [["", "This computer"]]);
+      store["agent-list.action"] = { kind: "machine", address: "t1", at: Date.now() };
+      await view.command("act", cx);
+      assert.equal(overlays.length, 1);
+      assert.deepEqual(plain(overlays[0].props), { rowMenu: "t1", machines: true });
     });
 
     it("moves an agent to a new tab of another space, keeps its tab name, and returns to the space in view", async () => {
