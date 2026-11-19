@@ -97,6 +97,31 @@ describe("tab-titles", () => {
     assert.equal(tabs[1].name, "My manual name");
   });
 
+  it("uses a recap title below published titles and never over a manual name", () => {
+    const tabs = [
+      { id: "tb1", name: "1", named: false }, { id: "tb2", name: "2", named: false },
+      { id: "tb3", name: "My manual name", named: true }, { id: "tb4", name: "4", named: false },
+    ];
+    const commands = [];
+    const labels = [{}, { "session.title": "Published title", "session.title.updated": "300" }, {}, { "summary.goal": "Agent goal" }];
+    const observations = Object.fromEntries(tabs.map((_, i) => [`t${i}`, { pid: i === 3 ? 7 : 40 + i, recap: { title: `Recap title ${i}` } }]));
+    const evaluate = loadMod("tab-titles", {
+      spaces: () => [{ tabs }],
+      panes: () => tabs.map((tab, i) => ({ tab: tab.id, terminal: `t${i}`, program: { agent: true, key: "codex" }, title: "Codex" })),
+      terminals: () => tabs.map((_, i) => ({ address: `t${i}`, foreground: { argv: ["codex"], pid: 40 + i }, labels: labels[i] })),
+      shared: (key) => key === "mods.off" ? [] : key === "agents.conversations" ? observations
+        : key === "agents.sessions" ? { t3: { goal: "Agent goal" } } : {},
+      run: (_command, args) => commands.push(args),
+      localStorage: memoryStorage(),
+    });
+    evaluate("new TabTitles().sync()");
+    const names = Object.fromEntries(commands.map((args) => [args.id, args.name]));
+    assert.equal(names.tb1, "Recap title 0");
+    assert.equal(names.tb2, "Published title");
+    assert.equal(names.tb3, undefined);
+    assert.equal(names.tb4, "Agent goal", "a recap from an earlier process is ignored");
+  });
+
   it("retains automatic title ownership while spaces load or remote machines are offline", () => {
     let spaces = [];
     const store = { "tab-titles.set": JSON.stringify({ tb1: "Old title", "remote/tb2": "Remote title" }) };

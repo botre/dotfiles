@@ -92,20 +92,36 @@ Agents publish labels through `python3 "$HOME/scripts/herdr-context" label`:
 - Summaries: `summary.goal`, `summary.activity`, `summary.updated` (Unix seconds).
 - Titles: `session.title`, `session.title.updated` (Unix seconds).
 
-The newest agent report, status message, or recap supplies the activity. Transcript
-checks run every 30 seconds. “Current” means the report covers the latest inspected
-conversation. Later messages mark it “Last reported”; failed checks leave freshness
-unknown. Unchanged activity text preserves its timer while its report stays current.
-Status messages and recaps have no activity timer.
+Labels are optional but preferred. Every 30 seconds the overview reads the tail
+of each Claude Code and Codex transcript, with no model and no tokens. Activity
+comes from the agent's own report while it covers the latest conversation. Without
+one, it shows the live transcript: the running tool action during a turn ("Running
+node --test", "Editing overview.js"), else the latest assistant sentence. A dim
+"Live · 12s ago" marks it, and the activity timer counts from that action. Then
+come the newest recap, status message, or older report. Phrases drop environment
+assignments and anything after a token or password flag. Orange marks only a failed
+transcript check.
 
-Recaps start disabled. Enable them in the overview to send conversation history
-to each session's existing provider, OpenAI or Anthropic. Independent recaps run
-only for missing or stale reports while the overview is visible. They fork the
-native conversation, use a temporary directory, and leave the original unchanged. Requests wait
-at least two minutes after a report, three minutes between launches, and ten
-minutes between attempts for one session. Each request has a two-minute timeout.
-Recaps stay in a private cache on the session's machine. Unsupported or ambiguous
-sessions show unavailable freshness instead of guessed summaries.
+The goal comes from the agent's report, then the session title (the agent's label,
+its terminal title, or the tab name), then a recap, then the first line of the
+first prompt.
+
+Names follow one order in agent rows, helper names and tab titles: Claude Code's
+`/rename` name, the agent's `session.title` label, the recap's title, then the
+goal and the terminal title. `tab-titles` reads recap titles from the agent list's
+shared observations and never renames a tab the person named.
+
+Recaps start disabled. Enable them in the overview to send a short excerpt to the
+smallest model of the session's provider: Claude Haiku or Codex's `gpt-6-luna`.
+The excerpt holds the first prompt and the last eight messages, with tool calls as
+one-line phrases, at most 4000 characters. One call returns a goal, an activity
+and, when the session has no `/rename` name or `session.title` label, a title.
+Recaps run only for a missing goal or title while the overview is visible, and
+never resume or fork the conversation. Requests wait at least two minutes after a
+report, three minutes between launches, and fifteen minutes between attempts for
+one session. Each request has a two-minute timeout. Recaps stay in a private cache
+on the session's machine. Unsupported or ambiguous sessions show unavailable
+freshness instead of guessed summaries.
 
 Right-click an agent and pick Move to machine to carry it to another connected
 machine. Only an idle or done agent moves; a working or blocked one gets a toast

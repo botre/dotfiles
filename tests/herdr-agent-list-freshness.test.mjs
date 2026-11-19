@@ -6,6 +6,7 @@ const now = 2000000;
 const terminal = { address: "t1", foreground: { pid: 42 }, program: { key: "codex" }, labels: {} };
 const report = { activity: "Prepare worktree", updatedAt: now - 600000, activityAt: now - 700000 };
 const observed = { pid: 42, session: "session", stamp: "100:200", conversationAt: now - 10000, checkedAt: now };
+const titled = { ...terminal, labels: { "session.title": "Login fix" } };
 const evaluate = loadMods(["agent-list/model.js"]);
 const call = (name, ...args) => evaluate(`${name}(${args.map((value) => JSON.stringify(value)).join(",")})`);
 const state = (t = terminal, r = report, o = observed) => call("activityState", t, r, o, now);
@@ -32,7 +33,9 @@ describe("agent-list conversation freshness", () => {
   it("does not equate old age with stale content when the conversation is unchanged", () => {
     const observation = { ...observed, conversationAt: report.updatedAt };
     assert.equal(state(terminal, report, observation).freshness, "current");
-    assert.equal(needed(terminal, report, observation), false);
+    // A session with its own goal and title needs no recap.
+    assert.equal(needed(titled, { ...report, goal: "Fix login" }, observation), false);
+    assert.equal(needed(terminal, report, observation), true, "a missing goal or title still asks for one");
   });
   it("reports freshness as unknown after an inspection fails or ages out", () => {
     for (const observation of [null, { ...observed, error: "Unavailable" }, { ...observed, checkedAt: now - 90000 }]) {
@@ -63,7 +66,7 @@ describe("agent-list conversation freshness", () => {
     assert.equal(state(working, { ...report, reportTurn: 4 }).freshness, "current");
     assert.equal(state({ ...working, turn: 5, status: "idle" }, { ...report, reportTurn: 4 }).freshness, "current");
     assert.equal(state({ ...working, turn: 5, status: "done" }, { ...report, reportTurn: 4 }, null).freshness, "current");
-    assert.equal(needed({ ...working, turn: 5, status: "idle" }, { ...report, reportTurn: 4 }), false);
+    assert.equal(needed({ ...titled, turn: 5, status: "idle" }, { ...report, goal: "Fix login", reportTurn: 4 }), false);
   });
   it("marks a report outdated once a newer turn starts without one", () => {
     assert.equal(state({ ...terminal, turn: 5, status: "working" }, { ...report, reportTurn: 4 }).freshness, "outdated");
@@ -146,5 +149,85 @@ describe("agent-list recap scheduling", () => {
     const h = harness({ all: [{ ...terminal, parent: "t0" }] });
     await h.sync();
     assert.equal(h.commands.filter((args) => args[0] === "run").length, 0);
+  });
+});
+
+describe("agent-list live transcript activity", () => {
+  const live = { action: "Running node --test", actionAt: now - 12000, message: "The tests pass.", messageAt: now - 5000, working: true };
+  const watched = { ...observed, live };
+  it("prefers a current agent report over live activity", () => {
+    const value = state(terminal, { ...report, updatedAt: now - 5000, activityAt: now - 8000 }, { ...watched, conversationAt: now - 5000 });
+    assert.equal(value.source, "agent");
+    assert.equal(value.activityAt, now - 8000);
+  });
+  it("shows the running tool action while a turn is underway, timed from that action", () => {
+    const value = state(terminal, report, watched);
+    assert.equal(value.activity, "Running node --test");
+    assert.equal(value.source, "live");
+    assert.equal(value.freshness, "current");
+    assert.equal(value.activityAt, now - 12000);
+    assert.equal(call("activityMeta", value, now), "Live · 12s ago");
+  });
+  it("shows the latest assistant sentence once the turn ends", () => {
+    const value = state(terminal, report, { ...watched, live: { ...live, working: false } });
+    assert.equal(value.activity, "The tests pass.");
+    assert.equal(call("activityMeta", value, now), "Latest message · 5s ago");
+  });
+  it("puts live activity ahead of recaps and status messages", () => {
+    const recap = { activity: "Verify tests", at: now, conversationAt: observed.conversationAt, stamp: observed.stamp };
+    assert.equal(state({ ...terminal, report: { msg: "Wait for CI" }, status_ms: now }, report, { ...watched, recap }).source, "live");
+    assert.equal(state(terminal, report, { ...observed, recap }).source, "recap");
+  });
+  it("ignores live activity from a failed or aged inspection", () => {
+    assert.equal(state(terminal, report, { ...watched, error: "Unavailable" }).source, "agent");
+    assert.equal(state(terminal, report, { ...watched, checkedAt: now - 90000 }).source, "agent");
+  });
+  it("keeps meta text plain for reports, recaps and failures", () => {
+    assert.equal(call("activityMeta", { source: "recap", freshness: "current" }, now), "Current · recap");
+    assert.equal(call("activityMeta", { source: "agent", freshness: "outdated", updatedAt: now - 240000 }, now), "Reported · 4m ago · conversation changed");
+    assert.equal(call("activityMeta", { source: null, inspectionError: "Unavailable" }, now), "Conversation unavailable");
+    assert.equal(call("activityMeta", { source: null }, now), "No current report");
+  });
+  it("waits fifteen minutes between recaps of one session and skips an unchanged transcript", () => {
+    assert.equal(needed(terminal, {}, { ...observed, recap: { at: now - 600000, goal: "Old" } }), false);
+    assert.equal(needed(terminal, {}, { ...observed, recap: { at: now - 960000, goal: "Old", stamp: "older" } }), true);
+    assert.equal(needed(terminal, {}, { ...observed, recap: { at: now - 960000, goal: "Same", stamp: observed.stamp } }), false);
+  });
+});
+
+describe("agent-list goals and names", () => {
+  const base = { address: "t1", state: "live", foreground: { pid: 42 }, program: { agent: true, key: "codex" }, labels: {}, title: "" };
+  const seen = (extra = {}) => ({ ...observed, ...extra });
+  const goal = (t, r = {}, o = null, tab = null) => call("goalState", t, r, o, tab);
+  const name = (t, o, r) => call("sessionName", t, o, r);
+  it("takes the goal from the report, then the recap and the first prompt, never the title", () => {
+    const o = seen({ recap: { goal: "Recap goal" }, firstPrompt: "Please fix the login page" });
+    assert.equal(goal(base, { goal: "Report goal" }, o), "Report goal");
+    assert.equal(goal({ ...base, title: "✦ Login fix | api", labels: { "session.title": "Login fix" } }, {}, o), "Recap goal");
+    assert.equal(goal({ ...base, title: "Claude Code" }, {}, o), "Recap goal");
+    assert.equal(goal(base, {}, seen({ firstPrompt: "Please fix the login page" })), "Please fix the login page");
+    assert.equal(goal(base, {}, { ...o, pid: 7 }), "No goal update yet");
+  });
+  it("names sessions by /rename, then the published title, the recap title and the goal", () => {
+    const labels = { "session.title": "Published", "summary.goal": "Agent goal" };
+    assert.equal(name({ ...base, labels }, seen({ renamed: "Renamed", recap: { title: "Recap title" } })), "Renamed");
+    assert.equal(name({ ...base, labels }, seen({ recap: { title: "Recap title" } })), "Published");
+    assert.equal(name({ ...base, labels: { "summary.goal": "Agent goal" } }, seen({ recap: { title: "Recap title" } })), "Recap title");
+    assert.equal(name({ ...base, labels: { "summary.goal": "Agent goal" } }, null), "Agent goal");
+    assert.equal(call("helperName", { ...base, name: "cx675" }, seen({ recap: { title: "Recap title" } })), "Recap title");
+    assert.equal(call("helperName", { ...base, name: "cx675" }, seen({ pid: 7, recap: { title: "Old process" } })), "cx675");
+  });
+  it("asks a recap for a title only without a /rename name or published title", () => {
+    assert.equal(call("recapWantsTitle", base, observed), true);
+    assert.equal(call("recapWantsTitle", { ...base, labels: { "session.title": "Mine" } }, observed), false);
+    assert.equal(call("recapWantsTitle", base, seen({ renamed: "Renamed" })), false);
+  });
+  it("passes the title request to the background recap", async () => {
+    const titledRun = harness({ all: [{ ...terminal, labels: { "session.title": "Mine" } }] });
+    await titledRun.sync();
+    assert.equal(JSON.parse(titledRun.commands.find((args) => args[0] === "run").at(-1)).wantTitle, false);
+    const untitled = harness();
+    await untitled.sync();
+    assert.equal(JSON.parse(untitled.commands.find((args) => args[0] === "run").at(-1)).wantTitle, true);
   });
 });

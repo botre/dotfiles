@@ -1,5 +1,6 @@
 // Uses the name given with Claude Code's /rename, then an agent's published
-// session title, then its goal or conversation title.
+// session title, then the agent list's recap title, then its goal or
+// conversation title.
 // Preserve manual tab names. Clearing a name enables automatic titles again.
 
 import { View, div } from "gpui-kit";
@@ -22,6 +23,8 @@ const TRANSIENT_TITLE_RE = /^(?:action required|attention required|needs (?:you|
 
 const NAME = "tab-titles";
 const STORE = "tab-titles.set";
+// The agent list's transcript observations, recaps included.
+const OBSERVATIONS = "agents.conversations";
 const MAX = 40;
 const AGENTS = { claude: "Claude Code", codex: "Codex" };
 const SHELLS = new Set(["zsh", "bash", "fish", "sh", "dash", "nu"]);
@@ -53,6 +56,12 @@ function publishedTitle(terminal, record = {}) {
   return current ? cleanTitle(terminal.labels["session.title"]) : null;
 }
 
+// The title a recap gave the session, from the agent list's transcript
+// observations. One made for an earlier process names other work.
+function recapTitle(terminal, observation) {
+  return observation && observation.pid === terminal?.foreground?.pid ? cleanTitle(observation.recap?.title) : null;
+}
+
 function folderName(cwd) {
   if (!cwd) return null;
   if (cwd === home()) return "~";
@@ -77,10 +86,11 @@ async function readSession(machine, pid) {
   return r?.code === 0 ? r.stdout : null;
 }
 
-function nameFor(p, fg, terminal, record, renamed) {
+function nameFor(p, fg, terminal, record, renamed, observation) {
   const prog = base(fg?.argv?.[0]) || fg?.name;
   if (prog in AGENTS || p.program?.agent) {
-    return renamed || publishedTitle(terminal, record) || cleanTitle(record?.goal) || agentTitle(p, p.program?.key ?? prog);
+    return renamed || publishedTitle(terminal, record) || recapTitle(terminal, observation)
+      || cleanTitle(record?.goal) || agentTitle(p, p.program?.key ?? prog);
   }
   if (!prog || SHELLS.has(prog)) return folderName(fg?.cwd ?? p.cwd);
   return p.program && !p.program.shell && !p.program.agent ? p.program.name : prog;
@@ -112,6 +122,7 @@ export default class TabTitles extends View {
     const all = panes().filter((p) => p.terminal);
     const terminalByAddress = new Map(terminals().map((t) => [t.address, t]));
     const records = shared("agents.sessions") ?? {};
+    const observations = shared(OBSERVATIONS) ?? {};
     const isAgent = (p) => p.program?.agent || base(terminalByAddress.get(p.terminal)?.foreground?.argv?.[0]) in AGENTS;
     for (const space of knownSpaces) {
       for (const tab of space.tabs) {
@@ -120,7 +131,7 @@ export default class TabTitles extends View {
         const here = all.filter((p) => p.tab === tab.id);
         const pane = here.find(isAgent) ?? here.find((p) => p.focused) ?? here[0];
         const terminal = terminalByAddress.get(pane?.terminal);
-        const raw = pane && (nameFor(pane, terminal?.foreground, terminal, records[pane.terminal], this.renamed(terminal))
+        const raw = pane && (nameFor(pane, terminal?.foreground, terminal, records[pane.terminal], this.renamed(terminal), observations[pane.terminal])
           || cleanTitle(ours[tab.id]) || (isAgent(pane) ? pane.program?.name : null));
         if (!raw) {
           if (tab.named) next[tab.id] = tab.name;

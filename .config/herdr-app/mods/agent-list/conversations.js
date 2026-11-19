@@ -1,5 +1,5 @@
 import { appHome, readTextFile, exec, hc, shared, setShared, panes, spaces, terminals } from "herdr";
-import { machineOf, needsRecap } from "./model.js";
+import { machineOf, needsRecap, recapWantsTitle } from "./model.js";
 
 export const OBSERVATIONS = "agents.conversations";
 export const RECAPS = "agents.recaps.enabled";
@@ -61,7 +61,8 @@ export class Conversations {
     const observation = next[candidate.address];
     const on = machineOf(candidate.address);
     const requests = groups.get(on) || [];
-    const request = { ...requests.find((item) => item.address === candidate.address), session: observation.session };
+    const request = { ...requests.find((item) => item.address === candidate.address), session: observation.session,
+      wantTitle: recapWantsTitle(candidate, observation) };
     this.lastRecap = now;
     const args = ["run", "--bg", "--no-parent", "--no-notify", "--rm", "--name", `recap-${Date.now().toString(36)}`];
     if (on) args.push("--on", on);

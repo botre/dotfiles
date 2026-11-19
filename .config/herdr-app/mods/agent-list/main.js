@@ -8,6 +8,7 @@ import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout, hc, notify, nextCommand, home, keys, machines, exec } from "herdr";
 import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
+import { OBSERVATIONS } from "./conversations.js";
 import { ICON } from "./ui.js";
 import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, gridTrail, liveProjects, projectRank, tabProjects, projectIcon, pickerOverlay } from "./projects.js";
 import { overview } from "./overview.js";
@@ -796,7 +797,7 @@ export default class Agents extends View {
         .when(Boolean(l), el => el.border_l(1.5).border_color(t.input))
         .when(l === "└" || l === "├", el => el.border_b(1.5).rounded_bl(6))))
       .when(Boolean(pic), el => el.child(div().mr(8).child(pic)))
-      .child(div().flex_1().truncate().text_color(on ? t.foreground : t.muted).child(helperName(k)))
+      .child(div().flex_1().truncate().text_color(on ? t.foreground : t.muted).child(helperName(k, shared(OBSERVATIONS)?.[k.address])))
       .child(this.status(t, { status: st }));
   }
 
