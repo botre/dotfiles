@@ -16,12 +16,13 @@ import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
 import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
-import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, initial } from "./store.js";
+import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, twemojiUrl, initial } from "./store.js";
 
 // Changes made on another machine show up within this long.
 const POLL = 60000;
 const FAVICONS = "projects.favicons";
-const EMOJI_FONT = { macos: "Apple Color Emoji", windows: "Segoe UI Emoji" };
+// The picture a project's icon comes from: its favicon URL, else its emoji's.
+const iconUrl = (p) => p.icon?.favicon ?? (p.icon?.emoji ? twemojiUrl(p.icon.emoji) : null);
 // A favicon that failed to download is tried again after this long.
 const FAVICON_RETRY = 600000;
 const RAIL_CELL = 32;
@@ -209,7 +210,7 @@ export default class Projects extends View {
     // image() resolves against the app folder, so favicons live under it.
     const dir = `${appHome()}/${FAVICON_DIR}`;
     for (const p of liveProjects(this.projects)) {
-      const url = p.icon?.favicon;
+      const url = iconUrl(p);
       const base = url && faviconBase(url);
       if (!base) continue;
       const have = this.favicons[url];
@@ -370,13 +371,12 @@ export default class Projects extends View {
   icon(p, t, size = 18) {
     if (p.id === GENERAL) return h_flex().size(size).flex_none().items_center().justify_center().text_color(t.muted)
       .child(svg("mods/workspace-chrome/layers.svg").size(size - 4));
-    const fav = p.icon?.favicon && (this.favicons?.[p.icon.favicon]?.path ?? shared(FAVICONS)?.[p.icon.favicon]);
+    const src = iconUrl(p);
+    const fav = src && (this.favicons?.[src]?.path ?? shared(FAVICONS)?.[src]);
     if (fav) return image(fav).size(size).flex_none().rounded(4);
-    // The colour emoji font by name: otherwise a monochrome symbol font that has
-    // the same glyph can win the fallback and draw it grey.
+    // Until its picture is downloaded, an emoji draws as text.
     if (p.icon?.emoji) return h_flex().size(size).flex_none().items_center().justify_center()
-      .font_family(EMOJI_FONT[window()?.platform] ?? "Noto Color Emoji").text_size(size - 3).line_height(size).text_color(t.foreground)
-      .child(p.icon.emoji);
+      .text_size(size - 3).line_height(size).text_color(t.foreground).child(p.icon.emoji);
     return h_flex().size(size).flex_none().rounded(5).bg(tileColor(p.id)).items_center().justify_center()
       .text_size(size * 0.58).font_bold().text_color("#ffffff").child(initial(p.name));
   }

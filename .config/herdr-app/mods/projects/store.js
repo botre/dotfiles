@@ -202,5 +202,16 @@ export function iconCandidates(html, pageUrl) {
   return found.sort((a, b) => a.rank - b.rank).map((f) => f.abs).filter((u) => !seen.has(u) && seen.add(u));
 }
 
+// A colour picture of an emoji: Twemoji's SVG, named by its code points. The
+// UI font can draw an emoji grey (a monochrome symbol font wins the fallback),
+// and naming the colour emoji font draws nothing, so the icon is an image.
+// Twemoji drops U+FE0F from a name unless the emoji joins parts with U+200D.
+export function twemojiUrl(emoji) {
+  const points = [...String(emoji ?? "").trim()].map((c) => c.codePointAt(0));
+  if (!points.length) return null;
+  const kept = points.includes(0x200d) ? points : points.filter((p) => p !== 0xfe0f);
+  return `https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/${kept.map((p) => p.toString(16)).join("-")}.svg`;
+}
+
 // The first letter of a name, for a project without an icon.
 export const initial = (name) => ([...String(name ?? "").trim()][0] ?? "?").toUpperCase();
