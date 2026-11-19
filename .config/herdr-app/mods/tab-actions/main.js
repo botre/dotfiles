@@ -41,7 +41,7 @@ function loadActions(view, cx) {
 function actionsMenu(view, overlay) {
   const t = theme();
   const space = spaces().find(s => s.active);
-  return v_flex().id("tab-actions").size_full().min_h(0).bg(t.popover).p(5).text_size(12.8)
+  return v_flex().id("tab-actions").size_full().min_h(0).bg(t.popover).p(5).gap(2).text_size(12.8)
     .children(ACTIONS.map(action => {
       const state = view.actions?.[action.id];
       const enabled = Boolean(space) && state != null && !view.running && action.enabled(state);

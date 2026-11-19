@@ -157,8 +157,9 @@ describe("projects", () => {
     assert.equal(evaluate('faviconSource("https://skipr.co/app?x=1")'), "https://skipr.co/favicon.ico");
     assert.equal(evaluate('faviconSource("https://cdn.x.io/logo.PNG")'), "https://cdn.x.io/logo.PNG");
     assert.equal(evaluate('faviconSource("javascript:alert(1)")'), null);
-    assert.match(evaluate('faviconFile("https://skipr.co")'), /^[0-9a-f]{8}\.ico$/);
-    assert.equal(evaluate('faviconFile("https://skipr.co")'), evaluate('faviconFile("https://skipr.co/")'));
+    assert.match(evaluate('faviconBase("https://skipr.co")'), /^[0-9a-f]{8}$/);
+    assert.equal(evaluate('faviconBase("https://skipr.co")'), evaluate('faviconBase("https://skipr.co/")'));
+    assert.equal(evaluate('faviconBase("ftp://x")'), null);
     assert.equal(evaluate('initial(" monorepo")'), "M");
     const dirs = { "": { x: "/home/me/x" }, vps: { x: "/srv/x", y: "/srv/y" } };
     assert.deepEqual(run('worktreeFolder(dirs, "x", "vps")', { dirs }), { folder: "/srv/x", machine: "vps" });
@@ -182,3 +183,38 @@ describe("projects", () => {
     assert.equal(keys["ctrl-0"], "app.zoom_reset");
   });
 });
+
+describe("project agent count", () => {
+  it("counts agents in the project's tabs, not its tabs", async () => {
+    const { projectAgents } = await import("../.config/herdr-app/mods/projects/membership.js");
+    const tabs = [{ id: "tb1" }, { id: "tb2" }, { id: "tb3" }];
+    const agents = [{ tab: "tb1" }, { tab: "tb2" }, { tab: "tb9" }];
+    assert.equal(projectAgents(agents, tabs), 2);
+  });
+});
+
+describe("favicon from a site", () => {
+  it("finds a page's icons, apple-touch first, with hrefs made absolute", async () => {
+    const { iconCandidates } = await import("../.config/herdr-app/mods/projects/store.js");
+    const html = `<head>
+      <link href="https://cdn.example.com/a/icon.png" rel="shortcut icon" type="image/x-icon"/>
+      <link rel='apple-touch-icon' href="/touch.png">
+      <link rel="icon" href="favicon.svg">
+      <link rel="mask-icon" href="/mask.svg">
+      <link rel="stylesheet" href="/x.css">
+      <link rel="icon" href="data:image/png;base64,AAAA"></head>`;
+    assert.deepEqual(iconCandidates(html, "https://www.skipr.co/en/"), [
+      "https://www.skipr.co/touch.png",
+      "https://cdn.example.com/a/icon.png",
+      "https://www.skipr.co/en/favicon.svg",
+    ]);
+    assert.deepEqual(iconCandidates("<link rel=icon href=//cdn.x.io/i.ico>", "http://a.b"), ["http://cdn.x.io/i.ico"]);
+  });
+
+  it("reads an image extension from a URL", async () => {
+    const { imageExt } = await import("../.config/herdr-app/mods/projects/store.js");
+    assert.equal(imageExt("https://x.io/logo.JPEG?v=2"), "jpg");
+    assert.equal(imageExt("https://www.skipr.co/"), null);
+  });
+});
+
