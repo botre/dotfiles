@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { loadMods } from "./mod-source.mjs";
 
 describe("agent-tabs", () => {
-  const evaluate = loadMods(["agent-tabs/main.js"]);
+  const evaluate = loadMods(["agent-tabs/projects.js", "agent-tabs/main.js"]);
   const ids = (expression, values) => JSON.parse(evaluate(`JSON.stringify(${expression}.map((t) => t.id))`, values));
   const tab = (id, active = false) => ({ id, active });
   const agentPane = (tabId, terminal) => ({ tab: tabId, terminal, program: { agent: true } });
@@ -29,8 +29,8 @@ describe("agent-tabs", () => {
       ["t8", { labels: { "inbox.snoozed": "5000" } }],
     ]);
     const pending = { t7: { "inbox.snoozed": "5000", at: 900 } };
-    assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 1000)", { space, all, terms, pending }), ["b", "d", "e"]);
-    assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 9000)", { space, all, terms, pending }), ["a", "b", "c", "d", "e", "f", "g"]);
+    assert.deepEqual(ids("visibleTabs(space.tabs, all, terms, pending, 1000)", { space, all, terms, pending }), ["b", "d", "e"]);
+    assert.deepEqual(ids("visibleTabs(space.tabs, all, terms, pending, 9000)", { space, all, terms, pending }), ["a", "b", "c", "d", "e", "f", "g"]);
   });
 
   it("hides a tab whose agents are all settled, until one works, needs you or starts a new turn", () => {
@@ -54,7 +54,7 @@ describe("agent-tabs", () => {
     ]);
     const pending = { t6: { "inbox.settled": "900:0", at: 900 } };
     // a: settled; b: one snoozed, one settled; c: works again; d: a newer turn; e: just settled; f: in view.
-    assert.deepEqual(ids("visibleTabs(space, all, terms, pending, 1000)", { space, all, terms, pending }), ["c", "d", "f"]);
+    assert.deepEqual(ids("visibleTabs(space.tabs, all, terms, pending, 1000)", { space, all, terms, pending }), ["c", "d", "f"]);
   });
 
   it("numbers and steps through the tabs the bar shows", () => {
@@ -78,6 +78,32 @@ describe("agent-tabs", () => {
     assert.deepEqual(steps(swipe), [null, null, null, "prev", null, null, null, "prev"]);
     // A pause starts a new gesture.
     assert.deepEqual(steps([[{ delta: { y: -25 } }, 1000], [{ delta: { y: -25 } }, 1500]]), ["next", "next"]);
+  });
+
+  it("shows the selected project's tabs from every space and machine, with the focused one active", () => {
+    const spaces = [
+      { id: "sp1", active: true, tabs: [{ id: "a", active: true }, { id: "b" }] },
+      { id: "sp2", tabs: [{ id: "c", active: true }] },
+      { id: "vps/sp1", machine: "vps", tabs: [{ id: "vps/d", active: true }, { id: "vps/e" }] },
+    ];
+    const all = [
+      { tab: "a", terminal: "t1" }, { tab: "b", terminal: "t2" }, { tab: "c", terminal: "t3" },
+      { tab: "vps/d", terminal: "vps/t4" }, { tab: "vps/e", terminal: "vps/t5" },
+    ];
+    const terms = new Map([
+      ["t2", { address: "t2", labels: { project: "github.com/o/x" } }],
+      ["vps/t4", { address: "vps/t4", labels: { project: "github.com/o/x" } }],
+      ["vps/t5", { address: "vps/t5", labels: { project: "github.com/o/deleted" } }],
+    ]);
+    const projects = [{ id: "github.com/o/x", name: "x" }, { id: "github.com/o/deleted", name: "d", deleted: true }];
+    const pending = { t3: { project: "github.com/o/x", at: 900 } };
+    const bar = (selected, focused) => JSON.parse(evaluate("JSON.stringify(projectBarTabs(spaces, all, terms, projects, selected, focused, pending, 1000))", { spaces, all, terms, projects, pending, selected, focused }))
+      .map((t) => [t.id, t.space, t.active]);
+    // Each space keeps its own active tab: only the focused one counts.
+    assert.deepEqual(bar("github.com/o/x", "vps/d"), [["b", "sp1", false], ["c", "sp2", false], ["vps/d", "vps/sp1", true]]);
+    // A tab labelled with a deleted project is in General; an unknown selection falls back to General.
+    assert.deepEqual(bar("general", "a"), [["a", "sp1", true], ["vps/e", "vps/sp1", false]]);
+    assert.deepEqual(bar("github.com/o/deleted", "a"), bar("general", "a"));
   });
 
   it("starts with no remembered panels when the saved value is corrupt", () => {

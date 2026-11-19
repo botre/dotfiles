@@ -30,6 +30,33 @@ Use it for Codex launches through `hc run` too. Each machine needs the executabl
 launcher at `~/scripts/herdr-codex`. Existing Codex processes need a resume to clear
 colors they cached before the window attached.
 
+## Projects
+
+The `projects` sidebar replaces spaces in the `bjorn` layout. A project is a git
+remote, such as `github.com/owner/repo`. Create one with the sidebar's +: pick a
+folder in a repository with an `origin` remote, then add a name and an emoji or
+favicon URL. The same remote on any machine is the same project. The fixed General
+project holds everything else.
+
+A tab belongs to the project its terminals carry in a `project=<id>` label. Tabs
+without one are in General. A new tab joins the project selected when it opens.
+Selecting a project fills the tab bar with its tabs from every space on every
+connected machine. Ctrl+1..9 select the projects in sidebar order.
+
+The sidebar lists the projects marked "Show in list", or else the five most recently
+active ones. Search finds the rest. Right-click a project for New worktree, Show or
+Hide, Edit and Delete. The agents list groups agents by project, General first.
+
+Each machine keeps the list in `~/.local/state/herdr/projects.json`. Every minute,
+and after each change, the sidebar merges the files of all connected machines and
+writes the result back. The newest edit wins, and deletes stay as tombstones.
+Each machine also keeps its project folders in `project-dirs.json`, and caches
+favicons in `favicons/` beside it.
+
+`projects/membership.js` decides which tab belongs where. The tab bar and the
+agents list carry identical copies as `projects.js`, since a mod can't import
+from another mod's folder. A test fails when the copies differ.
+
 ## Sessions
 
 The sidebar overview icon opens the closable Agents tab across connected

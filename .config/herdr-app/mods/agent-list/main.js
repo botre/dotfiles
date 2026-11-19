@@ -1,4 +1,5 @@
-// Agents in grouped or priority views; parents take their most urgent sub-agent's place.
+// Agents grouped by project (General first, as in the sidebar); parents take
+// their most urgent sub-agent's place.
 // A viewed done agent stays in Done until left. A finished agent can be parked
 // or snoozed into folded shelves at the bottom (inbox.js); new work brings it back.
 
@@ -8,6 +9,7 @@ import { agents, terminals, panes, focused, spaces, run, theme, shared, setShare
 import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { ICON } from "./ui.js";
+import { GENERAL, PROJECT_LIST, PROJECT_PENDING, liveProjects, projectRank, tabProjects } from "./projects.js";
 import { overview } from "./overview.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
 
@@ -135,13 +137,30 @@ const kidStatuses = (all, addr, listed) => all
 // How many helpers an agent waits on: it has stopped while they still work.
 const waitingOn = (a, all, listed) => (a.status === "working" || a.status === "blocked" ? 0
   : kidStatuses(all, a.address, listed).filter((s) => s === "working").length);
-const SORTS = [
-  { id: "priority", label: "Priority", icon: "clock" },
-  { id: "grouped", label: "Grouped by space", icon: "layers" },
-];
-const sortOf = () => SORTS.find((s) => s.id === shared("agents.sort")) ?? SORTS[0];
-const SECTION = { 4: "Needs you", 3: "Done", 2: "Working", 1: "Idle" };
-const SECTION_STATUS = { 4: "blocked", 3: "done", 2: "working" };
+
+// Each agent's project, from its tab: General without a label, or when the
+// label names a project that is gone. Returns address -> project id.
+export function agentProjects(list, allSpaces, allPanes, terms, projects, pending = null, now = Date.now()) {
+  const known = new Set(liveProjects(projects).map((p) => p.id));
+  const byTab = tabProjects(allSpaces, allPanes, terms, known, pending, now);
+  return new Map(list.map((a) => [a.address, byTab.get(a.tab) ?? GENERAL]));
+}
+
+// Agents in project order (General first, then by name), each project's
+// agents next to each other in `list`'s order, as header groups.
+export function projectGroups(list, projectOf, projects) {
+  const rank = projectRank(projects);
+  const names = new Map(liveProjects(projects).map((p) => [p.id, p.name]));
+  const at = (a) => rank.get(projectOf.get(a.address)) ?? rank.size;
+  const groups = [];
+  for (const a of [...list].sort((x, y) => at(x) - at(y))) {
+    const project = rank.has(projectOf.get(a.address)) ? projectOf.get(a.address) : GENERAL;
+    const id = `pj-${project}`;
+    if (groups.at(-1)?.id === id) groups.at(-1).members.push(a);
+    else groups.push({ id, project, label: project === GENERAL ? "General" : names.get(project) ?? project, status: null, members: [a] });
+  }
+  return groups;
+}
 
 function duration(ms) {
   const m = Math.floor(ms / 60000);
@@ -231,7 +250,7 @@ function icon(p, size, color) {
 
 export default class Agents extends View {
   init(_props, cx) {
-    if (props()?.sortMenu || props()?.rowMenu) return;
+    if (props()?.rowMenu) return;
     if (props()?.overview) {
       this.expanded = new Set();
       cx.timer.every(10000, (cx) => cx.notify());
@@ -670,32 +689,6 @@ export default class Agents extends View {
     return r;
   }
 
-  sortMenu(t) {
-    const on = sortOf().id;
-    return v_flex()
-      .w_full()
-      .p(5)
-      .bg(t.popover)
-      .text_size(12.8)
-      .child(div().px(8).pt(4).pb(6).text_size(11).text_color(t.dim).child("Sort agents"))
-      .children(SORTS.map((s) => h_flex()
-        .id(`sort-${s.id}`)
-        .h(31)
-        .px(8)
-        .gap(9)
-        .rounded(7)
-        .items_center()
-        .text_color(t.foreground)
-        .hover((el) => el.bg(t.hover))
-        .on_click(() => {
-          setShared("agents.sort", s.id);
-          closeOverlay(props().overlay);
-        })
-        .child(svg(`mods/workspace-chrome/${s.icon}.svg`).size(14).flex_none().text_color(t.muted))
-        .child(div().flex_1().child(s.label))
-        .when(s.id === on, (el) => el.child(svg("mods/workspace-chrome/check.svg").size(14).flex_none().text_color(t.foreground)))));
-  }
-
   peek(addr) {
     run("terminal.peek", { terminal: addr });
   }
@@ -753,10 +746,8 @@ export default class Agents extends View {
   render(cx) {
     const t = theme();
     if (props()?.overview) return overview(this.expanded);
-    if (props()?.sortMenu) return this.sortMenu(t);
     if (props()?.rowMenu) return this.rowMenu(t);
     const collapsed = narrow();
-    const sort = sortOf();
     const all = terminals();
     let list = agents();
     // One read of panes and spaces per render: every host read copies the whole list.
@@ -770,7 +761,6 @@ export default class Agents extends View {
     const now = Date.now();
     this.track(list, now);
     this.hold(list);
-    const byPriority = sort.id === "priority";
     this.graced = false;
     const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a, now), ...kidStatuses(all, a.address, this.listed).map((s) => RANK[s] ?? 0))]));
     this.urgency = urgency;
@@ -790,13 +780,16 @@ export default class Agents extends View {
     const label = (a) => labels.get(a.address) ?? "";
     const spaceAt = new Map(allSpaces.map((s, i) => [s.id, i]));
     const byName = (x, y) => `${x.space_name ?? ""} ${label(x)}`.localeCompare(`${y.space_name ?? ""} ${label(y)}`, undefined, { numeric: true, sensitivity: "base" });
-    list = [...list].sort(byPriority
-      ? (x, y) => rankOf(y) - rankOf(x) || byName(x, y)
-      : (x, y) => (spaceAt.get(x.space) ?? 0) - (spaceAt.get(y.space) ?? 0) || byName(x, y));
+    list = [...list].sort((x, y) => (spaceAt.get(x.space) ?? 0) - (spaceAt.get(y.space) ?? 0) || byName(x, y));
+    const projects = shared(PROJECT_LIST) ?? [];
+    const projectOf = agentProjects(list, allSpaces, allPanes, this.terms, projects, shared(PROJECT_PENDING), now);
     const shelved = (kind) => list.filter((a) => this.shelf.get(a.address)?.kind === kind);
     const snoozed = shelved("snoozed").sort((x, y) => this.shelf.get(x.address).wake - this.shelf.get(y.address).wake);
     const settled = shelved("settled").sort((x, y) => this.shelf.get(y.address).at - this.shelf.get(x.address).at);
     list = list.filter((a) => !this.shelf.has(a.address));
+    // One group per project (General first), then the shelves.
+    const groups = projectGroups(list, projectOf, projects);
+    list = groups.flatMap((g) => g.members);
     this.activeOrder = list;
     this.parked = settled;
     this.rows = new Set([...list, ...snoozed, ...settled].map((a) => a.address));
@@ -858,10 +851,8 @@ export default class Agents extends View {
       const idle = a.status === "idle" && !a.focused && !waits;
       // Woken from a snooze and not looked at since: the name turns accent.
       const woke = this.woke.has(a.address);
-      // Under a space header the space goes without saying; an automatic tab number says nothing.
-      // Without a space header above (priority) the row names its space.
-      const full = byPriority;
-      const name = full ? a.space_name || label(a) : more ?? (DIGITS_RE.test(label(a)) ? a.program?.name || label(a) : label(a));
+      // An automatic tab number says nothing, so such a row goes by its program.
+      const name = more ?? (DIGITS_RE.test(label(a)) ? a.program?.name || label(a) : label(a));
       return h_flex()
         .id(`ag-${a.address}`)
         .pl(2)
@@ -879,21 +870,11 @@ export default class Agents extends View {
         .child(caret(a, subs))
         .when(Boolean(pic), el => el.child(pic))
         .child(h_flex().flex_1().min_w(0).gap(5).items_center()
-          .child(div().min_w(0).max_w(full && more ? 120 : 200).truncate().text_color(woke ? t.accent : idle ? t.muted : t.foreground).child(name))
-          .when(full && Boolean(more), el => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))))
+          .child(div().min_w(0).max_w(200).truncate().text_color(woke ? t.accent : idle ? t.muted : t.foreground).child(name)))
         .when(Boolean(machine), el => el.child(div().text_size(10).text_color(t.dim).child(machine)))
         .child(this.status(t, { ...shown, unreported: a.unreported }));
     };
 
-    // Groups in list order: spaces (grouped) or priority sections. Agents of a
-    // space are next to each other in agents(), so neighbours make a group.
-    const groups = [];
-    for (const a of list) {
-      const r = rankOf(a) || RANK.idle;
-      const id = byPriority ? `sec-${r}` : `sp-${a.space}`;
-      if (groups.at(-1)?.id === id) groups.at(-1).members.push(a);
-      else groups.push({ id, label: byPriority ? SECTION[r] : a.space_name || "", status: byPriority ? SECTION_STATUS[r] : null, members: [a] });
-    }
     if (snoozed.length) groups.push({ id: "inbox-snoozed", label: "Snoozed", status: null, members: snoozed, shelf: true });
     if (settled.length) groups.push({ id: "inbox-settled", label: "Parked", status: null, members: settled, shelf: true });
 
@@ -967,7 +948,7 @@ export default class Agents extends View {
           cx.notify();
         })
         .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
-        .when(byPriority || !open || g.shelf, (el) => el.child(div().text_color(t.dim).child(String(g.members.length))))
+        .when(!open || g.shelf, (el) => el.child(div().text_color(t.dim).child(String(g.members.length))))
         .child(div().flex_1())
         .when(g.id === "inbox-settled", (el) => el.child(div()
           .id("inbox-clear")
@@ -979,7 +960,7 @@ export default class Agents extends View {
           .on_click((_e, cx) => { cx.stop_propagation(); this.askClear(g.members); })
           .child("Clear")))
         .when(!open, (el) => el
-          .when(!byPriority && !g.shelf && top && top !== "idle", (el) => el.child(this.status(t, { status: top })))
+          .when(!g.shelf && top && top !== "idle", (el) => el.child(this.status(t, { status: top })))
           .child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)));
     };
     const rows = collapsed
@@ -1016,15 +997,6 @@ export default class Agents extends View {
                   .hover((s) => s.text_color(t.foreground))
                   .tooltip("Open all agent sessions").accessibility_label("Open all agent sessions")
                   .on_click((_e, cx) => this.overview(cx)).child(svg(ICON).size(14)))
-                .child(
-              div()
-                .id("ag-sort")
-                .text_size(11)
-                .text_color(t.dim)
-                .hover((s) => s.text_color(t.foreground))
-                .on_click(() => openOverlay({ mod: "agent-list", kind: "popup", width: 200, height: 140, props: { sortMenu: true } }))
-                .tooltip(`Sort agents: ${sort.label}`)
-                .child(svg(`mods/workspace-chrome/${sort.icon}.svg`).size(14))),
             ),
         ),
       )
