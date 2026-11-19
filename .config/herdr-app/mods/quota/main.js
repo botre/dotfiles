@@ -155,9 +155,8 @@ export default class Quota extends View {
     const card = HoverCard.new("quota-hover").open_delay(400).close_delay(200)
       .anchor("bottom_right").trigger(h_flex().gap(16).items_center().children(items))
       .content(this.popup(t, data).w(502).rounded(8).border(1).border_color(t.border).shadow_md());
-    // No fill: the status row in the layout is the card.
     return h_flex().id("quota").size_full().px(14).items_center().justify_end()
-      .text_size(11.8).text_color(t.muted)
+      .bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .child(data ? card : div().text_color(t.dim).child("Quota…"));
   }
 

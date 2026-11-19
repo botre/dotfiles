@@ -51,9 +51,6 @@ export default class Pane extends View {
       .px(10)
       .gap(8)
       .items_center()
-      // Its pane is a 14 px card with a 1 px border, and Herdr doesn't clip a
-      // mod to it, so the header rounds its own top (as the islands layout does).
-      .rounded_t(13)
       .bg(t.background)
       .border_b(1)
       .border_color(t.border)

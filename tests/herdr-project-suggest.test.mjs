@@ -110,7 +110,7 @@ describe("project suggestion strip", () => {
     await look();
     assert.deepEqual(plain(execs), [["git", ["remote", "get-url", "origin"], { cwd: "/home/me/one", on: null }]]);
     assert.equal(view.shown.proj.id, ONE);
-    assert.deepEqual(plain(ran), [["layout.resize", { id: "project-suggest", px: 42 }]]);
+    assert.deepEqual(plain(ran), [["layout.resize", { id: "project-suggest", px: 46 }]]);
     await look();
     assert.equal(execs.length, 1, "cached per folder");
     const text = JSON.stringify(view.render().calls);
