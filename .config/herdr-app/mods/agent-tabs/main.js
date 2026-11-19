@@ -205,12 +205,7 @@ export default class Tabs extends View {
       if (active >= 0) this.scroll.scroll_to_item(active);
     }
     const stop = (_e, cx) => cx.stop_propagation();
-    // Controls on the bar are pills, as in the islands layout (MIT, Copyright (c)
-    // 2026 Cody Packer): `surface` fill, a 1 px `border`, `hover` on hover. The
-    // window buttons stay plain glyphs.
-    const button = (id, label, action, pill = false) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim)
-      .when(pill, el => el.bg(t.surface).border(1).border_color(t.border))
-      .hover(s => s.bg(t.hover).text_color(t.foreground))
+    const button = (id, label, action) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const item = (c, i) => {
       const overview = overviews.has(c.id);
@@ -219,8 +214,7 @@ export default class Tabs extends View {
       return h_flex().id(`tab-${c.id}`).h(29).px(10).gap(7).rounded(7).items_center().flex_none().text_size(12.8)
         // A rename or status dot on this or an earlier tab can push the active one out.
         .when(i <= active, el => el.on_size_change((_size, cx) => { this.scroll.scroll_to_item(active); cx.notify(); }))
-        // The active tab keeps the fill and turns its border, text and icon to the accent.
-        .border(1).border_color(c.active ? t.accent : t.border).bg(t.surface).text_color(c.active ? t.accent : t.muted)
+        .border(1).border_color(c.active ? t.border : t.chrome).bg(c.active ? t.raised : t.chrome).text_color(c.active ? t.foreground : t.muted)
         .hover(s => s.bg(t.hover))
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
         .on_mouse_up("left", () => {
@@ -231,8 +225,8 @@ export default class Tabs extends View {
           else selectTab(c);
         })
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu-org", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: c.space } } }); })
-        .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(c.active ? t.accent : t.muted) : image(program.icon).size(14)))
-        .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(c.active ? t.accent : t.muted)))
+        .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
+        .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(t.muted)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
         .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(GRID.spinner).flex_none().text_color(t.working).spin(900)))
         .when(c.status === "blocked" || c.status === "done", el => el.child(div().size(GRID.dot).flex_none().rounded(4).bg(t[c.status])))
@@ -240,10 +234,9 @@ export default class Tabs extends View {
     };
     const root = layout(), sidebar = find(root, "sidebar"), w = window();
     // Old saved rails and a dragged-narrow sidebar can be smaller than the window buttons.
-    // The bar starts after the window's padding, the sidebar and the gap after it.
     const lightsPadding = w?.platform === "macos" && w.titlebar === "none" && !w.fullscreen && root?.traffic_lights
-      ? Math.max(10, (root.traffic_lights[0] + 64) / settings().zoom - (sidebar?.hidden ? 0 : (sidebar?.size?.px ?? 0) + (root.gap ?? 0)) - (root.padding ?? 0))
-      : 0;
+      ? Math.max(10, (root.traffic_lights[0] + 64) / settings().zoom - (sidebar?.hidden ? 0 : sidebar?.size?.px ?? 0))
+      : 10;
     const panel = find(root, "panel"), body = find(root, "panel-body");
     const enabled = shared("workspace.panels") ?? ["files", "changes"];
     this.syncPanel(shared(PROJECT_SELECTED) ?? GENERAL, panel, body, enabled);
@@ -251,15 +244,14 @@ export default class Tabs extends View {
     const panelButton = (id, label, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)
-        .text_size(12).bg(t.surface).border(1).border_color(on ? t.accent : t.border).text_color(on ? t.accent : t.muted)
+        .text_size(12).bg(on ? t.selected : t.chrome).text_color(on ? t.foreground : t.muted)
         .hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });
           else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
         }).child(svg(icon).size(14)).child(label);
     };
-    // No fill: the canvas shows through, and the pills line up with the cards' edges.
-    return h_flex().size_full().min_w(0).pl(lightsPadding).gap(3).items_center()
+    return h_flex().size_full().min_w(0).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
       .on_mouse_up("left", () => { this.pressed = null; })
       .on_scroll_wheel(e => {
         const step = wheelStep(this.swipe, e);
@@ -269,10 +261,10 @@ export default class Tabs extends View {
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().track_scroll(this.scroll)
         .on_size_change((_size, cx) => { if (active >= 0) { this.scroll.scroll_to_item(active); cx.notify(); } })
         .children(shown.map(item)))
-      .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu-org", kind: "popup", width: 250, height: 512 }), true))
+      .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu-org", kind: "popup", width: 250, height: 512 })))
       // The tab-actions menu; off in the Mods panel hides the button. Height: 31 per action, plus 10.
       .when(!(shared("mods.off") ?? []).includes("tab-actions"), el => el.child(button("tab-actions", svg("mods/tab-actions/more.svg").size(16),
-        () => openOverlay({ mod: "tab-actions", kind: "popup", width: 250, height: 41 }), true)))
+        () => openOverlay({ mod: "tab-actions", kind: "popup", width: 250, height: 41 }))))
       .when(enabled.includes("files"), el => el.child(panelButton("files", "Files", "mods/files/file.svg")))
       .when(enabled.includes("changes"), el => el.child(panelButton("changes", "Changes", "mods/changes/changes.svg")))
       .when(w?.buttons, el => el.child(button("minimize", w.platform === "windows" ? svg("mods/tabs/win-min.svg").size(16) : "−", () => run("window.minimize")))
