@@ -102,7 +102,7 @@ describe("project start page render", () => {
       handle: { focus: () => { focused++; } }, at, shownAt: 1, asked: new Set(),
       agentLists: { "": [claude, codex] },
     });
-    const cx = { notify() {}, stop_propagation() {}, spawn() {} };
+    const cx = { notify() {}, stop_propagation() {}, spawn(f) { f(cx); } };
     const tree = evaluate("view.renderStart(cx)", { view, cx });
     return { text: JSON.stringify(tree.calls), tree, view, cx, ran, overlays, focused: () => focused, shared };
   };
@@ -112,7 +112,7 @@ describe("project start page render", () => {
     const { text } = render({ selected: ID, list, dirs: { "": { [ID]: "/home/me/code/repo" } } });
     for (const s of ["Repo", "o/repo", "github.com", "~/code/repo", "Start Claude Code", "Start Codex", "New terminal", "New worktree…", "Open worktree…"]) assert.ok(text.includes(JSON.stringify(s)), s);
     assert.match(text, /"max_w",460/);
-    assert.match(text, /"h",46\],\["px",10\],\["gap",12\]/);
+    assert.match(text, /"h",36\],\["px",10\],\["gap",10\]/);
     assert.match(text, /"rounded",8/);
     assert.match(text, /svg mods\/workspace-chrome\/terminal\.svg/);
     assert.doesNotMatch(text, /No folder/);

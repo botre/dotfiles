@@ -1024,7 +1024,7 @@ export default class Agents extends View {
           .child("Clear")))
         // As on every row of the sidebar: the count, then the status slot at the right edge.
         .child(gridTrail(UI, [div().text_color(t.dim).child(String(g.members.length))],
-          !g.shelf && top && top !== "idle" ? statusGlyph(UI, t, top) : null));
+          !g.shelf && top ? statusGlyph(UI, t, top) : null));
     };
     const rows = collapsed
       ? list.flatMap(withKids)

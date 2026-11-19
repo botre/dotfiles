@@ -144,7 +144,7 @@ describe("sidebar grid", () => {
   it("draws an emoji with a pixel line height, centred in its box", () => {
     const evaluate = loadMods(["projects/membership.js"], builders);
     const calls = JSON.stringify(evaluate("projectIconView(ui, t, { emoji: '\u{1F680}' }, 18)", { ui: builders, t }).calls);
-    assert.match(calls, /"line_height","18px"/);
+    assert.match(calls, /"line_height","14px"\]/);
     assert.match(calls, /"items_center".*"justify_center"/);
   });
 });
