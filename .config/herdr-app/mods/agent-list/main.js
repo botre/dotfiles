@@ -1,5 +1,5 @@
 // Agents in grouped or priority views; parents take their most urgent sub-agent's place.
-// A viewed done agent stays in Done until left. A finished agent can be settled
+// A viewed done agent stays in Done until left. A finished agent can be parked
 // or snoozed into folded shelves at the bottom (inbox.js); new work brings it back.
 
 import { View, div, image, svg } from "gpui-kit";
@@ -14,7 +14,6 @@ import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf,
 // A run that stops stays with Working this long, so a quick follow-up doesn't move it twice.
 const GRACE = 2000;
 const UNDO_MS = 5000;
-const CLEAR_ASK_MS = 3000;
 const UNDO_ICON = "mods/agent-list/undo.svg";
 const PLAY_ICON = "mods/agent-list/play.svg";
 const X_ICON = "mods/workspace-chrome/x.svg";
@@ -173,9 +172,10 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
   const chrome = (name) => `mods/workspace-chrome/${name}.svg`;
   const items = [];
   items.push({ kind: "rename", icon: chrome("square-pen"), label: "Rename", hint: keys().find((k) => k.action === "tab.rename")?.keys });
-  items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference this" });
-  if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Un-settle" });
-  else if (finished) items.push({ kind: "settle", icon: chrome("check"), label: "Settle", hint: keys().find((k) => k.action === "agent-list.settle")?.keys });
+  items.push({ kind: "reference", icon: chrome("terminal"), label: "Reference" });
+  // Parking keeps its old names inside (kind, label key), so parked agents stay parked.
+  if (settled) items.push({ kind: "unsettle", icon: UNDO_ICON, label: "Bring back" });
+  else if (finished) items.push({ kind: "settle", icon: chrome("check"), label: "Park" });
   if (snoozed) items.push({ kind: "wake", icon: UNDO_ICON, label: "Wake now" });
   const targets = moveTargets(address);
   if (targets.length) items.push({ heading: "Move to" });
@@ -366,13 +366,13 @@ export default class Agents extends View {
 
   // Key commands, and what the row menu asks for (it closes before its tasks could finish).
   async command(command, cx) {
-    if (command === "settle") return this.settleInView(cx);
+    if (command === "clear") return this.clearSettled(this.parked ?? [], cx);
     if (command !== "act") return;
     const act = shared(ACTION);
     if (!act || Date.now() - act.at > 10000) return;
     setShared(ACTION, null);
     const { kind, address } = act;
-    if (kind === "settle") return this.putAway([address], "Settled", (a) => ({ [SETTLED]: `${Date.now()}:${this.terms?.get(a)?.turn ?? 0}`, [SNOOZED]: "" }), cx);
+    if (kind === "settle") return this.putAway([address], "Parked", (a) => ({ [SETTLED]: `${Date.now()}:${this.terms?.get(a)?.turn ?? 0}`, [SNOOZED]: "" }), cx);
     if (kind === "snooze") {
       const wake = presets(Date.now()).find((p) => p.id === act.preset)?.wake;
       if (!wake) { notify({ title: "That time has passed", level: "warning", timeout: 3000 }); return; }
@@ -430,7 +430,7 @@ export default class Agents extends View {
     return labelOf(this.terms?.get(address) ?? { address }, key, shared(PENDING));
   }
 
-  // Settles or snoozes agents: the one in view hands focus
+  // Parks or snoozes agents: the one in view hands focus
   // to the next card, and an Undo notice offers them back.
   async putAway(addresses, verb, fields, cx) {
     const items = addresses.map((address) => ({
@@ -457,7 +457,7 @@ export default class Agents extends View {
     for (const it of undo.items) await this.write(it.address, { [SETTLED]: it[SETTLED], [SNOOZED]: it[SNOOZED] });
   }
 
-  // Works out the shelves from the labels, and brings agents back: a settled one
+  // Works out the shelves from the labels, and brings agents back: a parked one
   // when it or a sub-agent works or waits for you, or a turn has ended since
   // (also while no window was open); a snoozed one when it is due (with a
   // notification) or blocked (without).
@@ -510,23 +510,6 @@ export default class Agents extends View {
     if (next) run("pane.focus", { pane: next.pane });
   }
 
-  // ctrl-shift-s: settles the agent in view when it is finished, or brings it back.
-  async settleInView(cx) {
-    // The agent block's agent, else the focused terminal: one that reports no
-    // status has no agent block, and a settled one isn't among the active rows.
-    const f = focused();
-    const address = [f?.agent, f?.terminal].find((a) => a && this.rows?.has(a));
-    if (!address) return;
-    const shelf = this.shelf?.get(address);
-    if (shelf?.kind === "settled") return this.write(address, { [SETTLED]: "" });
-    if (shelf?.kind === "snoozed") return this.write(address, { [SNOOZED]: "" });
-    if (!this.finished?.has(address)) {
-      notify({ title: "Not finished yet", body: "Only an agent that is done or idle can be settled.", level: "info", timeout: 3000 });
-      return;
-    }
-    return this.putAway([address], "Settled", (a) => ({ [SETTLED]: `${Date.now()}:${this.terms?.get(a)?.turn ?? 0}`, [SNOOZED]: "" }), cx);
-  }
-
   // Types a one-line pointer to an agent into the agent in view, without Enter.
   // It goes through the clipboard, which gets its old text back afterwards.
   reference(address, cx) {
@@ -548,16 +531,26 @@ export default class Agents extends View {
     if (old !== undefined) cx.timer.after(500, (cx) => cx.write_to_clipboard(old));
   }
 
-  // Closes the panes of settled agents, after a second click. Not the one in
-  // view or its tab, and never a space's last pane (pane.close refuses it).
+  // Asks before it closes the panes of parked agents; the confirm dialog runs
+  // agent-list.clear, which closes the ones parked by then.
+  askClear(members) {
+    const n = members.length;
+    openOverlay({
+      mod: "confirm",
+      kind: "dialog",
+      width: 380,
+      height: 150,
+      props: {
+        title: "Close parked agents?",
+        detail: `This closes the panes of ${n} parked agent${n === 1 ? "" : "s"}.`,
+        command: { name: "agent-list.clear" },
+      },
+    });
+  }
+
+  // Closes the panes of parked agents. Not the one in view or its tab, and
+  // never a space's last pane (pane.close refuses it).
   clearSettled(members, cx) {
-    const now = Date.now();
-    if (!(this.clearAsk > now)) {
-      this.clearAsk = now + CLEAR_ASK_MS;
-      cx.timer.after(CLEAR_ASK_MS + 50, (cx) => cx.notify());
-      return;
-    }
-    this.clearAsk = 0;
     const tab = focused()?.tab;
     const spaceOf = new Map(spaces().flatMap((s) => s.tabs.map((t) => [t.id, s.id])));
     const left = new Map();
@@ -572,7 +565,7 @@ export default class Agents extends View {
       closed++;
     }
     notify({
-      title: closed ? `Closed ${closed} settled agent${closed === 1 ? "" : "s"}` : "Nothing to close",
+      title: closed ? `Closed ${closed} parked agent${closed === 1 ? "" : "s"}` : "Nothing to close",
       body: kept ? `Kept ${kept}: in view, or the last pane in its space.` : undefined,
       level: closed ? "success" : "info",
       timeout: 4000,
@@ -804,6 +797,7 @@ export default class Agents extends View {
     const settled = shelved("settled").sort((x, y) => this.shelf.get(y.address).at - this.shelf.get(x.address).at);
     list = list.filter((a) => !this.shelf.has(a.address));
     this.activeOrder = list;
+    this.parked = settled;
     this.rows = new Set([...list, ...snoozed, ...settled].map((a) => a.address));
     setAgentOrder([...list, ...snoozed, ...settled].map((a) => a.address));
 
@@ -900,9 +894,9 @@ export default class Agents extends View {
       else groups.push({ id, label: byPriority ? SECTION[r] : a.space_name || "", status: byPriority ? SECTION_STATUS[r] : null, members: [a] });
     }
     if (snoozed.length) groups.push({ id: "inbox-snoozed", label: "Snoozed", status: null, members: snoozed, shelf: true });
-    if (settled.length) groups.push({ id: "inbox-settled", label: "Settled", status: null, members: settled, shelf: true });
+    if (settled.length) groups.push({ id: "inbox-settled", label: "Parked", status: null, members: settled, shelf: true });
 
-    // A slim row on a shelf: muted, with how long ago it was settled or when it
+    // A slim row on a shelf: muted, with how long ago it was parked or when it
     // wakes; hovered, a button that brings it back.
     const shelfRow = (a) => {
       const info = this.shelf.get(a.address);
@@ -918,7 +912,7 @@ export default class Agents extends View {
         .text_color(t.dim)
         .cursor_pointer()
         .hover((s) => s.bg(t.hover).text_color(t.foreground))
-        .tooltip(info.kind === "settled" ? "Un-settle" : "Wake now")
+        .tooltip(info.kind === "settled" ? "Bring back" : "Wake now")
         .on_click((_e, cx) => {
           cx.stop_propagation();
           this.hovered = null;
@@ -974,18 +968,15 @@ export default class Agents extends View {
         .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
         .when(byPriority || !open || g.shelf, (el) => el.child(div().text_color(t.dim).child(String(g.members.length))))
         .child(div().flex_1())
-        .when(g.id === "inbox-settled", (el) => {
-          const asking = this.clearAsk > now;
-          return el.child(div()
-            .id("inbox-clear")
-            .px(5)
-            .rounded(4)
-            .text_color(asking ? t.blocked : t.dim)
-            .hover((s) => s.bg(t.hover).text_color(asking ? t.blocked : t.foreground))
-            .tooltip("Close the panes of settled agents")
-            .on_click((_e, cx) => { cx.stop_propagation(); this.clearSettled(g.members, cx); cx.notify(); })
-            .child(asking ? `Close ${g.members.length}?` : "Clear"));
-        })
+        .when(g.id === "inbox-settled", (el) => el.child(div()
+          .id("inbox-clear")
+          .px(5)
+          .rounded(4)
+          .text_color(t.dim)
+          .hover((s) => s.bg(t.hover).text_color(t.foreground))
+          .tooltip("Close the panes of parked agents")
+          .on_click((_e, cx) => { cx.stop_propagation(); this.askClear(g.members); })
+          .child("Clear")))
         .when(!open, (el) => el
           .when(!byPriority && !g.shelf && top && top !== "idle", (el) => el.child(this.status(t, { status: top })))
           .child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)));

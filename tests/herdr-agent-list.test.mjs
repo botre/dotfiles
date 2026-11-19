@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { readFileSync } from "node:fs";
 import { loadMod, loadMods, memoryStorage, plain } from "./mod-source.mjs";
 
 describe("agent-list", () => {
@@ -158,12 +159,12 @@ describe("agent-list", () => {
       assert.ok(view.woke.has("t1"));
     });
 
-    it("settles at once on screen, moves on, and undoes it all", async () => {
+    it("parks at once on screen, moves on, and undoes it all", async () => {
       const terms = [{ address: "t1", turn: 7, labels: {} }, { address: "t2", turn: 1, labels: {} }];
       const focus = [];
       const { view, writes, cx, settle, pendingOf } = sidebar(terms, { run: (name, args) => focus.push([name, args]) });
       view.activeOrder = [agent("t1", "idle", { focused: true }), agent("t2", "idle")];
-      await view.putAway(["t1"], "Settled", (a) => ({ "inbox.settled": `9:${view.terms.get(a).turn}`, "inbox.snoozed": "" }), cx);
+      await view.putAway(["t1"], "Parked", (a) => ({ "inbox.settled": `9:${view.terms.get(a).turn}`, "inbox.snoozed": "" }), cx);
       assert.equal(pendingOf().t1["inbox.settled"], "9:7");
       assert.deepEqual(plain(focus), [["pane.focus", { pane: "p-t2" }]]);
       assert.equal(writes[0].join(" "), "label t1 inbox.settled=9:7 inbox.snoozed=");
@@ -173,16 +174,42 @@ describe("agent-list", () => {
       assert.equal(writes[1].join(" "), "label t1 inbox.settled= inbox.snoozed=");
     });
 
-    it("settles or brings back the focused terminal even when it reports no status", async () => {
+    it("binds no key to parking, and ignores the old settle command", async () => {
+      const keys = JSON.parse(readFileSync(new URL("../.config/herdr-app/keys.json", import.meta.url), "utf8"));
+      const bound = Object.entries(keys).flatMap(([, group]) => Object.entries(group));
+      assert.ok(bound.every(([key, action]) => key !== "ctrl-shift-s" && !/settle/.test(action)));
       const terms = [{ address: "t3", turn: 0, labels: { "inbox.settled": "5:0" } }];
       const { view, writes, cx } = sidebar(terms, { focused: () => ({ agent: null, terminal: "t3" }), agents: () => [] });
       view.rows = new Set(["t3"]);
       view.shelf = new Map([["t3", { kind: "settled", at: 5 }]]);
-      await view.settleInView(cx);
-      assert.equal(writes[0].join(" "), "label t3 inbox.settled=");
-      view.rows = new Set();
-      await view.settleInView(cx);
-      assert.equal(writes.length, 1, "a terminal the list doesn't show is left alone");
+      await view.command("settle", cx);
+      assert.equal(writes.length, 0);
+    });
+
+    it("asks before Clear closes the panes of parked agents, and closes them on confirm", async () => {
+      const overlays = [], closes = [];
+      const { view, notes, cx } = sidebar([], {
+        openOverlay: (spec) => overlays.push(spec),
+        focused: () => ({ tab: "tb0" }),
+        spaces: () => [{ id: "sp1", tabs: [{ id: "tb0" }, { id: "tb1" }, { id: "tb2" }, { id: "tb3" }] }],
+        panes: () => [{ pane: "p0", tab: "tb0" }, { pane: "p1", tab: "tb1" }, { pane: "p2", tab: "tb2" }, { pane: "p3", tab: "tb3" }],
+        run: (name, args) => closes.push([name, args]),
+      });
+      const parked = ["t1", "t2", "t3"].map((a, i) => agent(a, "idle", { tab: `tb${i + 1}`, pane: `p${i + 1}` }));
+      view.askClear(parked);
+      assert.equal(closes.length, 0, "nothing closes before the dialog is confirmed");
+      assert.equal(overlays.length, 1);
+      assert.equal(overlays[0].mod, "confirm");
+      assert.equal(overlays[0].kind, "dialog");
+      assert.deepEqual(plain(overlays[0].props), {
+        title: "Close parked agents?",
+        detail: "This closes the panes of 3 parked agents.",
+        command: { name: "agent-list.clear" },
+      });
+      view.parked = parked;
+      await view.command("clear", cx);
+      assert.deepEqual(plain(closes), [["pane.close", { pane: "p1" }], ["pane.close", { pane: "p2" }], ["pane.close", { pane: "p3" }]]);
+      assert.equal(notes.at(-1).title, "Closed 3 parked agents");
     });
 
     it("holds a run that just stopped in Working, except when it is blocked", () => {
@@ -293,6 +320,19 @@ describe("agent-list", () => {
       assert.ok(items.some((it) => it.kind === "snooze"));
       assert.ok(items.every((it) => it.kind !== "pin" && it.kind !== "unpin"));
       assert.ok(plain(evaluate('menuItems("t9")')).every((it) => it.kind !== "move" && it.heading !== "Move to"), "an agent without a pane can't move");
+    });
+
+    it("names the menu items Reference, Park and Bring back", () => {
+      const labels = (labels, opts) => {
+        const { evaluate } = setup(() => ({ terminals: () => [{ address: "t1", labels }] }));
+        return plain(evaluate("menuItems(\"t1\", opts)", { opts })).map((it) => it.label).filter(Boolean);
+      };
+      const finished = labels({}, { finished: true });
+      assert.ok(finished.includes("Reference") && finished.includes("Park"));
+      assert.ok(!finished.includes("Bring back"));
+      const parked = labels({ "inbox.settled": "5:0" }, {});
+      assert.ok(parked.includes("Bring back") && !parked.includes("Park"));
+      assert.ok([...finished, ...parked].every((l) => !/settle|Reference this/i.test(l)));
     });
 
     it("renames the agent's tab through Herdr's prompt", async () => {

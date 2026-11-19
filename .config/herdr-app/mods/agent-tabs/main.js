@@ -2,7 +2,7 @@ import { View, div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, terminals, run, openOverlay, theme, window, shared, layout, settings, nextCommand } from "herdr";
 
-// The agents list snoozes or settles an agent with a label on its terminal,
+// The agents list snoozes or parks an agent with a label on its terminal,
 // and shares what it just wrote until hc has it (agent-list/inbox.js).
 const SNOOZED = "inbox.snoozed";
 const SETTLED = "inbox.settled";
@@ -22,7 +22,7 @@ function snoozedNow(address, terms, pending, now) {
   return NUMBER_RE.test(value ?? "") && Number(value) > now;
 }
 
-// Settled until it works, needs you or starts a new turn, as the agents list
+// Parked until it works, needs you or starts a new turn, as the agents list
 // has it, so the tab comes back before that list clears the label.
 function settledNow(pane, terms, pending, now) {
   const m = SETTLED_RE.exec(labelNow(SETTLED, pane.terminal, terms, pending, now) ?? "");
@@ -31,7 +31,7 @@ function settledNow(pane, terms, pending, now) {
 }
 
 // The tabs the bar shows: all but those whose every agent is snoozed or
-// settled. The tab in view always shows, and a tab without an agent never
+// parked. The tab in view always shows, and a tab without an agent never
 // hides. A put-away terminal counts as an agent even while it reports no
 // status (Herdr marks a program as an agent only once it does).
 export function visibleTabs(space, all = panes(), terms = new Map(terminals().map((k) => [k.address, k])), pending = shared(PENDING), now = Date.now()) {

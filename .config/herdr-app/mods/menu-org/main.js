@@ -67,7 +67,7 @@ function items(p, git) {
       const terminal = tabTerminal(tg.id);
       return [
         ["Rename", "tab.rename", { id: tg.id }],
-        ...(terminal ? [["Reference this", "reference", { terminal }]] : []),
+        ...(terminal ? [["Reference", "reference", { terminal }]] : []),
         ["New tab", "tab.new", { space: tg.space }],
         ["Close", "tab.close", { id: tg.id }],
       ];

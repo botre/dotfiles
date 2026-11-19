@@ -59,7 +59,6 @@
     "f2": "tab.rename",
     "shift-f2": "space.rename",
     "ctrl-shift-r": "resume.run",
-    "ctrl-shift-s": "agent-list.settle",
     "ctrl-shift-m": "mod.open:mods"
   },
   "terminal": {
