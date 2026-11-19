@@ -271,7 +271,7 @@ function drawRowIcon(spec, size, t) {
   if (spec.program) return icon(spec.program, size, t.foreground);
   if (spec.favicon) return image(spec.favicon).w(size).h(size).flex_none().rounded(3);
   if (spec.emoji) return h_flex().w(size).h(size).flex_none().items_center().justify_center()
-    .text_size(size - 3).line_height(size).text_color(t.foreground).child(spec.emoji);
+    .text_size(size - 3).line_height(`${size}px`).text_color(t.foreground).child(spec.emoji);
   return h_flex().w(size).h(size).flex_none().rounded(4).bg(spec.color).items_center().justify_center()
     .text_size(size * 0.6).font_bold().text_color("#ffffff").child(spec.letter);
 }
