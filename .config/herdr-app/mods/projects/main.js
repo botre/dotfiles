@@ -826,7 +826,7 @@ export default class Projects extends View {
             .hover((s) => s.bg(t.hover)).on_click((_e, cx) => { this.machine = m; this.error = ""; cx.notify(); })
             .child(m ?? "This computer")))))))
       .child(row("Icon", input(iconField)))
-      .child(hint("An emoji, or a website such as https://www.skipr.co/ to use its favicon."))
+      .child(hint("An emoji, or a website address to use its favicon."))
       .when(Boolean(this.error), (el) => el.child(hint(this.error).text_color(t.blocked)))
       .child(div().flex_1())
       .child(h_flex().gap(8).items_center()
