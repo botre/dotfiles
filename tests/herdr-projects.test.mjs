@@ -218,3 +218,13 @@ describe("favicon from a site", () => {
   });
 });
 
+describe("emoji icons", () => {
+  it("names Twemoji's file by code points, dropping U+FE0F outside joined emoji", async () => {
+    const { twemojiUrl } = await import("../.config/herdr-app/mods/projects/store.js");
+    assert.match(twemojiUrl("\u{1f6b2}"), /\/1f6b2\.svg$/);
+    assert.match(twemojiUrl("\u2764\ufe0f"), /\/2764\.svg$/);
+    assert.match(twemojiUrl("\u{1f469}\u200d\u{1f4bb}"), /\/1f469-200d-1f4bb\.svg$/);
+    assert.equal(twemojiUrl(""), null);
+  });
+});
+
