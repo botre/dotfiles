@@ -157,7 +157,7 @@ export default class Quota extends View {
       .content(this.popup(t, data).w(502).rounded(8).border(1).border_color(t.border).shadow_md());
     return h_flex().id("quota").size_full().px(14).items_center().justify_end()
       .bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
-      .child(data ? card : div().text_color(t.dim).child("quota…"));
+      .child(data ? card : div().text_color(t.dim).child("Quota…"));
   }
 
   // A table: one header, then each provider's name and its windows. Every row

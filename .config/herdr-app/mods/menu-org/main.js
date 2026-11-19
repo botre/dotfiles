@@ -73,7 +73,7 @@ function items(p, git) {
     case "tab": {
       const terminal = tabTerminal(tg.id);
       return [
-        ["Rename", "tab.rename", { id: tg.id }],
+        ["Rename…", "tab.rename", { id: tg.id }],
         ...(terminal ? [["Reference", "reference", { terminal }], ["Move to project…", "project-move", { tab: tg.id }]] : []),
         ["New tab", "tab.new", { space: tg.space }],
         ["Close", "tab.close", { id: tg.id }],
@@ -81,19 +81,19 @@ function items(p, git) {
     }
     case "space":
       return [
-        ["Rename", "space.rename", { id: tg.id }],
-        ...(git ? [["New worktree", "worktree", { space: tg.id, action: "new" }], ["Open worktree", "worktree", { space: tg.id, action: "open" }]] : []),
-        ...(git === "linked" ? [["Remove worktree", "worktree", { space: tg.id, action: "remove" }]] : []),
+        ["Rename…", "space.rename", { id: tg.id }],
+        ...(git ? [["New worktree…", "worktree", { space: tg.id, action: "new" }], ["Open worktree…", "worktree", { space: tg.id, action: "open" }]] : []),
+        ...(git === "linked" ? [["Remove worktree…", "worktree", { space: tg.id, action: "remove" }]] : []),
         ["Close", "space.close", { id: tg.id }],
       ];
     default:
       return [
         ["New space", "space.new", {}],
         ["Keybinds", "app.help", {}],
-        ["Theme: graphite", "app.theme", { name: "graphite" }],
-        ["Theme: ink", "app.theme", { name: "ink" }],
-        ["Theme: moss", "app.theme", { name: "moss" }],
-        ["Theme: atom one dark", "app.theme", { name: "atom-one-dark" }],
+        ["Theme: Graphite", "app.theme", { name: "graphite" }],
+        ["Theme: Ink", "app.theme", { name: "ink" }],
+        ["Theme: Moss", "app.theme", { name: "moss" }],
+        ["Theme: Atom One Dark", "app.theme", { name: "atom-one-dark" }],
       ];
   }
 }

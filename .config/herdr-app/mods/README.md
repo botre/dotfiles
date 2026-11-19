@@ -73,6 +73,12 @@ favicons in `favicons/` beside it.
 agents list carry identical copies as `projects.js`, since a mod can't import
 from another mod's folder. A test fails when the copies differ.
 
+The same file holds the sidebar grid. `GRID` and `MENU` set row heights, paddings,
+gaps and slot sizes. `gridRow`, `statusSlot` and `projectIconView` draw the rows of
+both lists, so icons, names, counts and status glyphs line up across the sidebar.
+Every row ends with its status slot, and a count or time sits just before it.
+`tests/herdr-sidebar-grid.test.mjs` renders both lists and compares their rows.
+
 ## Sessions
 
 The sidebar overview icon opens the closable Agents tab across connected

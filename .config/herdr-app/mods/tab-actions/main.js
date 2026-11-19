@@ -45,8 +45,8 @@ function actionsMenu(view, overlay) {
     .children(ACTIONS.map(action => {
       const state = view.actions?.[action.id];
       const enabled = Boolean(space) && state != null && !view.running && action.enabled(state);
-      return h_flex().id(action.id).h(31).px(9).gap(10).rounded(7).items_center().flex_none()
-        .text_color(enabled ? t.foreground : t.dim).when(enabled, el => el.hover(s => s.bg(t.selected)))
+      return h_flex().id(action.id).h(31).px(8).gap(9).rounded(7).items_center().flex_none()
+        .text_color(enabled ? t.foreground : t.dim).when(enabled, el => el.hover(s => s.bg(t.hover)))
         // Closing the popup cancels this copy's tasks, so the action finishes before it closes.
         .on_click((_e, cx) => {
           if (!enabled) return;
@@ -57,7 +57,7 @@ function actionsMenu(view, overlay) {
             finally { closeOverlay(overlay); }
           });
         })
-        .child(svg(action.icon).size(14))
+        .child(svg(action.icon).size(14).flex_none().text_color(enabled ? t.muted : t.dim))
         .child(div().flex_1().child(action.label))
         .child(div().text_size(11).text_color(t.dim).child(state === undefined ? "…" : state === null ? "" : action.hint?.(state) ?? ""));
     }));

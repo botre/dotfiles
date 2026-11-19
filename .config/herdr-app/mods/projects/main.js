@@ -16,7 +16,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
-import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects } from "./membership.js";
+import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
 
@@ -30,6 +30,13 @@ const RAIL_CELL = 32;
 const SELECT_RE = /^select-([1-9])$/;
 // The agents each machine reported last, as the new-tab menu keeps them.
 const KNOWN_AGENTS = "new-menu.agents";
+// The timer looks at tabs only when no render has done so for this long.
+const OBSERVE_EVERY = 2000;
+// The element builders the shared grid helpers draw with (membership.js). Each is
+// looked up when called, so a test can leave out the ones it never draws.
+const UI = { div: (...a) => div(...a), h_flex: (...a) => h_flex(...a), svg: (...a) => svg(...a), image: (...a) => image(...a) };
+// The project menu's rows, and the line before Delete.
+const menuHeight = (n) => MENU.pad * 2 + n * MENU.row + (n - 1) * MENU.gap + 9;
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -138,7 +145,9 @@ export default class Projects extends View {
     cx.spawn(async (cx) => this.sync(cx));
     cx.timer.every(POLL, (cx) => cx.spawn(async (cx) => this.sync(cx)));
     // Renders follow live data; this catches what changes while the sidebar is hidden.
-    cx.timer.every(2000, (cx) => this.observe(cx));
+    cx.timer.every(OBSERVE_EVERY, (cx) => {
+      if (Date.now() - (this.observedAt ?? 0) >= OBSERVE_EVERY - 100) this.observe(cx);
+    });
     cx.spawn(async (cx) => {
       for (;;) {
         const command = await nextCommand();
@@ -325,9 +334,11 @@ export default class Projects extends View {
   // --- Watching tabs ----------------------------------------------------
 
   // Labels new tabs with the selected project, follows focus into another
-  // project's tab, and records activity. Runs on every render and on a timer.
+  // project's tab, and records activity. Runs on every render and on a timer
+  // (only while no render came). Returns what it read, for the render to reuse.
   observe(cx) {
-    const sp = spaces(), ps = panes();
+    this.observedAt = Date.now();
+    const sp = spaces(), ps = panes(), running = agents();
     const terms = new Map(terminals().map((k) => [k.address, k]));
     let pending = shared(PROJECT_PENDING);
     const fresh = freshTerminals(this.seen, this.readyBefore, ps);
@@ -361,42 +372,40 @@ export default class Projects extends View {
       }
       if (next) setShared(PROJECT_SELECTED, next);
     }
-    for (const a of agents()) {
+    for (const a of running) {
       const before = this.seq.get(a.address);
       this.seq.set(a.address, a.seq);
       if (before !== undefined && before !== a.seq) touched.push(tabProject.get(a.tab));
     }
     if (touched.length) this.touch(touched);
-    return tabProject;
+    return { tabProject, sp, running };
   }
 
   // --- Drawing ----------------------------------------------------------
 
-  icon(p, t, size = 18) {
-    if (p.id === GENERAL) return h_flex().size(size).flex_none().items_center().justify_center().text_color(t.muted)
+  icon(p, t, size = GRID.icon) {
+    if (p.id === GENERAL) return h_flex().w(size).h(size).flex_none().items_center().justify_center().text_color(t.muted)
       .child(svg("mods/workspace-chrome/layers.svg").size(size - 4));
     const src = iconUrl(p);
     const own = src && this.favicons?.[src]?.path;
-    const pic = projectIcon(p, own ? { [src]: own } : shared(PROJECT_FAVICONS));
-    if (pic.favicon) return image(pic.favicon).size(size).flex_none().rounded(4);
-    if (pic.emoji) return h_flex().size(size).flex_none().items_center().justify_center()
-      .text_size(size - 3).line_height(`${size}px`).text_color(t.foreground).child(pic.emoji);
-    return h_flex().size(size).flex_none().rounded(5).bg(pic.color).items_center().justify_center()
-      .text_size(size * 0.58).font_bold().text_color("#ffffff").child(pic.letter);
+    return projectIconView(UI, t, projectIcon(p, own ? { [src]: own } : shared(PROJECT_FAVICONS)), size);
   }
 
+  // A row on the sidebar grid (membership.js), as the agents list draws its rows:
+  // the agent count just left of the status slot. Idle shows no glyph.
   row(p, t, on, status, count) {
-    return h_flex().id(`project-${p.id}`).h(30).px(8).gap(9).flex_none().items_center().rounded(8)
+    return gridRow(UI, {
+      id: `project-${p.id}`,
+      icon: this.icon(p, t),
+      name: div().flex_1().min_w(0).truncate().text_color(on ? t.foreground : t.muted).child(p.name),
+      details: [count > 0 && div().text_size(11).text_color(t.dim).child(String(count))],
+      glyph: status === "idle" ? null : statusGlyph(UI, t, status),
+    })
       .when(on, (el) => el.bg(t.selected))
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
       .cursor_pointer()
       .on_click((_e, cx) => { this.select(p.id); cx.notify(); })
-      .when(p.id !== GENERAL, (el) => el.on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.menu(p); }))
-      .child(this.icon(p, t))
-      .child(div().flex_1().min_w(0).truncate().text_color(on ? t.foreground : t.muted).child(p.name))
-      .when(status === "blocked" || status === "done", (el) => el.child(div().size(6).flex_none().rounded(3).bg(t[status])))
-      .when(status === "working", (el) => el.child(svg("mods/workspace-chrome/spinner.svg").size(11).flex_none().text_color(t.working).spin(900)))
-      .when(count > 0, (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(String(count))));
+      .when(p.id !== GENERAL, (el) => el.on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.menu(p); }));
   }
 
   compact(p, t, on, status) {
@@ -406,12 +415,12 @@ export default class Projects extends View {
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
       .on_click((_e, cx) => { this.select(p.id); cx.notify(); })
       .when(p.id !== GENERAL, (el) => el.on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.menu(p); }))
-      .child(this.icon(p, t, 18))
+      .child(this.icon(p, t))
       .when(status === "blocked" || status === "done", (el) => el.child(div().absolute().right(3).top(3).size(6).rounded(3).bg(t[status]))));
   }
 
   menu(p) {
-    openOverlay({ mod: "projects", kind: "popup", width: 200, height: 160, props: { menu: true, project: p.id } });
+    openOverlay({ mod: "projects", kind: "popup", width: 200, height: menuHeight(4), props: { menu: true, project: p.id } });
   }
 
   create() {
@@ -426,11 +435,11 @@ export default class Projects extends View {
     if (p.start) return this.renderStart(cx);
     const t = theme();
     const collapsed = narrow();
-    const tabProject = this.observe(cx);
+    // One read of the host's lists per render: observe() hands back what it read.
+    const { tabProject, sp, running } = this.observe(cx);
     const selected = this.selected();
     const searching = !collapsed && this.query.trim() !== "";
     const list = searching ? searchProjects(this.projects, this.query) : listedProjects(this.projects, shared(PROJECT_ACTIVE) ?? {});
-    const sp = spaces(), running = agents();
     const rows = list.map((proj) => {
       const tabs = projectTabs(sp, proj.id, tabProject);
       const status = projectStatus(tabs);
@@ -438,13 +447,17 @@ export default class Projects extends View {
       return collapsed ? this.compact(proj, t, on, status) : this.row(proj, t, on, status, projectAgents(running, tabs));
     });
     return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
-      .child(h_flex().h(31).flex_none().pl(16).pr(10).items_center().justify_between().text_size(11.5).text_color(t.dim)
+      // The title starts where row content does; the + sits centred over the status column.
+      .child(h_flex().h(GRID.sectionH).flex_none().pl(GRID.listPx + GRID.rowPx).pr(GRID.listPx + GRID.rowPx + GRID.status / 2 - 13)
+        .items_center().justify_between().text_size(11.5).font_medium().text_color(t.dim)
         .when(collapsed, (el) => el.pl(0).pr(0).justify_center())
         .when(!collapsed, (el) => el.child("Projects"))
         .child(div().id("project-new").size(26).flex_none().flex().items_center().justify_center().rounded(6)
           .tooltip("New project").hover((s) => s.bg(t.hover).text_color(t.foreground))
           .on_click(() => this.create()).child(svg("mods/workspace-chrome/plus.svg").size(14))))
-      .when(!collapsed, (el) => el.child(h_flex().id("project-search").mx(8).mt(0).mb(12).h(26).flex_none().px(8).gap(6).items_center().rounded(6)
+      // On the grid too: the glyph over the icons, the text where names start.
+      .when(!collapsed, (el) => el.child(h_flex().id("project-search").mx(GRID.listPx).mt(0).mb(GRID.listEnd).h(26).flex_none()
+        .px(GRID.rowPx - 1).gap(GRID.iconGap).items_center().rounded(6)
         .border(1).border_color(t.border).text_color(t.dim)
         .on_key_down((e, cx) => {
           if (e.key !== "escape") return;
@@ -453,11 +466,11 @@ export default class Projects extends View {
           cx.stop_propagation();
           cx.notify();
         })
-        .child(svg("mods/workspace-chrome/search.svg").size(12).flex_none())
+        .child(h_flex().w(GRID.icon).flex_none().justify_center().child(svg("mods/workspace-chrome/search.svg").size(12)))
         .child(Input.new(this.search).flex_1().min_w(0).h(24).items_center().text_size(12).text_color(t.foreground))))
-      .child(v_flex().id("project-list").flex_1().min_h(0).px(collapsed ? 0 : 8).pb(14).gap(1).overflow_y_scrollbar()
+      .child(v_flex().id("project-list").flex_1().min_h(0).px(collapsed ? 0 : GRID.listPx).pb(GRID.listEnd).gap(GRID.rowGap).overflow_y_scrollbar()
         .children(rows)
-        .when(searching && rows.length === 0, (el) => el.child(div().px(8).py(6).text_size(12).text_color(t.dim).child("No matching projects"))));
+        .when(searching && rows.length === 0, (el) => el.child(div().px(GRID.rowPx).py(6).text_size(12).text_color(t.dim).child("No matching projects"))));
   }
 
   // --- Right-click menu ---------------------------------------------------
@@ -467,9 +480,9 @@ export default class Projects extends View {
     if (!proj) return [];
     const where = worktreeFolder(shared(PROJECT_DIRS), proj.id, spaces().find((s) => s.active)?.machine ?? null);
     return [
-      { id: "worktree", label: "New worktree", icon: "git-branch", enabled: Boolean(where), where },
+      { id: "worktree", label: "New worktree…", icon: "git-branch", enabled: Boolean(where), where },
       { id: "show", label: proj.shown ? "Hide from list" : "Show in list", icon: proj.shown ? "pin-off" : "pin", enabled: true, shown: !proj.shown },
-      { id: "edit", label: "Edit", icon: "square-pen", enabled: true },
+      { id: "edit", label: "Edit…", icon: "square-pen", enabled: true },
       { id: "delete", label: "Delete", icon: "x", enabled: true },
     ];
   }
@@ -490,7 +503,7 @@ export default class Projects extends View {
   renderMenu(p) {
     const t = theme();
     const items = this.menuItems(p);
-    return v_flex().id("project-menu").track_focus(this.handle).w_full().min_h(0).p(5).gap(2).bg(t.popover).text_size(12.8)
+    return v_flex().id("project-menu").track_focus(this.handle).w_full().min_h(0).p(MENU.pad).gap(MENU.gap).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
         if (!items.length) return;
         if (e.key === "down") this.at = (this.at + 1) % items.length;
@@ -502,7 +515,7 @@ export default class Projects extends View {
       })
       .children(items.map((it, i) => v_flex()
         .when(it.id === "delete", (el) => el.child(div().mx(7).my(4).h(1).bg(t.border)))
-        .child(h_flex().id(`pm-${it.id}`).h(31).px(8).gap(9).rounded(7).items_center()
+        .child(h_flex().id(`pm-${it.id}`).h(MENU.row).px(8).gap(9).rounded(MENU.radius).items_center()
           .text_color(it.enabled ? t.foreground : t.dim)
           .when(i === this.at && it.enabled, (el) => el.bg(t.selected))
           .when(it.enabled, (el) => el.hover((s) => s.bg(t.hover)))
@@ -542,7 +555,7 @@ export default class Projects extends View {
     const t = theme();
     const { items, current } = this.pickerModel(p.picker);
     this.at = Math.min(this.at, Math.max(0, items.length - 1));
-    return v_flex().id("project-picker").track_focus(this.handle).size_full().min_h(0).p(5).gap(2).bg(t.popover).text_size(12.8)
+    return v_flex().id("project-picker").track_focus(this.handle).size_full().min_h(0).p(MENU.pad).gap(MENU.gap).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
         if (e.key === "down") this.at = (this.at + 1) % items.length;
         else if (e.key === "up") this.at = (this.at + items.length - 1) % items.length;
@@ -552,9 +565,9 @@ export default class Projects extends View {
         cx.stop_propagation();
         cx.notify();
       })
-      .child(div().px(8).pt(8).h(26).flex_none().text_size(11).text_color(t.dim).child("Move to project"))
-      .child(v_flex().id("picker-list").flex_1().min_h(0).gap(2).overflow_y_scrollbar()
-        .children(items.map((proj, i) => h_flex().id(`pk-${proj.id}`).h(31).px(8).gap(9).flex_none().rounded(7).items_center()
+      .child(div().px(8).pt(8).h(MENU.heading).flex_none().text_size(11).text_color(t.dim).child("Move to project"))
+      .child(v_flex().id("picker-list").flex_1().min_h(0).gap(MENU.gap).overflow_y_scrollbar()
+        .children(items.map((proj, i) => h_flex().id(`pk-${proj.id}`).h(MENU.row).px(8).gap(9).flex_none().rounded(MENU.radius).items_center()
           .cursor_pointer()
           .text_color(t.foreground)
           .when(i === this.at, (el) => el.bg(t.selected))
@@ -655,7 +668,7 @@ export default class Projects extends View {
             .when(!general, (el) => el.child(line("git-branch", repo.join("/") || proj.id, repo.length ? host : null)))
             .when(place.known, (el) => el.child(line("folder", tilde(place.folder), place.machine ? `on ${place.machine}` : null)))))
         .child(div().h(1).flex_none().bg(t.border))
-        .child(v_flex().p(8).gap(2)
+        .child(v_flex().px(10).py(8).gap(2)
           .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).h(46).px(10).gap(12).flex_none().rounded(8).items_center()
             .cursor_pointer()
             .when(i === this.at, (el) => el.bg(t.hover))
@@ -670,7 +683,7 @@ export default class Projects extends View {
         .when(!place.known, (el) => el.child(div().px(20).pb(12).text_size(12).text_color(t.dim)
           .child("No folder for this project on a connected machine, so these start in your home folder.")))
         .child(h_flex().px(20).py(9).border_t(1).border_color(t.border).text_size(11).text_color(t.dim)
-          .child("\u2191\u2193 to choose \u00b7 \u21b5 to start")))
+          .child("\u2191\u2193 choose \u00b7 \u21b5 start")))
       .child(div().flex_1());
   }
 
@@ -754,7 +767,7 @@ export default class Projects extends View {
     const iconField = this.fields[editing ? 1 : 2];
     const tilde = (path) => (path.startsWith(home()) ? `~${path.slice(home().length)}` : path);
     // Where the project's checkouts are known: one line per machine.
-    const folders = editing ? Object.entries(this.dirs ?? {}).filter(([, d]) => d?.[p.project]).map(([m, d]) => [m || "This computer", tilde(d[p.project])]) : [];
+    const folders = editing ? Object.entries(shared(PROJECT_DIRS) ?? {}).filter(([, d]) => d?.[p.project]).map(([m, d]) => [m || "This computer", tilde(d[p.project])]) : [];
     const [host, ...repo] = (p.project ?? "").split("/");
     const header = editing
       ? h_flex().gap(12).items_start()
@@ -773,7 +786,7 @@ export default class Projects extends View {
         .child(div().text_size(15).font_semibold().text_color(t.foreground).child("New project"))
         .child(div().text_color(t.muted).text_size(12)
           .child("A project is a git remote. The folder only tells which one; the same remote on any machine is the same project."));
-    return v_flex().id("project-dialog").track_focus(this.handle).size_full().p(18).gap(12).bg(t.popover).text_size(13)
+    return v_flex().id("project-dialog").track_focus(this.handle).size_full().p(16).gap(12).bg(t.popover).text_size(13)
       .on_key_down((e, cx) => {
         if (e.key === "escape") { closeOverlay(p.overlay); return; }
         if (e.key !== "tab") return;
@@ -791,7 +804,7 @@ export default class Projects extends View {
       .when(!editing, (el) => el
         .child(row("Folder", h_flex().gap(6).items_center()
           .child(div().flex_1().min_w(0).child(input(this.fields[1])))
-          .when(!this.machine, (el) => el.child(button("pd-browse", "Browse", false, (cx) => cx.spawn(async (cx) => {
+          .when(!this.machine, (el) => el.child(button("pd-browse", "Browse…", false, (cx) => cx.spawn(async (cx) => {
             const folder = await pickFolder({ prompt: "Choose" });
             if (folder) this.fields[1].set_value(folder);
             cx.notify();

@@ -40,6 +40,8 @@ export class SessionTracker {
       await this.conversations.sync(all, records);
       const keys = new Set(all.map((t) => `${t.address}:${t.created_ms}:${t.foreground?.pid}`));
       for (const key of this.starts.keys()) if (!keys.has(key)) this.starts.delete(key);
-    } finally { this.busy = false; cx.notify(); }
+    // No redraw of its own: what it learns reaches the views through setShared,
+    // which redraws them, and the sidebar shows none of it.
+    } finally { this.busy = false; }
   }
 }
