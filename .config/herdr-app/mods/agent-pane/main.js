@@ -3,16 +3,18 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { panes, props, run, theme, home } from "herdr";
+import { programIcon } from "./program-icons.js";
 
-// Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
-// sprite that blurs when scaled and a logo on a white square.
-const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
+// A program's icon, cropped to fill its slot (program-icons.js).
+function mark(p, size, color) {
+  const pic = programIcon(p);
+  if (!pic) return null;
+  return pic.tint ? svg(pic.path).size(size).flex_none().text_color(pic.color ?? color) : image(pic.path).w(size).h(size).flex_none();
+}
+
 
 function icon(p, size, color) {
-  const brand = BRAND[p?.key];
-  if (brand) return svg(brand[0]).size(size).flex_none().text_color(brand[1]);
-  if (!p?.icon) return null;
-  return p.tint ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
+  return mark(p, size, color);
 }
 
 function folder(cwd) {
