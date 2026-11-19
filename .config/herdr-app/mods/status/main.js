@@ -3,7 +3,7 @@
 // browser. Asks `gh`, read-only, every two minutes and when the space or
 // branch changes.
 
-import { View, div, svg } from "gpui-kit";
+import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { spaces, agents, panes, focused, theme, run, window, keys, exec } from "herdr";
 
@@ -16,6 +16,16 @@ function where(space) {
   const f = focused();
   const cwd = (f?.space === space.id && f.cwd) || panes().find((p) => p.tab === f?.tab && p.cwd)?.cwd || space.folder;
   return { cwd, on: space.machine, key: `${space.machine ?? ""}|${cwd}|${space.branch ?? ""}` };
+}
+
+// The program of the agent in the focused pane (Claude Code, Codex), or null
+// when that pane runs no agent or its program has no icon.
+export function focusedAgentProgram(f, allPanes, allAgents) {
+  const address = f?.agent ?? f?.terminal;
+  if (!address) return null;
+  const agent = allAgents.find((a) => a.address === address);
+  const program = agent?.program ?? allPanes.find((p) => p.terminal === address)?.program;
+  return program?.icon && (agent || program.agent) ? program : null;
 }
 
 // statusCheckRollup mixes check runs (status, conclusion) and commit
@@ -100,8 +110,12 @@ export default class WorkspaceStatus extends View {
     const needs = list.filter(a => a.status === "blocked").length;
     const label = (icon, text) => h_flex().gap(6).items_center().child(svg(`mods/workspace-chrome/${icon}.svg`).size(13)).child(text);
     const pr = space?.branch ? this.prItem(t) : null;
+    const program = focusedAgentProgram(focused(), panes(), list);
     return h_flex().size_full().px(14).gap(16).items_center().bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
-      .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer"))
+      .child(h_flex().gap(10).items_center()
+        .when(Boolean(program), (el) => el.child(div().id("agent-program").flex_none().tooltip(program.name)
+          .child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).w(14).h(14))))
+        .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer")))
       .when(Boolean(space?.branch), el => el.child(h_flex().gap(10).items_center().child(label("branch", space.branch)).when(Boolean(pr), (e) => e.child(pr))))
       .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} agents`)
         .when(needs > 0, el => el.child(div().text_color(t.blocked).child(`· ${needs} needs you`))))

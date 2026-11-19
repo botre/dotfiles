@@ -46,6 +46,15 @@ connected machine. Ctrl+1..9 select the projects in sidebar order.
 The sidebar lists the projects marked "Show in list", or else the five most recently
 active ones. Search finds the rest. Right-click a project for New worktree, Show or
 Hide, Edit and Delete. The agents list groups agents by project, General first.
+Its rows show the project's icon; General agents and helpers keep the program's
+icon, as does the Agents overview. The bottom bar starts with the program icon
+of the agent in view.
+
+Right-click an agent or a tab for Move to project. The picker relabels every
+terminal in the tab and leaves the selected project as it is, so a tab moved
+elsewhere leaves the bar. When an agent's folder has the remote of another
+project, the `project-suggest` strip under the main area offers the move. Its
+cross hides the offer for that agent and project.
 
 A project without tabs shows a start page in the main area. It offers Claude Code,
 Codex and a terminal in the project's folder, plus New worktree and Open worktree.

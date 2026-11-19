@@ -1,5 +1,6 @@
 // Projects: which tab belongs to which project. Copied verbatim into
-// agent-tabs/ and agent-list/ (mods can't import from another mod's folder);
+// agent-tabs/, agent-list/ and project-suggest/ as projects.js (mods can't
+// import from another mod's folder);
 // tests/herdr-projects.test.mjs fails when the copies drift.
 //
 // Tabs join a project through a `project=<id>` label on their terminals; a
@@ -22,6 +23,10 @@ export const PROJECT_PENDING = "projects.pending";
 export const PROJECT_ACTION = "projects.action";
 // Set when the main area turns to the start page, so the page takes the keyboard.
 export const PROJECT_START_SHOWN = "projects.start-shown";
+// Favicon URL -> downloaded file (under the app folder), as the sidebar copy has them.
+export const PROJECT_FAVICONS = "projects.favicons";
+// Agent address -> the project its suggestion strip was dismissed for.
+export const PROJECT_DISMISSED = "projects.move-dismissed";
 export const PROJECT_PENDING_MS = 5000;
 export const PROJECT_RECENT = 5;
 
@@ -94,4 +99,44 @@ export function projectStatus(tabs) {
 // while it has none, since the tab in view then belongs to another project.
 export function mainChild(tabs) {
   return (tabs ?? []).length ? MAIN_TAB : MAIN_START;
+}
+
+// Letter tiles: one strong color per hue, light and dark alike (as spaces-plain).
+const TILES = ["#22a99a", "#e3814f", "#5b8def", "#8b7cf6", "#3fae6a", "#d9649a"];
+
+// A letter tile's color: the same for a project on every machine.
+export function tileColor(id) {
+  let hash = 0;
+  for (const ch of String(id)) hash = (hash * 31 + ch.codePointAt(0)) >>> 0;
+  return TILES[hash % TILES.length];
+}
+
+// How a project's icon draws: { favicon: path } once its picture is downloaded,
+// { emoji } (drawn as text), else { letter, color } for a tile. Null for General,
+// which has no icon of its own. favicons: url -> path (PROJECT_FAVICONS).
+export function projectIcon(p, favicons) {
+  if (!p || p.id === GENERAL) return null;
+  const path = p.icon?.favicon && favicons?.[p.icon.favicon];
+  if (path) return { favicon: path };
+  if (p.icon?.emoji) return { emoji: p.icon.emoji };
+  return { letter: ([...String(p.name ?? "").trim()][0] ?? "?").toUpperCase(), color: tileColor(p.id) };
+}
+
+// The hc commands that move a tab to a project: a label on each of its
+// terminals, removed for General.
+export function moveCommands(allPanes, tab, project) {
+  const value = project && project !== GENERAL ? project : "";
+  const addresses = [...new Set((allPanes ?? []).filter((p) => p.tab === tab && p.terminal).map((p) => p.terminal))];
+  return addresses.map((address) => ["label", address, `${PROJECT_LABEL}=${value}`]);
+}
+
+// The "Move to project" picker: General, then every project by name.
+export const pickerProjects = (list) => [generalProject(), ...[...liveProjects(list)].sort(byProjectName)];
+
+const PICKER_ROW = 31;
+const PICKER_ROWS = 10;
+// The picker popup for a tab, sized to its list (it scrolls past ten projects).
+export function pickerOverlay(tab, list) {
+  const rows = Math.min(pickerProjects(list).length, PICKER_ROWS);
+  return { mod: "projects", kind: "popup", width: 260, height: 10 + 26 + rows * PICKER_ROW + (rows - 1) * 2, props: { picker: tab } };
 }

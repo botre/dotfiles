@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { loadMod, plain } from "./mod-source.mjs";
+import { loadMod, loadMods, plain } from "./mod-source.mjs";
 
 describe("menu-org", () => {
   const setup = (paneList) => {
@@ -37,5 +37,25 @@ describe("menu-org", () => {
     assert.equal(store["agent-list.action"].kind, "reference");
     assert.equal(store["agent-list.action"].address, "t1");
     assert.deepEqual(plain(calls), [["agent-list.act"]]);
+  });
+
+  it("offers Move to project for a tab with a terminal, opening the projects picker", () => {
+    const overlays = [], closed = [];
+    const projects = [{ id: "github.com/o/one", name: "One" }, { id: "github.com/o/gone", name: "Gone", deleted: true }];
+    const evaluate = loadMod("menu-org", {
+      panes: () => [{ tab: "tb1", terminal: "t1" }],
+      props: () => ({ tab: "tab", target: { id: "tb1", space: "sp1" }, overlay: "m1" }),
+      shared: (key) => (key === "projects.list" ? projects : undefined),
+      openOverlay: (o) => { overlays.push(o); }, closeOverlay: (id) => { closed.push(id); }, run: () => {},
+    });
+    const list = plain(evaluate('items({ tab: "tab", target: { id: "tb1" } })'));
+    const i = list.findIndex((it) => it[0] === "Move to project…");
+    assert.deepEqual(list[i], ["Move to project…", "project-move", { tab: "tb1" }]);
+    evaluate(`Menu.prototype.choose.call({ git: null }, ${i})`);
+    assert.deepEqual(closed, ["m1"]);
+    const membership = loadMods(["projects/membership.js"]);
+    assert.deepEqual(plain(overlays), [plain(membership("pickerOverlay('tb1', list)", { list: projects }))]);
+    const empty = loadMod("menu-org", { panes: () => [] });
+    assert.ok(plain(empty('items({ tab: "tab", target: { id: "tb1" } })')).every((it) => it[1] !== "project-move"));
   });
 });

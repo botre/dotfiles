@@ -139,6 +139,12 @@
                   "active": "main"
                 },
                 {
+                  "id": "project-suggest",
+                  "type": "block",
+                  "content": { "mod": "project-suggest" },
+                  "size": { "px": 0 }
+                },
+                {
                   "id": "commands",
                   "type": "block",
                   "content": { "mod": "agent-commands" },

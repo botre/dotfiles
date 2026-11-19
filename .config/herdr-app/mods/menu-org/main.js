@@ -5,10 +5,17 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { run, props, closeOverlay, openOverlay, theme, keys, terminals, spaces, panes, exec, setShared } from "herdr";
+import { run, props, closeOverlay, openOverlay, theme, keys, terminals, spaces, panes, exec, shared, setShared } from "herdr";
 
 // The agents list types references; it reads the request from here (agent-list/inbox.js).
 const ACTION = "agent-list.action";
+
+// The projects mod's "Move to project" picker for a tab, sized as
+// pickerOverlay in projects/membership.js sizes it (tests compare the two).
+export function projectPicker(tab, list = shared("projects.list") ?? []) {
+  const rows = Math.min(1 + list.filter((p) => !p.deleted && p.id !== "general").length, 10);
+  return { mod: "projects", kind: "popup", width: 260, height: 10 + 26 + rows * 31 + (rows - 1) * 2, props: { picker: tab } };
+}
 
 // The terminal a tab stands for: its agent, else its focused pane, else its first.
 function tabTerminal(id) {
@@ -67,7 +74,7 @@ function items(p, git) {
       const terminal = tabTerminal(tg.id);
       return [
         ["Rename", "tab.rename", { id: tg.id }],
-        ...(terminal ? [["Reference", "reference", { terminal }]] : []),
+        ...(terminal ? [["Reference", "reference", { terminal }], ["Move to project…", "project-move", { tab: tg.id }]] : []),
         ["New tab", "tab.new", { space: tg.space }],
         ["Close", "tab.close", { id: tg.id }],
       ];
@@ -92,7 +99,7 @@ function items(p, git) {
 }
 
 function menuIcon(command) {
-  const name = command.endsWith(".close") ? "x" : command.endsWith(".rename") ? "square-pen" : command.endsWith(".new") ? "plus" : command === "worktree" ? "git-branch" : command === "app.help" ? "terminal" : command === "app.theme" ? "settings" : command === "pane.split" ? "panel-right" : command === "pane.zoom" ? "square" : "terminal";
+  const name = command.endsWith(".close") ? "x" : command.endsWith(".rename") ? "square-pen" : command.endsWith(".new") ? "plus" : command === "worktree" ? "git-branch" : command === "project-move" ? "folder" : command === "app.help" ? "terminal" : command === "app.theme" ? "settings" : command === "pane.split" ? "panel-right" : command === "pane.zoom" ? "square" : "terminal";
   return `mods/workspace-chrome/${name}.svg`;
 }
 
@@ -125,6 +132,7 @@ export default class Menu extends View {
     if (!it) return;
     closeOverlay(props()?.overlay);
     if (it[1] === "worktree") openOverlay({ mod: "worktree-org", kind: "dialog", ...(it[2].action === "open" ? { width: 560, height: 480 } : { width: 440, height: 260 }), props: it[2] });
+    else if (it[1] === "project-move") openOverlay(projectPicker(it[2].tab));
     else if (it[1] === "reference") {
       setShared(ACTION, { kind: "reference", address: it[2].terminal, at: Date.now() });
       run("agent-list.act");
