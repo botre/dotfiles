@@ -44,7 +44,7 @@ export function visibleTabs(space, all = panes(), terms = new Map(terminals().ma
   });
 }
 
-// ctrl-1..9 and the next/prev keys go by the tabs the bar shows, not by every tab.
+// alt-1..9 and the next/prev keys go by the tabs the bar shows, not by every tab.
 export function tabFor(command, tabs) {
   const n = SELECT_RE.exec(command);
   if (n) return tabs[Number(n[1]) - 1] ?? null;
