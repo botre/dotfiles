@@ -106,6 +106,44 @@ describe("agent-tabs", () => {
     assert.deepEqual(bar("github.com/o/deleted", "a"), bar("general", "a"));
   });
 
+  it("turns the main stack to the start page while the project has no tab, asking once", () => {
+    const ran = [];
+    const shared = {};
+    const tabs = loadMods(["agent-tabs/projects.js", "agent-tabs/main.js"], {
+      run: (...args) => { ran.push(args); }, setShared: (key, value) => { shared[key] = value; },
+    });
+    const view = tabs("Object.create(Tabs.prototype)");
+    const stack = (active) => ({ id: "main-stack", type: "stack", active, children: [{ id: "main" }, { id: "project-start" }] });
+    const sync = (node, want, now) => tabs("view.syncMain(node, want, now)", { view, node, want, now });
+    sync(stack("main"), "project-start", 1000);
+    sync(stack("main"), "project-start", 1500);
+    assert.deepEqual(JSON.parse(JSON.stringify(ran)), [["layout.select", { stack: "main-stack", child: "project-start" }]]);
+    assert.equal(shared["projects.start-shown"], 1000);
+    // The layout caught up; a new tab turns it back, without marking a turn to the page.
+    sync(stack("project-start"), "project-start", 1600);
+    sync(stack("project-start"), "main", 1700);
+    assert.deepEqual(JSON.parse(JSON.stringify(ran[1])), ["layout.select", { stack: "main-stack", child: "main" }]);
+    assert.equal(shared["projects.start-shown"], 1000);
+    // A layout without the stack, or without that child, is left alone.
+    sync(null, "project-start", 2000);
+    sync({ id: "main-stack", children: [{ id: "main" }] }, "project-start", 2000);
+    assert.equal(ran.length, 2);
+  });
+
+  it("counts a tab opened from the start page in the project once the sidebar labels it", () => {
+    const store = loadMods(["projects/membership.js", "projects/store.js"]);
+    const before = [{ tab: "a", terminal: "t1" }];
+    const after = [...before, { tab: "new", terminal: "t2" }];
+    const fresh = store("freshTerminals(seen, ready, after)", { seen: new Set(["t1"]), ready: new Set([null]), after });
+    const writes = JSON.parse(store('JSON.stringify(autoLabels(fresh, after, () => "", "github.com/o/x"))', { fresh, after }));
+    assert.deepEqual(writes, [{ address: "t2", project: "github.com/o/x" }]);
+    const spaces = [{ id: "sp1", tabs: [{ id: "a", active: true }, { id: "new" }] }];
+    const projects = [{ id: "github.com/o/x", name: "x" }];
+    const child = (pending) => evaluate('mainChild(projectBarTabs(spaces, after, new Map(), projects, "github.com/o/x", "a", pending, 1000))', { spaces, after, projects, pending });
+    assert.equal(child(null), "project-start");
+    assert.equal(child({ t2: { project: "github.com/o/x", at: 900 } }), "main");
+  });
+
   it("starts with no remembered panels when the saved value is corrupt", () => {
     assert.equal(evaluate('JSON.stringify(savedObject("{oops"))'), "{}");
     assert.equal(evaluate('JSON.stringify(savedObject("[1]"))'), "{}");

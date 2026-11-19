@@ -20,8 +20,15 @@ export const PROJECT_ACTIVE = "projects.active";
 export const PROJECT_LAST_TAB = "projects.last-tab";
 export const PROJECT_PENDING = "projects.pending";
 export const PROJECT_ACTION = "projects.action";
+// Set when the main area turns to the start page, so the page takes the keyboard.
+export const PROJECT_START_SHOWN = "projects.start-shown";
 export const PROJECT_PENDING_MS = 5000;
 export const PROJECT_RECENT = 5;
+
+// The bjorn layout's main area: a stack of the shown tab and the start page.
+export const MAIN_STACK = "main-stack";
+export const MAIN_TAB = "main";
+export const MAIN_START = "project-start";
 
 export const generalProject = () => ({ id: GENERAL, name: "General", icon: {}, shown: true, updated_at: 0 });
 
@@ -82,3 +89,9 @@ export function projectStatus(tabs) {
   return (tabs ?? []).reduce((top, t) => ((STATUS_RANK[t.status] ?? 0) > (STATUS_RANK[top] ?? 0) ? t.status : top), null);
 }
 
+
+// What the main area shows for the selected project's tabs: the start page
+// while it has none, since the tab in view then belongs to another project.
+export function mainChild(tabs) {
+  return (tabs ?? []).length ? MAIN_TAB : MAIN_START;
+}
