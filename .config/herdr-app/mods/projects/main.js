@@ -16,13 +16,13 @@ import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
 import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
-import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, twemojiUrl, initial } from "./store.js";
+import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates, initial } from "./store.js";
 
 // Changes made on another machine show up within this long.
 const POLL = 60000;
 const FAVICONS = "projects.favicons";
-// The picture a project's icon comes from: its favicon URL, else its emoji's.
-const iconUrl = (p) => p.icon?.favicon ?? (p.icon?.emoji ? twemojiUrl(p.icon.emoji) : null);
+// The picture a project's icon comes from, when it has a favicon. An emoji draws as text.
+const iconUrl = (p) => p.icon?.favicon ?? null;
 // A favicon that failed to download is tried again after this long.
 const FAVICON_RETRY = 600000;
 const RAIL_CELL = 32;
@@ -204,8 +204,7 @@ export default class Projects extends View {
   }
 
   // A favicon URL can name an image or a site. For a site, the page's own
-  // <link rel="icon"> tags are tried first, then /favicon.ico. Anything but a
-  // PNG is turned into one when ImageMagick is there, since .ico may not draw.
+  // <link rel="icon"> tags are tried first, then /favicon.ico.
   async fetchFavicons(cx) {
     // image() resolves against the app folder, so favicons live under it.
     const dir = `${appHome()}/${FAVICON_DIR}`;
@@ -239,18 +238,11 @@ export default class Projects extends View {
       await exec("rm", ["-f", page]);
       candidates.push(faviconSource(url));
     }
-    const magick = (await exec("sh", ["-c", "command -v magick || command -v convert"])).stdout?.trim();
     for (const src of candidates) {
       const tmp = `${dir}/${base}.download`;
       if ((await curl(src, tmp)).code !== 0) continue;
+      // Kept as downloaded: image() draws SVG, PNG, ICO and the other common formats.
       const ext = imageExt(src) ?? "ico";
-      if (ext !== "png" && magick) {
-        // [0]: an .ico holds several sizes; the first is enough at sidebar size.
-        const r = await exec(magick, [`${tmp}[0]`, "-background", "none", "-resize", "64x64", `${dir}/${base}.png`]);
-        await exec("rm", ["-f", tmp]);
-        if (r.code === 0) return `${base}.png`;
-        continue;
-      }
       if ((await exec("mv", [tmp, `${dir}/${base}.${ext}`])).code === 0) return `${base}.${ext}`;
     }
     return null;
@@ -374,7 +366,6 @@ export default class Projects extends View {
     const src = iconUrl(p);
     const fav = src && (this.favicons?.[src]?.path ?? shared(FAVICONS)?.[src]);
     if (fav) return image(fav).size(size).flex_none().rounded(4);
-    // Until its picture is downloaded, an emoji draws as text.
     if (p.icon?.emoji) return h_flex().size(size).flex_none().items_center().justify_center()
       .text_size(size - 3).line_height(size).text_color(t.foreground).child(p.icon.emoji);
     return h_flex().size(size).flex_none().rounded(5).bg(tileColor(p.id)).items_center().justify_center()
@@ -567,12 +558,15 @@ export default class Projects extends View {
       .child(svg(`mods/workspace-chrome/${icon}.svg`).size(12).flex_none())
       .child(div().truncate().child(text))
       .when(Boolean(extra), (el) => el.child(div().flex_none().text_color(t.dim).child(extra)));
+    // Each action's icon sits in a small tile, like a launcher.
     const icon = (it) => {
-      if (it.kind !== "agent") return svg(`mods/workspace-chrome/${it.icon}.svg`).size(14).flex_none().text_color(t.muted);
-      if (!it.agent.icon) return div().size(14).flex_none();
-      return it.agent.tint ? svg(it.agent.icon).size(14).flex_none().text_color(t.foreground) : image(it.agent.icon).size(14).flex_none();
+      const inner = it.kind !== "agent"
+        ? svg(`mods/workspace-chrome/${it.icon}.svg`).size(15).text_color(t.muted)
+        : !it.agent.icon ? div()
+        : it.agent.tint ? svg(it.agent.icon).size(16).text_color(t.foreground) : image(it.agent.icon).size(16);
+      return h_flex().size(30).flex_none().items_center().justify_center().rounded(8).bg(t.raised).child(inner);
     };
-    return v_flex().id("project-start").track_focus(this.handle).size_full().items_center().justify_center().px(16)
+    return v_flex().id("project-start").track_focus(this.handle).size_full().items_center().px(16)
       .bg(t.background).text_size(13)
       .on_mouse_down("left", () => this.handle.focus())
       .on_key_down((e, cx) => {
@@ -584,24 +578,33 @@ export default class Projects extends View {
         cx.stop_propagation();
         cx.notify();
       })
-      .child(v_flex().w_full().max_w(420).gap(16)
-        .child(h_flex().gap(14).items_start().px(8)
-          .child(this.icon(proj, t, 40))
+      // A third of the way down reads better than dead centre on a tall pane.
+      .child(div().flex_1().max_h(220))
+      .child(v_flex().w_full().max_w(460).flex_none().rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_md().overflow_hidden()
+        .child(h_flex().gap(14).items_center().px(20).py(18)
+          .child(this.icon(proj, t, 44))
           .child(v_flex().flex_1().min_w(0).gap(4)
-            .child(div().truncate().text_size(17).font_semibold().text_color(t.foreground).child(proj.name))
+            .child(div().truncate().text_size(18).font_semibold().text_color(t.foreground).child(proj.name))
             .when(!general, (el) => el.child(line("git-branch", repo.join("/") || proj.id, repo.length ? host : null)))
             .when(place.known, (el) => el.child(line("folder", tilde(place.folder), place.machine ? `on ${place.machine}` : null)))))
         .child(div().h(1).flex_none().bg(t.border))
-        .child(v_flex().gap(2)
-          .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).h(31).px(8).gap(9).flex_none().rounded(7).items_center()
-            .cursor_pointer().text_color(t.foreground)
-            .when(i === this.at, (el) => el.bg(t.selected))
+        .child(v_flex().p(8).gap(2)
+          .children(items.map((it, i) => h_flex().id(`ps-${it.id}`).h(46).px(10).gap(12).flex_none().rounded(8).items_center()
+            .cursor_pointer()
+            .when(i === this.at, (el) => el.bg(t.hover))
             .hover((s) => s.bg(t.hover))
+            .on_mouse_move(() => { this.at = i; })
             .on_click((_e, cx) => { this.at = i; this.chooseStart(it, place); cx.notify(); })
             .child(icon(it))
-            .child(div().flex_1().min_w(0).truncate().child(it.label)))))
-        .when(!place.known, (el) => el.child(div().px(8).text_size(12).text_color(t.dim)
-          .child("No folder for this project on a connected machine, so these start in your home folder."))));
+            .child(v_flex().flex_1().min_w(0).gap(1)
+              .child(div().truncate().text_color(t.foreground).child(it.label))
+              .when(Boolean(it.hint), (el) => el.child(div().truncate().text_size(11.5).text_color(t.dim).child(it.hint))))
+            .when(i === this.at, (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child("\u21b5"))))))
+        .when(!place.known, (el) => el.child(div().px(20).pb(12).text_size(12).text_color(t.dim)
+          .child("No folder for this project on a connected machine, so these start in your home folder.")))
+        .child(h_flex().px(20).py(9).border_t(1).border_color(t.border).text_size(11).text_color(t.dim)
+          .child("\u2191\u2193 to choose \u00b7 \u21b5 to start")))
+      .child(div().flex_1());
   }
 
   // --- Create and edit dialog --------------------------------------------
