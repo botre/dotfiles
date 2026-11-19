@@ -9,9 +9,8 @@ ruby = "3.4"
 terraform = "1.16"
 yarn = "1.22"
 
-# Match Skipr's tools/go_lint_all.sh pin to avoid different lint verdicts.
 # Skipr's Makefile installs mockery and protoc-gen-go itself.
-"golangci-lint" = "2.1.6"
+golangci-lint = "2.12.2"
 "go:github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt" = "latest"
 "go:golang.org/x/tools/cmd/goimports" = "latest"
 shfmt = "latest"
