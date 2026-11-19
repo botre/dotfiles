@@ -567,6 +567,7 @@ export default class Projects extends View {
     const t = theme();
     const { items, current } = this.pickerModel(p.picker);
     this.at = Math.min(this.at, Math.max(0, items.length - 1));
+    const shown = Math.min(Math.max(items.length, 1), 10);
     return v_flex().id("project-picker").track_focus(this.handle).size_full().min_h(0).p(MENU.pad).gap(MENU.gap).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
         if (e.key === "down") this.at = (this.at + 1) % items.length;
@@ -578,7 +579,8 @@ export default class Projects extends View {
         cx.notify();
       })
       .child(div().px(8).pt(8).h(MENU.heading).flex_none().text_size(11).text_color(t.dim).child("Move to project"))
-      .child(v_flex().id("picker-list").flex_1().min_h(0).gap(MENU.gap).overflow_y_scrollbar()
+      // A popup sizes to its content, so the list takes the height of its rows (ten at most, then it scrolls).
+      .child(v_flex().id("picker-list").flex_none().h(shown * MENU.row + (shown - 1) * MENU.gap).gap(MENU.gap).overflow_y_scrollbar()
         .children(items.map((proj, i) => h_flex().id(`pk-${proj.id}`).h(MENU.row).px(8).gap(9).flex_none().rounded(MENU.radius).items_center()
           .cursor_pointer()
           .text_color(t.foreground)
