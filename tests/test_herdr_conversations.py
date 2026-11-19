@@ -218,6 +218,12 @@ class HerdrLiveActivityTests(unittest.TestCase):
         live = self.live([prompt, tool, result, final, claude_line("user", "Now add a test")])
         self.assertTrue(live["working"])
         self.assertIsNone(live["action"])
+        # A sentence after the action supersedes it, so the action never goes stale.
+        said = claude_line("assistant", [{"type": "text", "text": "Tests pass. Now the page."}],
+                           "2026-11-04T10:00:20Z", stop_reason="tool_use")
+        live = self.live([prompt, tool, result, said])
+        self.assertIsNone(live["action"])
+        self.assertEqual(live["message"], "Tests pass.")
 
     def test_codex_code_mode_and_function_calls(self):
         cell = 'text(await tools.exec_command({cmd:"cd /srv && rg -n \\"activityState\\" model.js",max_output_tokens:500}));'
@@ -237,7 +243,8 @@ class HerdrLiveActivityTests(unittest.TestCase):
         self.assertEqual(self.live([call])["action"], "Running make test")
         done = codex_line("event_msg", {"type": "item_completed", "item": {"type": "CommandExecution", "command": ["/usr/bin/zsh", "-lc", "pytest -q"]},
                                         "started_at_ms": 1793786410000})
-        self.assertEqual(self.live(lines + [done])["action"], "Running pytest -q")
+        # A finished command reads in the past tense.
+        self.assertEqual(self.live(lines + [done])["action"], "Ran pytest -q")
         self.assertEqual(self.live(lines + [done])["actionAt"], 1793786410000)
 
     def test_codex_final_answer_ends_the_turn_and_skips_injected_context(self):

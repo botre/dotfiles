@@ -425,6 +425,9 @@ def events(lines):
                 elif item.get("type") == "Extension" and item.get("kind") == "web.search":
                     phrase = "Searching the web"
                 if phrase:
+                    # The command has already finished, so say so instead of "Running".
+                    if phrase.startswith("Running "):
+                        phrase = "Ran " + phrase[len("Running "):]
                     yield {"kind": "tool", "text": phrase, "at": started}
 
 
@@ -443,7 +446,8 @@ def live_activity(items):
             if kind == "tool" and item.get("text"):
                 action = item
             elif kind == "assistant":
-                message = item
+                # A newer sentence supersedes the action before it.
+                action, message = None, item
     return {"action": action["text"] if action else None, "actionAt": action["at"] if action else None,
             "message": first_sentence(message["text"]) if message else None,
             "messageAt": message["at"] if message else None, "working": working}
