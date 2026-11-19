@@ -31,11 +31,11 @@ export function startAgents(known) {
 export function startActions(id, place, agents) {
   const repo = id !== GENERAL && place.known;
   return [
-    ...agents.map((a) => ({ id: `agent-${a.key}`, kind: "agent", label: `Start ${a.name} here`, agent: a })),
-    { id: "terminal", kind: "terminal", label: "New terminal here", icon: "terminal" },
+    ...agents.map((a) => ({ id: `agent-${a.key}`, kind: "agent", label: `Start ${a.name}`, hint: "A new agent in this folder", agent: a })),
+    { id: "terminal", kind: "terminal", label: "New terminal", hint: "A shell in this folder", icon: "terminal" },
     ...(repo ? [
-      { id: "worktree-new", kind: "worktree", action: "new", label: "New worktree…", icon: "git-branch" },
-      { id: "worktree-open", kind: "worktree", action: "open", label: "Open worktree…", icon: "folder" },
+      { id: "worktree-new", kind: "worktree", action: "new", label: "New worktree…", hint: "Branch off for a new task", icon: "git-branch" },
+      { id: "worktree-open", kind: "worktree", action: "open", label: "Open worktree…", hint: "Pick up an existing checkout", icon: "folder" },
     ] : []),
   ];
 }

@@ -38,7 +38,7 @@ describe("project start page", () => {
     assert.deepEqual(ids(ID, { folder: "/r", machine: null, known: true }), all);
     assert.deepEqual(ids(ID, { folder: "/home/me", machine: null, known: false }), ["agent-claude", "agent-codex", "terminal"]);
     assert.deepEqual(ids("general", { folder: "/home/me", machine: null, known: true }), ["agent-claude", "agent-codex", "terminal"]);
-    assert.equal(run("startActions(id, place, agents)[0].label", { id: ID, place: { known: true }, agents }), "Start Claude Code here");
+    assert.equal(run("startActions(id, place, agents)[0].label", { id: ID, place: { known: true }, agents }), "Start Claude Code");
   });
 
   it("opens tabs in a space on the folder's machine, or a new space there", () => {
@@ -110,10 +110,10 @@ describe("project start page render", () => {
   it("draws a project with its repo, folder and every action", () => {
     const list = [{ id: ID, name: "Repo", icon: { emoji: "\u{1F680}" }, updated_at: 1 }];
     const { text } = render({ selected: ID, list, dirs: { "": { [ID]: "/home/me/code/repo" } } });
-    for (const s of ["Repo", "o/repo", "github.com", "~/code/repo", "Start Claude Code here", "Start Codex here", "New terminal here", "New worktree…", "Open worktree…"]) assert.ok(text.includes(JSON.stringify(s)), s);
-    assert.match(text, /"max_w",420/);
-    assert.match(text, /"h",31\],\["px",8\],\["gap",9\]/);
-    assert.match(text, /"rounded",7/);
+    for (const s of ["Repo", "o/repo", "github.com", "~/code/repo", "Start Claude Code", "Start Codex", "New terminal", "New worktree…", "Open worktree…"]) assert.ok(text.includes(JSON.stringify(s)), s);
+    assert.match(text, /"max_w",460/);
+    assert.match(text, /"h",46\],\["px",10\],\["gap",12\]/);
+    assert.match(text, /"rounded",8/);
     assert.match(text, /svg mods\/workspace-chrome\/terminal\.svg/);
     assert.doesNotMatch(text, /No folder/);
   });
@@ -123,7 +123,7 @@ describe("project start page render", () => {
     assert.ok(text.includes('"General"'));
     assert.ok(text.includes('"~"'));
     assert.doesNotMatch(text, /worktree|git-branch|No folder/);
-    assert.ok(text.includes('"New terminal here"'));
+    assert.ok(text.includes('"New terminal"'));
   });
 
   it("notes a project without a folder and starts at home", () => {
@@ -131,7 +131,7 @@ describe("project start page render", () => {
     const { text } = render({ selected: ID, list });
     assert.match(text, /No folder for this project on a connected machine/);
     assert.doesNotMatch(text, /worktree/);
-    assert.ok(text.includes('"New terminal here"'));
+    assert.ok(text.includes('"New terminal"'));
   });
 
   it("takes the keyboard when the tab bar turns to it, and moves and chooses with the arrows and enter", () => {
