@@ -17,7 +17,9 @@ import time
 UUID = re.compile(r"^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$")
 TAIL_BYTES = 2 * 1024 * 1024
 OUTPUT_BYTES = 256 * 1024
-HEAD_BYTES = 256 * 1024
+HEAD_LINES = 200
+# A first prompt with pasted screenshots holds them inline, so one line can be megabytes.
+HEAD_LINE_BYTES = 16 * 1024 * 1024
 EXCERPT_CHARS = 4000
 FIRST_CHARS = 600
 MESSAGE_CHARS = 400
@@ -454,15 +456,28 @@ def live_activity(items):
             "messageAt": message["at"] if message else None, "working": working}
 
 
-def head(path, limit=HEAD_BYTES):
+def head(path, count=HEAD_LINES, limit=HEAD_LINE_BYTES):
+    """The first whole lines of a transcript, skipping any line too long to read."""
+    lines = []
     with path.open("rb") as stream:
-        data = stream.read(limit)
-    lines = data.decode(errors="replace").splitlines()
-    return lines if len(data) < limit else lines[:-1]
+        while len(lines) < count:
+            line = stream.readline(limit)
+            if not line:
+                break
+            if not line.endswith(b"\n") and len(line) == limit:
+                while line and not line.endswith(b"\n"):
+                    line = stream.readline(limit)
+                continue
+            lines.append(line.decode(errors="replace").rstrip("\r\n"))
+    return lines
 
 
 def first_prompt(path):
-    return next((item["text"] for item in events(head(path)) if item["kind"] == "user"), None)
+    text = next((item["text"] for item in events(head(path)) if item["kind"] == "user"), None)
+    if text is None:
+        return None
+    # Pasted screenshots leave "[Image #1]" markers that say nothing about the task.
+    return re.sub(r"\s*\[Image #\d+\]", "", text).strip().rstrip(":").strip() or None
 
 
 def excerpt(path, lines=None):

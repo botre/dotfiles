@@ -261,6 +261,12 @@ class HerdrLiveActivityTests(unittest.TestCase):
         self.assertEqual(observed["live"]["message"], "Shipped: the fix is merged.")
         self.assertEqual(observed["firstPrompt"], "Ship the fix")
 
+    def test_first_prompt_survives_pasted_screenshots(self):
+        image = {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "A" * 400_000}}
+        prompt = claude_line("user", [{"type": "text", "text": "This looks glitched: [Image #1] [Image #2]"}, image])
+        path = self.write([json.dumps({"type": "mode"}), prompt])
+        self.assertEqual(PROBE["first_prompt"](path), "This looks glitched")
+
     def test_excerpt_holds_the_first_prompt_and_recent_messages_within_its_cap(self):
         lines = [claude_line("user", "Build the overview " + "a" * 2000)]
         for index in range(30):
