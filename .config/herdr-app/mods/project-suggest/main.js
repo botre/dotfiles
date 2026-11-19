@@ -148,7 +148,7 @@ export default class ProjectSuggest extends View {
     const pic = projectIcon(proj, shared(PROJECT_FAVICONS) ?? {});
     if (pic.favicon) return image(pic.favicon).w(16).h(16).flex_none().rounded(3);
     if (pic.emoji) return h_flex().w(16).h(16).flex_none().items_center().justify_center()
-      .text_size(13).line_height(16).text_color(t.foreground).child(pic.emoji);
+      .text_size(13).line_height("16px").text_color(t.foreground).child(pic.emoji);
     return h_flex().w(16).h(16).flex_none().rounded(4).bg(pic.color).items_center().justify_center()
       .text_size(9.6).font_bold().text_color("#ffffff").child(pic.letter);
   }

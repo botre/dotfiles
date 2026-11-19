@@ -380,7 +380,7 @@ export default class Projects extends View {
     const pic = projectIcon(p, own ? { [src]: own } : shared(PROJECT_FAVICONS));
     if (pic.favicon) return image(pic.favicon).size(size).flex_none().rounded(4);
     if (pic.emoji) return h_flex().size(size).flex_none().items_center().justify_center()
-      .text_size(size - 3).line_height(size).text_color(t.foreground).child(pic.emoji);
+      .text_size(size - 3).line_height(`${size}px`).text_color(t.foreground).child(pic.emoji);
     return h_flex().size(size).flex_none().rounded(5).bg(pic.color).items_center().justify_center()
       .text_size(size * 0.58).font_bold().text_color("#ffffff").child(pic.letter);
   }
