@@ -410,7 +410,7 @@ export default class Agents extends View {
       const agent = w.agent === "codex" ? "Codex" : "Claude";
       return gridRow(UI, {
         id: `resume-${w.address}`,
-        icon: image(`icons/${w.agent}.svg`).w(programIcon()).h(programIcon()).flex_none().opacity(hovered || pane.focused ? 1 : 0.6),
+        icon: icon({ key: w.agent, icon: `icons/${w.agent}.svg` }, programIcon(), t.muted).opacity(hovered || pane.focused ? 1 : 0.6),
         name: h_flex().flex_1().min_w(0).gap(5).items_center()
           .child(div().min_w(0).max_w(more ? 120 : 200).truncate().text_color(t.foreground).child(name))
           .when(Boolean(more), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))),
