@@ -5,7 +5,7 @@ import sys
 import unittest
 from unittest import mock
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 ROUTE = runpy.run_path(str(ROOT / "scripts/herdr-context"), run_name="herdr_context")["resolve"].__globals__
 SESSION = "12345678-1234-1234-1234-123456789abc"
 

@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 LAUNCHER = runpy.run_path(str(ROOT / 'scripts/herdr-codex'))['main'].__globals__
 # The codex function from .zshrc, without the rest of the shell setup.
 SHELL_CODEX = re.search(r'^function codex \{\n.*?^\}\n', (ROOT / '.zshrc').read_text(), re.M | re.S).group(0)

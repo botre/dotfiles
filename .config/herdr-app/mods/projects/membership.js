@@ -1,7 +1,7 @@
 // Projects: which tab belongs to which project. Copied verbatim into
 // agent-tabs/, agent-list/ and project-suggest/ as projects.js (mods can't
 // import from another mod's folder);
-// tests/herdr-projects.test.mjs fails when the copies drift.
+// .config/herdr-app/tests/herdr-projects.test.mjs fails when the copies drift.
 //
 // Tabs join a project through a `project=<id>` label on their terminals; a
 // tab without one is in General.

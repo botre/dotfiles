@@ -5,7 +5,7 @@ import { loadMods, plain } from "./mod-source.mjs";
 
 const evaluate = loadMods(["projects/membership.js", "projects/store.js", "projects/main.js"]);
 const run = (expression, values) => plain(evaluate(`(${expression})`, values));
-const mods = (path) => readFileSync(new URL(`../.config/herdr-app/mods/${path}`, import.meta.url), "utf8");
+const mods = (path) => readFileSync(new URL(`../mods/${path}`, import.meta.url), "utf8");
 
 describe("projects", () => {
   it("names a project after its normalised remote", () => {
@@ -176,7 +176,7 @@ describe("projects", () => {
   });
 
   it("binds ctrl+1..9 to projects and leaves the other keys", () => {
-    const keys = JSON.parse(readFileSync(new URL("../.config/herdr-app/keys.json", import.meta.url), "utf8")).global;
+    const keys = JSON.parse(readFileSync(new URL("../keys.json", import.meta.url), "utf8")).global;
     for (let n = 1; n <= 9; n++) {
       assert.equal(keys[`ctrl-${n}`], `projects.select-${n}`);
       assert.equal(keys[`alt-${n}`], `agent-tabs.select-${n}`);
@@ -187,7 +187,7 @@ describe("projects", () => {
 
 describe("project agent count", () => {
   it("counts agents in the project's tabs, not its tabs", async () => {
-    const { projectAgents } = await import("../.config/herdr-app/mods/projects/membership.js");
+    const { projectAgents } = await import("../mods/projects/membership.js");
     const tabs = [{ id: "tb1" }, { id: "tb2" }, { id: "tb3" }];
     const agents = [{ tab: "tb1" }, { tab: "tb2" }, { tab: "tb9" }];
     assert.equal(projectAgents(agents, tabs), 2);
@@ -196,7 +196,7 @@ describe("project agent count", () => {
 
 describe("favicon from a site", () => {
   it("finds a page's icons, apple-touch first, with hrefs made absolute", async () => {
-    const { iconCandidates } = await import("../.config/herdr-app/mods/projects/store.js");
+    const { iconCandidates } = await import("../mods/projects/store.js");
     const html = `<head>
       <link href="https://cdn.example.com/a/icon.png" rel="shortcut icon" type="image/x-icon"/>
       <link rel='apple-touch-icon' href="/touch.png">
@@ -213,7 +213,7 @@ describe("favicon from a site", () => {
   });
 
   it("reads an image extension from a URL", async () => {
-    const { imageExt } = await import("../.config/herdr-app/mods/projects/store.js");
+    const { imageExt } = await import("../mods/projects/store.js");
     assert.equal(imageExt("https://x.io/logo.JPEG?v=2"), "jpg");
     assert.equal(imageExt("https://www.example.com/"), null);
   });

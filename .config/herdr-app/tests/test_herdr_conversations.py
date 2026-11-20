@@ -9,7 +9,7 @@ import time
 import unittest
 from unittest import mock
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 PROBE = runpy.run_path(str(ROOT / ".config/herdr-app/mods/agent-list/conversations.py"), run_name="conversations")
 PROBE = PROBE["resolve"].__globals__
 SESSION = "12345678-1234-1234-1234-123456789abc"

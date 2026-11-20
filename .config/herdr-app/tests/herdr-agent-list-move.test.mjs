@@ -4,8 +4,8 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import * as move from "../.config/herdr-app/mods/agent-list/move.js";
-import { normalizeRemote as storeNormalize } from "../.config/herdr-app/mods/projects/store.js";
+import * as move from "../mods/agent-list/move.js";
+import { normalizeRemote as storeNormalize } from "../mods/projects/store.js";
 
 const SESSION = "e3420013-f979-4e9c-b28c-a216bf058a48";
 const CODEX = "01a1f2e2-aa00-79d1-acfe-2e69fa6ea031";
@@ -26,8 +26,8 @@ describe("agent-list move to machine: planning", () => {
   });
 
   it("names worktree folders with worktree-org's slug", () => {
-    const source = readFileSync(new URL("../.config/herdr-app/mods/worktree-org/main.js", import.meta.url), "utf8");
-    const mine = readFileSync(new URL("../.config/herdr-app/mods/agent-list/move.js", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../mods/worktree-org/main.js", import.meta.url), "utf8");
+    const mine = readFileSync(new URL("../mods/agent-list/move.js", import.meta.url), "utf8");
     const body = (text) => /const slug = \(branch\) => \{[\s\S]*?\n\};/.exec(text)?.[0];
     assert.ok(body(source));
     assert.equal(body(mine), body(source));

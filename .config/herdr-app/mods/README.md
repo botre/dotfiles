@@ -1,12 +1,12 @@
 # Herdr mods
 
-Each mod's tests live in `tests/herdr-<mod>.test.mjs`, and a large mod adds
-`tests/herdr-<mod>-<topic>.test.mjs` files. The Python scripts have
-`tests/test_herdr_<script>.py`. Run tests from the repository root:
+Each mod's tests live in `.config/herdr-app/tests/herdr-<mod>.test.mjs`, and a large mod adds
+`.config/herdr-app/tests/herdr-<mod>-<topic>.test.mjs` files. The Python scripts have
+`.config/herdr-app/tests/test_herdr_<script>.py`. Run tests from the repository root:
 
 ```sh
-node --test --test-isolation=none tests/*.test.mjs
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_herdr_*.py'
+node --test --test-isolation=none .config/herdr-app/tests/*.test.mjs
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s .config/herdr-app/tests -p 'test_herdr_*.py'
 ```
 
 ## Agent context
@@ -77,7 +77,7 @@ The same file holds the sidebar grid. `GRID` and `MENU` set row heights, padding
 gaps and slot sizes. `gridRow`, `statusSlot` and `projectIconView` draw the rows of
 both lists, so icons, names, counts and status glyphs line up across the sidebar.
 Every row ends with its status slot, and a count or time sits just before it.
-`tests/herdr-sidebar-grid.test.mjs` renders both lists and compares their rows.
+`.config/herdr-app/tests/herdr-sidebar-grid.test.mjs` renders both lists and compares their rows.
 
 ## Sessions
 

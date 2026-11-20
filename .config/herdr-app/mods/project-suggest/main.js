@@ -16,7 +16,7 @@ const PAD = 8;
 const REMOTE_TTL = 5 * 60 * 1000;
 
 // Copied from projects/store.js (a mod can't import from another mod's
-// folder); tests/herdr-project-suggest.test.mjs fails when the copies differ.
+// folder); .config/herdr-app/tests/herdr-project-suggest.test.mjs fails when the copies differ.
 export function normalizeRemote(url) {
   const s = String(url ?? "").trim();
   if (!s) return null;

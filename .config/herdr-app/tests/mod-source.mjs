@@ -3,7 +3,7 @@ import vm from "node:vm";
 
 // Herdr loads mods as ES modules; the tests run them as plain scripts in a vm context.
 export function modSource(path) {
-  return readFileSync(new URL(`../.config/herdr-app/mods/${path}`, import.meta.url), "utf8")
+  return readFileSync(new URL(`../mods/${path}`, import.meta.url), "utf8")
     .replace(/^import .*;\n/gm, "")
     .replace(/^export (?:default )?/gm, "");
 }
