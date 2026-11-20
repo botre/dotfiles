@@ -126,10 +126,12 @@ export default class TabTitles extends View {
     const isAgent = (p) => p.program?.agent || base(terminalByAddress.get(p.terminal)?.foreground?.argv?.[0]) in AGENTS;
     for (const space of knownSpaces) {
       for (const tab of space.tabs) {
-        // The person named it, not us: leave it alone.
-        if (tab.named && tab.name !== ours[tab.id]) { delete next[tab.id]; continue; }
         const here = all.filter((p) => p.tab === tab.id);
         const pane = here.find(isAgent) ?? here.find((p) => p.focused) ?? here[0];
+        // The person named it, not us: leave it alone. A launcher names an agent's tab
+        // after the program ("Claude Code"), which is no name of the person's.
+        const launched = isAgent(pane ?? {}) && (tab.name === pane.program?.name || Object.values(AGENTS).includes(tab.name));
+        if (tab.named && tab.name !== ours[tab.id] && !launched) { delete next[tab.id]; continue; }
         const terminal = terminalByAddress.get(pane?.terminal);
         const raw = pane && (nameFor(pane, terminal?.foreground, terminal, records[pane.terminal], this.renamed(terminal), observations[pane.terminal])
           || cleanTitle(ours[tab.id]) || (isAgent(pane) ? pane.program?.name : null));

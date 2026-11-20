@@ -97,6 +97,21 @@ describe("tab-titles", () => {
     assert.equal(tabs[1].name, "My manual name");
   });
 
+  it("retitles an agent tab a launcher named after the program, but keeps a person's name", () => {
+    const tabs = [{ id: "tb1", name: "Codex", named: true }, { id: "tb2", name: "Codex review", named: true }];
+    const commands = [], store = {};
+    const evaluate = loadMod("tab-titles", {
+      spaces: () => [{ tabs }],
+      panes: () => tabs.map((tab, i) => ({ tab: tab.id, terminal: `t${i}`, program: { agent: true, key: "codex", name: "Codex" } })),
+      terminals: () => tabs.map((_, i) => ({ address: `t${i}`, foreground: { argv: ["codex"] }, labels: { "session.title": "Review card reversal limits", "session.title.updated": "300" } })),
+      shared: (key) => key === "mods.off" ? [] : {},
+      run: (command, args) => commands.push({ command, args }),
+      localStorage: memoryStorage(store),
+    });
+    evaluate("new TabTitles().sync()");
+    assert.deepEqual(commands.map((c) => [c.args.id, c.args.name]), [["tb1", "Review card reversal limits"]]);
+  });
+
   it("uses a recap title below published titles and never over a manual name", () => {
     const tabs = [
       { id: "tb1", name: "1", named: false }, { id: "tb2", name: "2", named: false },
