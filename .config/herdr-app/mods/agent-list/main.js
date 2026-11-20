@@ -1024,7 +1024,6 @@ export default class Agents extends View {
 
     const header = (g) => {
       const open = !this.folded.has(g.id);
-      const top = g.members.reduce((m, a) => ((RANK[a.status] ?? 0) > (RANK[m] ?? 0) ? a.status : m), null);
       return h_flex()
         .id(g.id)
         .px(GRID.rowPx)
@@ -1042,7 +1041,7 @@ export default class Agents extends View {
           cx.notify();
         })
         .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
-        // Folded: a chevron after the name, so the right column stays count, then status.
+        // Folded: a chevron after the name.
         .when(!open, (el) => el.child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)))
         .child(div().flex_1())
         .when(g.id === "inbox-settled", (el) => el.child(div()
@@ -1054,9 +1053,9 @@ export default class Agents extends View {
           .tooltip("Close the panes of parked agents")
           .on_click((_e, cx) => { cx.stop_propagation(); this.askClear(g.members); })
           .child("Clear")))
-        // As on every row of the sidebar: the count, then the status slot at the right edge.
-        .child(gridTrail(UI, [div().text_color(t.dim).child(String(g.members.length))],
-          !g.shelf && top ? statusGlyph(UI, t, top) : null));
+        // Project groups show no count or status (the projects list has them); a
+        // shelf keeps its count, in the grid's count column.
+        .when(Boolean(g.shelf), (el) => el.child(gridTrail(UI, [div().text_color(t.dim).child(String(g.members.length))], null)));
     };
     const rows = collapsed
       ? list.flatMap(withKids)
