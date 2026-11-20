@@ -10,13 +10,6 @@ import { run, props, closeOverlay, openOverlay, theme, keys, terminals, spaces, 
 // The agents list types references; it reads the request from here (agent-list/inbox.js).
 const ACTION = "agent-list.action";
 
-// The projects mod's "Move to project" picker for a tab, sized as
-// pickerOverlay in projects/membership.js sizes it (tests compare the two).
-export function projectPicker(tab, list = shared("projects.list") ?? []) {
-  const rows = Math.min(1 + list.filter((p) => !p.deleted && p.id !== "general").length, 10);
-  return { mod: "projects", kind: "popup", width: 260, height: 10 + 26 + rows * 31 + (rows - 1) * 2, props: { picker: tab } };
-}
-
 // The terminal a tab stands for: its agent, else its focused pane, else its first.
 function tabTerminal(id) {
   const mine = panes().filter((p) => p.tab === id && p.terminal);
@@ -72,10 +65,12 @@ function items(p, git) {
     }
     case "tab": {
       const terminal = tabTerminal(tg.id);
+      // An agent's tab is about that agent, so it offers no New tab.
+      const agentTab = panes().some((p) => p.tab === tg.id && p.program?.agent);
       return [
         ["Rename…", "tab.rename", { id: tg.id }],
         ...(terminal ? [["Reference", "reference", { terminal }], ["Move to project…", "project-move", { tab: tg.id }]] : []),
-        ["New tab", "tab.new", { space: tg.space }],
+        ...(agentTab ? [] : [["New tab", "tab.new", { space: tg.space }]]),
         ["Close", "tab.close", { id: tg.id }],
       ];
     }
@@ -132,7 +127,11 @@ export default class Menu extends View {
     if (!it) return;
     closeOverlay(props()?.overlay);
     if (it[1] === "worktree") openOverlay({ mod: "worktree-org", kind: "dialog", ...(it[2].action === "open" ? { width: 560, height: 480 } : { width: 440, height: 260 }), props: it[2] });
-    else if (it[1] === "project-move") openOverlay(projectPicker(it[2].tab));
+    // The projects sidebar reads the tab's repository, then opens its picker.
+    else if (it[1] === "project-move") {
+      setShared("projects.action", { kind: "pick", tab: it[2].tab, at: Date.now() });
+      run("projects.act");
+    }
     else if (it[1] === "reference") {
       setShared(ACTION, { kind: "reference", address: it[2].terminal, at: Date.now() });
       run("agent-list.act");

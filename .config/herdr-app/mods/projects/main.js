@@ -16,7 +16,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
-import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects, MAIN_STACK, MAIN_START, MAIN_TAB } from "./membership.js";
+import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects, pickerOverlay, PICKER_ROWS, MAIN_STACK, MAIN_START, MAIN_TAB } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
 
@@ -268,6 +268,7 @@ export default class Projects extends View {
     setShared(PROJECT_ACTION, null);
     if (a.kind === "select") return this.select(a.id);
     if (a.kind === "move") return this.moveTab(a.tab, a.id);
+    if (a.kind === "pick") return this.openPicker(a.tab);
     if (a.kind === "show") this.projects = upsert(this.projects, a.id, { shown: a.shown });
     else if (a.kind === "delete") {
       this.projects = remove(this.projects, a.id);
@@ -277,6 +278,8 @@ export default class Projects extends View {
       if (a.dir) await this.saveDir(a.machine ?? null, a.id, a.dir);
     } else return;
     this.publish();
+    // A project made from a tab's picker takes that tab along.
+    if (a.kind === "save" && a.create && a.tab) await this.moveTab(a.tab, a.id);
     if (a.kind === "save" && a.create) this.select(a.id);
     cx.notify();
     await this.sync(cx);
@@ -539,6 +542,28 @@ export default class Projects extends View {
 
   // --- Move to project picker ---------------------------------------------
 
+  // Opens Move to project for a tab. A popup can't grow once open, so the tab's repository is
+  // read first: when no project has its remote, the popup is sized for a "New project" row.
+  async openPicker(tab) {
+    const list = shared(PROJECT_LIST) ?? [];
+    const repo = await this.tabRepo(tab).catch(() => null);
+    const create = repo && !liveProjects(list).some((x) => x.id === repo.id) ? repo : null;
+    openOverlay(pickerOverlay(tab, list, create));
+  }
+
+  // The repository a tab's agent (else its focused or first terminal) works in, or null.
+  async tabRepo(tab) {
+    const mine = panes().filter((x) => x.tab === tab && x.terminal && x.cwd);
+    const pane = mine.find((x) => x.program?.agent) ?? mine.find((x) => x.focused) ?? mine[0];
+    if (!pane) return null;
+    const machine = spaces().find((s) => (s.tabs ?? []).some((c) => c.id === tab))?.machine ?? null;
+    const r = await exec("sh", ["-c", 'cd "$1" && git rev-parse --show-toplevel && git remote get-url origin', "_", pane.cwd], { on: machine });
+    if (r.code !== 0) return null;
+    const [dir, url] = r.stdout.trim().split("\n");
+    const id = normalizeRemote(url ?? "");
+    return id ? { id, dir, machine } : null;
+  }
+
   // The picker's projects and the one the tab is in now.
   pickerModel(tab) {
     const list = shared(PROJECT_LIST) ?? [];
@@ -555,6 +580,12 @@ export default class Projects extends View {
     this.at = Math.max(0, items.findIndex((x) => x.id === current));
   }
 
+  // The create dialog, filled in with the tab's repository; saving moves the tab into it.
+  createFromPicker(p) {
+    closeOverlay(p.overlay);
+    openOverlay({ mod: "projects", kind: "dialog", width: 480, height: 400, props: { dialog: "create", folder: p.create.dir, machine: p.create.machine, tab: p.picker } });
+  }
+
   // The sidebar copy relabels the tab, since this popup's tasks end when it closes.
   choosePicker(proj, current, p) {
     closeOverlay(p.overlay);
@@ -566,19 +597,22 @@ export default class Projects extends View {
   renderPicker(p) {
     const t = theme();
     const { items, current } = this.pickerModel(p.picker);
-    this.at = Math.min(this.at, Math.max(0, items.length - 1));
-    return v_flex().id("project-picker").track_focus(this.handle).size_full().min_h(0).p(MENU.pad).gap(MENU.gap).bg(t.popover).text_size(12.8)
+    const count = items.length + (p.create ? 1 : 0);
+    this.at = Math.min(this.at, Math.max(0, count - 1));
+    const shown = Math.min(Math.max(items.length, 1), PICKER_ROWS);
+    return v_flex().id("project-picker").track_focus(this.handle).size_full().min_h(0).pt(MENU.pad).px(MENU.pad).pb(MENU.gap).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
-        if (e.key === "down") this.at = (this.at + 1) % items.length;
-        else if (e.key === "up") this.at = (this.at + items.length - 1) % items.length;
-        else if (e.key === "enter") this.choosePicker(items[this.at], current, p);
+        if (e.key === "down") this.at = (this.at + 1) % count;
+        else if (e.key === "up") this.at = (this.at + count - 1) % count;
+        else if (e.key === "enter") this.at === items.length ? this.createFromPicker(p) : this.choosePicker(items[this.at], current, p);
         else if (e.key === "escape") closeOverlay(p.overlay);
         else return;
         cx.stop_propagation();
         cx.notify();
       })
       .child(div().px(8).pt(8).h(MENU.heading).flex_none().text_size(11).text_color(t.dim).child("Move to project"))
-      .child(v_flex().id("picker-list").flex_1().min_h(0).gap(MENU.gap).overflow_y_scrollbar()
+      // A popup sizes to its content, so the list takes the height of its rows (ten at most, then it scrolls).
+      .child(v_flex().id("picker-list").flex_none().h(shown * MENU.row + (shown - 1) * MENU.gap).gap(MENU.gap).overflow_y_scrollbar()
         .children(items.map((proj, i) => h_flex().id(`pk-${proj.id}`).h(MENU.row).px(8).gap(9).flex_none().rounded(MENU.radius).items_center()
           .cursor_pointer()
           .text_color(t.foreground)
@@ -587,7 +621,15 @@ export default class Projects extends View {
           .on_click(() => this.choosePicker(proj, current, p))
           .child(this.icon(proj, t, 16))
           .child(div().flex_1().min_w(0).truncate().child(proj.name))
-          .when(proj.id === current, (el) => el.child(svg("mods/workspace-chrome/check.svg").size(13).flex_none().text_color(t.accent))))));
+          .when(proj.id === current, (el) => el.child(svg("mods/workspace-chrome/check.svg").size(13).flex_none().text_color(t.accent))))))
+      .when(Boolean(p.create), (el) => el.child(h_flex().id("pk-create").mt(MENU.gap).h(MENU.row).px(8).gap(9).flex_none().rounded(MENU.radius).items_center()
+        .cursor_pointer()
+        .text_color(t.foreground)
+        .when(this.at === items.length, (row) => row.bg(t.selected))
+        .hover((s) => s.bg(t.hover))
+        .on_click(() => this.createFromPicker(p))
+        .child(div().size(16).flex_none().flex().items_center().justify_center().child(svg("mods/workspace-chrome/plus.svg").size(14).text_color(t.muted)))
+        .child(div().flex_1().min_w(0).truncate().child("New project from this tab…"))));
   }
 
   // --- Start page ---------------------------------------------------------
@@ -700,8 +742,8 @@ export default class Projects extends View {
     const editing = p.dialog === "edit";
     const proj = editing ? (shared(PROJECT_LIST) ?? []).find((x) => x.id === p.project) : null;
     const space = spaces().find((s) => s.active);
-    this.machine = editing ? null : space?.machine ?? null;
-    const cwd = panes().find((x) => x.focused)?.cwd ?? "";
+    this.machine = editing ? null : "machine" in p ? p.machine ?? null : space?.machine ?? null;
+    const cwd = p.folder ?? panes().find((x) => x.focused)?.cwd ?? "";
     const field = (placeholder, value) => {
       const state = InputState.new({ placeholder, value });
       state.on("change", (_e, cx) => { this.error = ""; cx.notify(); });
@@ -752,7 +794,7 @@ export default class Projects extends View {
           : /No such remote/i.test(r.stderr) ? "That repository has no remote named origin." : (r.stderr.trim() || "Couldn't read that folder.");
         else if (!id) this.error = "Its origin isn't a remote URL, so it can't be a project.";
         else if (liveProjects(shared(PROJECT_LIST) ?? []).some((x) => x.id === id)) this.error = `${id} is a project already.`;
-        else return post({ id, name: name || nameOf(id), dir: top, machine: this.machine, create: true });
+        else return post({ id, name: name || nameOf(id), dir: top, machine: this.machine, create: true, ...(p.tab ? { tab: p.tab } : {}) });
       } catch (e) { this.error = String(e?.message ?? e); }
       this.busy = false;
       cx.notify();
