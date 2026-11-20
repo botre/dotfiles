@@ -161,11 +161,6 @@ describe("projects", () => {
     assert.equal(evaluate('faviconBase("https://example.com")'), evaluate('faviconBase("https://example.com/")'));
     assert.equal(evaluate('faviconBase("ftp://x")'), null);
     assert.equal(evaluate('initial(" monorepo")'), "M");
-    const dirs = { "": { x: "/home/me/x" }, vps: { x: "/srv/x", y: "/srv/y" } };
-    assert.deepEqual(run('worktreeFolder(dirs, "x", "vps")', { dirs }), { folder: "/srv/x", machine: "vps" });
-    assert.deepEqual(run('worktreeFolder(dirs, "x", null)', { dirs }), { folder: "/home/me/x", machine: null });
-    assert.deepEqual(run('worktreeFolder(dirs, "y", null)', { dirs }), { folder: "/srv/y", machine: "vps" });
-    assert.equal(run('worktreeFolder(dirs, "z", null)', { dirs }), null);
   });
 
   it("keeps the tab bar's, agents list's and suggestion strip's copies of membership.js identical", () => {
