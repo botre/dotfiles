@@ -130,6 +130,18 @@ function find(node, id) {
   return null;
 }
 
+// A tab's right-click menu. An agent's tab gets the agent's own menu from the
+// agents list, so both places offer the same actions.
+function tabMenu(c) {
+  const agent = panes().find((p) => p.tab === c.id && p.program?.agent && p.terminal);
+  if (agent) {
+    setShared("agent-list.action", { kind: "menu", address: agent.terminal, at: Date.now() });
+    run("agent-list.act");
+    return;
+  }
+  openOverlay({ mod: "menu-org", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: c.space } } });
+}
+
 export default class Tabs extends View {
   init(_props, cx) {
     this.pressed = null;
@@ -228,7 +240,7 @@ export default class Tabs extends View {
           if (from !== null && from !== i && shown[from]?.space === c.space && space) run("tab.move", { id: shown[from].id, index: space.tabs.findIndex(x => x.id === c.id) + 1 });
           else selectTab(c);
         })
-        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu-org", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: c.space } } }); })
+        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); tabMenu(c); })
         .when(Boolean(program?.icon), el => el.child(BRAND[program.key] ? svg(BRAND[program.key][0]).size(14).text_color(BRAND[program.key][1]) : program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
         .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(t.muted)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))

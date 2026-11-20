@@ -459,6 +459,8 @@ export default class Agents extends View {
     if (kind === "unsettle") return this.write(address, { [SETTLED]: "" });
     if (kind === "wake") return this.write(address, { [SNOOZED]: "" });
     if (kind === "reference") return this.reference(address, cx);
+    // An agent tab's right-click asks for the same menu as the agent's row.
+    if (kind === "menu") return this.openMenu({ address });
     if (kind === "move") return this.move(address, act.preset, cx);
     // A move can take minutes, so other commands don't wait for it.
     if (kind === "machine") return void (act.preset == null ? this.pickMachine(address) : this.moveToMachine(address, act.preset || null, cx));
