@@ -15,7 +15,7 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents } from "herdr";
+import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents, keys } from "herdr";
 import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects, pickerOverlay, PICKER_ROWS, MAIN_STACK, MAIN_START, MAIN_TAB } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
@@ -39,8 +39,37 @@ const OBSERVE_EVERY = 2000;
 // The element builders the shared grid helpers draw with (membership.js). Each is
 // looked up when called, so a test can leave out the ones it never draws.
 const UI = { div: (...a) => div(...a), h_flex: (...a) => h_flex(...a), svg: (...a) => svg(...a), image: (...a) => image(...a) };
-// The project menu's rows, and the line before Delete.
-const menuHeight = (n) => MENU.pad * 2 + n * MENU.row + (n - 1) * MENU.gap + 9;
+// A divider in a menu: 1px with 4px above and below.
+const DIVIDER = 9;
+// The project menu's height: its rows, headings and dividers, with a gap between each.
+export const projectMenuHeight = (items) => MENU.pad * 2
+  + items.reduce((h, it) => h + (it.divider ? DIVIDER : it.heading ? MENU.heading : MENU.row), 0)
+  + MENU.gap * Math.max(0, items.length - 1);
+
+// The project menu: what the New menu starts (in the project's folder), then the
+// project's own actions. agents: knownAgents() for the folder's machine. As the New
+// menu, it lists the installed agents, then up to two that aren't installed.
+export function projectMenuItems(proj, place, agents, terminalKey = "") {
+  const installed = (agents ?? []).filter((a) => a.installed);
+  const missing = (agents ?? []).filter((a) => !a.installed).slice(0, 2);
+  return [
+    { id: "terminal", kind: "terminal", label: "New terminal", icon: "icons/shell.svg", hint: terminalKey, enabled: true },
+    { heading: "Start an agent" },
+    ...installed.map((a, i) => ({ id: `agent-${a.key}`, kind: "agent", label: a.name, agent: a, hint: i < 9 ? String(i + 1) : "", enabled: true })),
+    ...missing.map((a) => ({ id: `agent-${a.key}`, kind: "agent", label: a.name, agent: a, hint: "Not installed", enabled: false })),
+    { divider: true },
+    { id: "worktree-new", kind: "worktree", action: "new", label: "New worktree…", icon: "mods/workspace-chrome/git-branch.svg", enabled: place.known },
+    { id: "worktree-open", kind: "worktree", action: "open", label: "Open worktree…", icon: "mods/workspace-chrome/git-branch.svg", enabled: place.known },
+    { divider: true },
+    { id: "show", label: proj.shown ? "Hide from list" : "Show in list", icon: `mods/workspace-chrome/${proj.shown ? "pin-off" : "pin"}.svg`, shown: !proj.shown, enabled: true },
+    { id: "edit", label: "Edit…", icon: "mods/workspace-chrome/square-pen.svg", enabled: true },
+    { divider: true },
+    { id: "delete", label: "Delete", icon: "mods/workspace-chrome/x.svg", enabled: true },
+  ];
+}
+
+// The key bound to a global command, for a menu row's hint.
+const keyFor = (action) => keys().find((b) => b.section === "global" && b.action === action)?.keys ?? "";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -78,13 +107,6 @@ export function iconFrom(text) {
   const s = String(text ?? "").trim();
   if (!s) return {};
   return /^https?:\/\//i.test(s) ? { favicon: s } : { emoji: [...s].slice(0, 4).join("") };
-}
-
-// The folder to run New worktree in: on the machine in view, else here, else anywhere.
-export function worktreeFolder(dirs, id, machine) {
-  const order = [machine ?? "", "", ...Object.keys(dirs ?? {})];
-  for (const m of order) if (dirs?.[m]?.[id]) return { folder: dirs[m][id], machine: m || null };
-  return null;
 }
 
 // Files under each machine's home folder. Here through the app; elsewhere through sh.
@@ -434,8 +456,24 @@ export default class Projects extends View {
       .when(status === "blocked" || status === "done", (el) => el.child(div().absolute().right(3).top(3).size(6).rounded(3).bg(t[status]))));
   }
 
-  menu(p) {
-    openOverlay({ mod: "projects", kind: "popup", width: 200, height: menuHeight(4), props: { menu: true, project: p.id } });
+  // A popup can't grow once open, so the agents on the project's machine are known
+  // first: the cached list, else asked for once.
+  async menu(p) {
+    const place = this.projectPlace(p.id);
+    const where = place.machine ?? "";
+    let agents = shared(KNOWN_AGENTS)?.[where];
+    if (!agents) {
+      agents = await knownAgents({ on: place.machine }).catch(() => []);
+      setShared(KNOWN_AGENTS, { ...(shared(KNOWN_AGENTS) ?? {}), [where]: agents });
+    }
+    const items = projectMenuItems(p, place, agents);
+    openOverlay({ mod: "projects", kind: "popup", width: 250, height: projectMenuHeight(items), props: { menu: true, project: p.id, agents } });
+  }
+
+  // Where a project's terminals start, as the start page has it.
+  projectPlace(id) {
+    const inView = spaces().find((s) => s.active)?.machine ?? null;
+    return startPlace(shared(PROJECT_DIRS) ?? {}, id, inView, readyMachines(), home());
   }
 
   create() {
@@ -490,26 +528,22 @@ export default class Projects extends View {
 
   // --- Right-click menu ---------------------------------------------------
 
-  menuItems(p) {
+  menuModel(p) {
     const proj = (shared(PROJECT_LIST) ?? []).find((x) => x.id === p.project && !x.deleted);
-    if (!proj) return [];
-    const where = worktreeFolder(shared(PROJECT_DIRS), proj.id, spaces().find((s) => s.active)?.machine ?? null);
-    return [
-      { id: "worktree", label: "New worktree…", icon: "git-branch", enabled: Boolean(where), where },
-      { id: "show", label: proj.shown ? "Hide from list" : "Show in list", icon: proj.shown ? "pin-off" : "pin", enabled: true, shown: !proj.shown },
-      { id: "edit", label: "Edit…", icon: "square-pen", enabled: true },
-      { id: "delete", label: "Delete", icon: "x", enabled: true },
-    ];
+    if (!proj) return { items: [], place: null };
+    const place = this.projectPlace(proj.id);
+    return { items: projectMenuItems(proj, place, p.agents, keyFor("tab.new")), place };
   }
 
-  chooseMenu(it, p) {
+  chooseMenu(it, p, place) {
     if (!it?.enabled) return;
     closeOverlay(p.overlay);
     const act = (fields) => { setShared(PROJECT_ACTION, { ...fields, id: p.project, at: Date.now() }); run("projects.act"); };
-    if (it.id === "worktree") {
-      // New tabs join the selected project, so the worktree's tab joins this one.
+    if (it.kind === "terminal" || it.kind === "agent" || it.kind === "worktree") {
+      // New tabs join the selected project, so the new tab joins this one.
       act({ kind: "select" });
-      openOverlay({ mod: "worktree-org", kind: "dialog", width: 440, height: 260, props: { folder: it.where.folder, machine: it.where.machine, action: "new" } });
+      if (it.kind === "worktree") openOverlay(worktreeOverlay(it, place));
+      else run(...startCommand(it, place, spaces()));
     } else if (it.id === "show") act({ kind: "show", shown: it.shown });
     else if (it.id === "edit") openOverlay({ mod: "projects", kind: "dialog", width: 480, height: 300, props: { dialog: "edit", project: p.project } });
     else if (it.id === "delete") act({ kind: "delete" });
@@ -517,27 +551,45 @@ export default class Projects extends View {
 
   renderMenu(p) {
     const t = theme();
-    const items = this.menuItems(p);
+    const { items, place } = this.menuModel(p);
+    // The keyboard steps over headings, dividers and greyed-out rows.
+    const live = items.map((it, i) => (it.enabled ? i : -1)).filter((i) => i >= 0);
+    if (!live.includes(this.at)) this.at = live[0] ?? 0;
+    const agents = items.filter((it) => it.kind === "agent" && it.enabled);
+    const icon = (it) => {
+      if (it.kind !== "agent") return svg(it.icon).size(14).text_color(t.muted);
+      const a = it.agent;
+      if (BRAND[a.key]) return svg(BRAND[a.key][0]).size(14).text_color(BRAND[a.key][1]);
+      if (!a.icon) return div();
+      return a.tint ? svg(a.icon).size(14).text_color(t.foreground) : image(a.icon).size(14);
+    };
     return v_flex().id("project-menu").track_focus(this.handle).w_full().min_h(0).p(MENU.pad).gap(MENU.gap).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
-        if (!items.length) return;
-        if (e.key === "down") this.at = (this.at + 1) % items.length;
-        else if (e.key === "up") this.at = (this.at + items.length - 1) % items.length;
-        else if (e.key === "enter") this.chooseMenu(items[this.at], p);
+        if (!live.length) return;
+        const k = live.indexOf(this.at);
+        // 1 to 9 start the installed agents, as in the New menu.
+        const digit = !e.modifiers.control && !e.modifiers.platform && !e.modifiers.alt && /^[1-9]$/.test(e.key) ? agents[Number(e.key) - 1] : null;
+        if (digit) this.chooseMenu(digit, p, place);
+        else if (e.key === "down") this.at = live[(k + 1) % live.length];
+        else if (e.key === "up") this.at = live[(k + live.length - 1) % live.length];
+        else if (e.key === "enter") this.chooseMenu(items[this.at], p, place);
         else if (e.key === "escape") closeOverlay(p.overlay);
         else return;
         cx.notify();
       })
-      .children(items.map((it, i) => v_flex()
-        .when(it.id === "delete", (el) => el.child(div().mx(7).my(4).h(1).bg(t.border)))
-        .child(h_flex().id(`pm-${it.id}`).h(MENU.row).px(8).gap(9).rounded(MENU.radius).items_center()
+      .children(items.map((it, i) => it.divider
+        ? div().mx(7).my(4).h(1).flex_none().bg(t.border)
+        : it.heading
+        ? div().px(8).pt(8).h(MENU.heading).flex_none().text_size(11).text_color(t.dim).child(it.heading)
+        : h_flex().id(`pm-${it.id}`).h(MENU.row).px(8).gap(9).flex_none().rounded(MENU.radius).items_center()
           .text_color(it.enabled ? t.foreground : t.dim)
           .when(i === this.at && it.enabled, (el) => el.bg(t.selected))
           .when(it.enabled, (el) => el.hover((s) => s.bg(t.hover)))
-          .when(!it.enabled, (el) => el.tooltip("No folder for this project on a connected machine"))
-          .on_click(() => this.chooseMenu(it, p))
-          .child(svg(`mods/workspace-chrome/${it.icon}.svg`).size(14).flex_none().text_color(t.muted))
-          .child(div().flex_1().child(it.label)))));
+          .when(!it.enabled && it.kind === "worktree", (el) => el.tooltip("No folder for this project on a connected machine"))
+          .on_click(() => this.chooseMenu(it, p, place))
+          .child(h_flex().w(14).flex_none().justify_center().child(icon(it)))
+          .child(div().flex_1().truncate().child(it.label))
+          .when(Boolean(it.hint), (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(it.hint)))));
   }
 
   // --- Move to project picker ---------------------------------------------
