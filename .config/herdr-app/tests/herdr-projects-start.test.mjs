@@ -61,7 +61,7 @@ describe("project start page", () => {
   });
 
   it("puts the start page in the bjorn layout's main stack, showing the tab by default", () => {
-    const layout = JSON.parse(readFileSync(new URL("../.config/herdr-app/layouts/bjorn.json", import.meta.url), "utf8"));
+    const layout = JSON.parse(readFileSync(new URL("../layouts/bjorn.json", import.meta.url), "utf8"));
     const find = (node, id) => node?.id === id ? node : (node?.children ?? []).map((c) => find(c, id)).find(Boolean) ?? null;
     const stack = find(layout, "main-stack");
     assert.equal(stack.type, "stack");

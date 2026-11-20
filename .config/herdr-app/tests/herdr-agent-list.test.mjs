@@ -175,7 +175,7 @@ describe("agent-list", () => {
     });
 
     it("binds no key to parking, and ignores the old settle command", async () => {
-      const keys = JSON.parse(readFileSync(new URL("../.config/herdr-app/keys.json", import.meta.url), "utf8"));
+      const keys = JSON.parse(readFileSync(new URL("../keys.json", import.meta.url), "utf8"));
       const bound = Object.entries(keys).flatMap(([, group]) => Object.entries(group));
       assert.ok(bound.every(([key, action]) => key !== "ctrl-shift-s" && !/settle/.test(action)));
       const terms = [{ address: "t3", turn: 0, labels: { "inbox.settled": "5:0" } }];
@@ -416,7 +416,7 @@ describe("agent-list", () => {
     });
 
     it("has no sort menu: grouped by project is the only view", () => {
-      const source = readFileSync(new URL("../.config/herdr-app/mods/agent-list/main.js", import.meta.url), "utf8");
+      const source = readFileSync(new URL("../mods/agent-list/main.js", import.meta.url), "utf8");
       assert.doesNotMatch(source, /sortMenu|agents\.sort|Grouped by space/);
     });
   });

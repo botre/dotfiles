@@ -24,7 +24,7 @@ const VALUE = /^[A-Za-z0-9._:\[\]-]+$/;
 const BUSY = new Set(["working", "blocked"]);
 
 // Copied from projects/store.js (a mod can't import another mod's files);
-// tests/herdr-agent-list-move.test.mjs checks they still agree.
+// .config/herdr-app/tests/herdr-agent-list-move.test.mjs checks they still agree.
 export function normalizeRemote(url) {
   const s = String(url ?? "").trim();
   if (!s) return null;

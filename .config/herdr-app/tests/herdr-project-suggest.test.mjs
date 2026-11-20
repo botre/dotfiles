@@ -11,7 +11,7 @@ const PROJECTS = [
   { id: "github.com/o/gone", name: "Gone", icon: {}, deleted: true, updated_at: 1 },
 ];
 const CLAUDE = { key: "claude", name: "Claude Code", icon: "icons/claude.svg", agent: true };
-const mods = (path) => readFileSync(new URL(`../.config/herdr-app/mods/${path}`, import.meta.url), "utf8");
+const mods = (path) => readFileSync(new URL(`../mods/${path}`, import.meta.url), "utf8");
 
 // Elements that record their builder calls; `when` applies its callback.
 const element = (kind) => {
