@@ -111,13 +111,11 @@ describe("sidebar grid", () => {
     assert.equal(children(idle[0]).length, 0);
   });
 
-  it("ends a group header with the count, then the same status slot", () => {
+  it("leaves the count and status off a project's group header", () => {
     const header = byId(agentRows(), "pj-github.com/o/one");
-    const trail = children(header).at(-1);
-    const kids = children(trail);
-    assert.ok(JSON.stringify(kids[0]).includes('"child","1"'));
-    assert.deepEqual(sizing(kids.at(-1)).slice(0, 2), [["w", 18], ["h", 18]]);
-    assert.ok(JSON.stringify(kids.at(-1)).includes("spinner.svg"));
+    const text = JSON.stringify(header);
+    assert.ok(!text.includes("spinner.svg"));
+    assert.ok(!text.includes('"child","1"'));
     assert.deepEqual(sizing(header).find((c) => c[0] === "px"), ["px", 8]);
   });
 
