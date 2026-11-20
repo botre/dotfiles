@@ -62,9 +62,9 @@ function projectRow(status = "working", count = 2) {
   return view.row(PROJECTS[0], t, false, status, count).calls;
 }
 
-function agentRows(extra = {}, renders = 1) {
+function agentRows(extra = {}, renders = 1, prep = () => {}) {
   const store = { "projects.list": PROJECTS };
-  const terms = [{ address: "t1", state: "live", labels: { project: ONE } }];
+  const terms = extra.terms ?? [{ address: "t1", state: "live", labels: { project: ONE } }];
   const evaluate = loadMods(["agent-list/projects.js", "agent-list/inbox.js", "agent-list/move.js", "agent-list/main.js"], {
     ...builders,
     ICON: "mods/agent-list/agents.svg",
@@ -79,6 +79,7 @@ function agentRows(extra = {}, renders = 1) {
   });
   const view = evaluate("new Agents()");
   Object.assign(view, { folded: new Set(), changed: {}, woke: new Set(), rawTitles: new Map() });
+  prep(view);
   const cx = { notify() {}, spawn() {}, timer: { after() {} } };
   for (let i = 1; i < renders; i++) view.render(cx);
   return view.render(cx).calls;
@@ -117,6 +118,21 @@ describe("sidebar grid", () => {
     assert.ok(!text.includes("spinner.svg"));
     assert.ok(!text.includes('"child","1"'));
     assert.deepEqual(sizing(header).find((c) => c[0] === "px"), ["px", 8]);
+  });
+
+  it("shows Parked's Clear only under the pointer, with the count right-aligned in the status column", () => {
+    const terms = [{ address: "t1", state: "live", labels: { project: ONE, "inbox.settled": "5:0" } }];
+    const agents = () => [{ address: "t1", status: "idle", pane: "p1", space: "sp1", space_name: "daily", tab: "tb1", tab_name: "Work", program: { name: "Claude Code" }, seq: 1 }];
+    const quiet = agentRows({ terms, agents });
+    const header = byId(quiet, "inbox-settled");
+    assert.ok(header, "the Parked shelf shows");
+    assert.ok(!byId(quiet, "inbox-clear"));
+    const count = children(header).at(-1);
+    assert.equal(value(count, "w"), 18);
+    assert.ok(has(count, "justify_end"));
+    assert.equal(value(count, "pr"), 3);
+    const hovered = agentRows({ terms, agents }, 1, (view) => { view.hovered = "hdr-inbox-settled"; });
+    assert.ok(byId(hovered, "inbox-clear"));
   });
 
   it("keeps list rows and menu rows on the same gap, and section titles on the row edge", () => {

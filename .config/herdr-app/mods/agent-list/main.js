@@ -10,7 +10,7 @@ import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { OBSERVATIONS } from "./conversations.js";
 import { ICON } from "./ui.js";
-import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, gridTrail, liveProjects, projectRank, tabProjects, projectIcon, PROJECT_ACTION } from "./projects.js";
+import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, liveProjects, projectRank, tabProjects, projectIcon, PROJECT_ACTION } from "./projects.js";
 import { overview } from "./overview.js";
 import { machineChoices, machineOf, moveAgent } from "./move.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
@@ -1040,11 +1040,17 @@ export default class Agents extends View {
           open ? this.folded.add(g.id) : this.folded.delete(g.id);
           cx.notify();
         })
+        .on_hover((on, cx) => {
+          if (on) this.hovered = `hdr-${g.id}`;
+          else if (this.hovered === `hdr-${g.id}`) this.hovered = null;
+          cx.notify();
+        })
         .child(div().truncate().text_color(t[g.status] ?? t.dim).child(g.label))
         // Folded: a chevron after the name.
         .when(!open, (el) => el.child(svg("mods/workspace-chrome/chevron-right.svg").size(11).flex_none().text_color(t.dim)))
         .child(div().flex_1())
-        .when(g.id === "inbox-settled", (el) => el.child(div()
+        // Clear shows only under the pointer, so the header stays quiet; it still asks first.
+        .when(g.id === "inbox-settled" && this.hovered === `hdr-${g.id}`, (el) => el.child(div()
           .id("inbox-clear")
           .px(5)
           .rounded(4)
@@ -1053,9 +1059,10 @@ export default class Agents extends View {
           .tooltip("Close the panes of parked agents")
           .on_click((_e, cx) => { cx.stop_propagation(); this.askClear(g.members); })
           .child("Clear")))
-        // Project groups show no count or status (the projects list has them); a
-        // shelf keeps its count, in the grid's count column.
-        .when(Boolean(g.shelf), (el) => el.child(gridTrail(UI, [div().text_color(t.dim).child(String(g.members.length))], null)));
+        // Project groups show no count or status (the projects list has them). A
+        // shelf keeps its count in the status column, right-aligned with the rows' glyphs.
+        .when(Boolean(g.shelf), (el) => el.child(h_flex().w(GRID.status).flex_none().justify_end()
+          .pr((GRID.status - GRID.spinner) / 2).text_color(t.dim).child(String(g.members.length))));
     };
     const rows = collapsed
       ? list.flatMap(withKids)
