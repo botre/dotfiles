@@ -54,6 +54,15 @@ class HerdrContextTests(unittest.TestCase):
                 ROUTE["main"]()
         self.assertEqual(calls[0][1], "right")
         self.assertIn("summary.pid=42", calls[0])
+        self.assertIn(f"summary.session={SESSION}", calls[0])
+
+    def test_title_labels_carry_the_conversation(self):
+        calls = []
+        with mock.patch.dict(ROUTE, {"resolve": lambda _: terminal("right", SESSION), "core": lambda *args: calls.append(args)}):
+            with mock.patch.object(sys, "argv", ["herdr-context", "label", "session.title=Fix alert contrast", "session.title.updated=123"]):
+                ROUTE["main"]()
+        self.assertIn("session.title.pid=42", calls[0])
+        self.assertIn(f"session.title.session={SESSION}", calls[0])
 
     def test_label_rejects_other_keys_without_writing(self):
         calls = []

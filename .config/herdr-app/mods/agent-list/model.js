@@ -12,11 +12,27 @@ export const directoryName = (cwd) => text(cwd).replace(/[\\/]+$/, "").split(/[\
 
 export const sameProcess = (record, terminal) => record?.pid === terminal.foreground?.pid && record?.createdAt === terminal.created_ms;
 
-// A label the terminal's current program wrote: one from an earlier program
-// in the same terminal names other work.
+// The conversation the terminal's program is in: the one the transcript probe
+// found for this process, else the one the resume mod saved.
+export function currentSession(terminal) {
+  const labels = terminal.labels ?? {};
+  if (labels["herdr.session"] && labels["herdr.session.pid"] === String(terminal.foreground?.pid)) return labels["herdr.session"];
+  try { return JSON.parse(labels.resume ?? "{}")?.session ?? null; } catch { return null; }
+}
+
+// Whether a label was written in the conversation running now, though by an
+// earlier process of it (the session was resumed).
+export const sameSession = (terminal, sessionKey) => {
+  const stamp = terminal.labels?.[sessionKey];
+  return Boolean(stamp) && stamp === currentSession(terminal);
+};
+
+// A label the terminal's current program, or its conversation, wrote: one from
+// another conversation in the same terminal names other work.
 const ownLabel = (terminal, key, pidKey) => {
   const author = terminal.labels?.[pidKey];
-  return !author || author === String(terminal.foreground?.pid) ? goalTitle(terminal.labels?.[key]) : "";
+  const mine = !author || author === String(terminal.foreground?.pid) || sameSession(terminal, pidKey.replace(/pid$/, "session"));
+  return mine ? goalTitle(terminal.labels?.[key]) : "";
 };
 
 // The observation the transcript probe made of this terminal's current process.
@@ -96,7 +112,9 @@ export function observe(terminal, previous, now, startedAt) {
   const updatedAt = Number.isFinite(raw) && raw > 0 && raw * 1000 <= now + 5000 ? raw * 1000 : null;
   const author = terminal.labels?.["summary.pid"];
   const valid = updatedAt && (!author || author === String(pid)) && updatedAt >= (started ?? observedAt) - 2000;
-  const goal = valid ? text(terminal.labels?.["summary.goal"]) : "";
+  // A resumed conversation keeps its goal; its activity describes the earlier run.
+  const resumed = !valid && Boolean(updatedAt) && sameSession(terminal, "summary.session");
+  const goal = valid || resumed ? text(terminal.labels?.["summary.goal"]) : "";
   const activity = valid ? text(terminal.labels?.["summary.activity"]) : "";
   const sameActivity = before.activity === activity && before.goal === goal;
   // Herdr's turn counter counts finished turns; the one at a report says which turn it describes.

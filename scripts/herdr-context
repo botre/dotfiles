@@ -70,10 +70,12 @@ def main():
         if any(arg.split("=", 1)[0] not in allowed or "=" not in arg for arg in labels):
             raise RuntimeError("Only session summary and title labels are supported")
         pid = (terminal.get("foreground") or {}).get("pid")
+        # The conversation too, so a resumed session (a new process) keeps its labels.
+        session = session_id(terminal) or ""
         if any(arg.startswith("summary.") for arg in labels):
-            labels.append(f"summary.pid={pid}")
+            labels += [f"summary.pid={pid}", f"summary.session={session}"]
         if any(arg.startswith("session.title") for arg in labels):
-            labels.append(f"session.title.pid={pid}")
+            labels += [f"session.title.pid={pid}", f"session.title.session={session}"]
         core("label", terminal["address"], *labels)
     else:
         context = (terminal.get("labels") or {}).get("herdr.context", "")

@@ -32,6 +32,16 @@ describe("agent-list session timing", () => {
     assert.equal(fresh.startedAt, 150000);
   });
 
+  it("keeps a resumed conversation's goal, but not the earlier run's activity", () => {
+    const labels = { ...terminal.labels, "summary.pid": "42", "summary.session": "s1", "herdr.session": "s1", "herdr.session.pid": "43" };
+    const resumed = observe({ ...terminal, foreground: { pid: 43, argv: ["codex"] }, labels }, undefined, 200000, 150000);
+    assert.equal(resumed.goal, "Fix login");
+    assert.equal(resumed.activity, "");
+    assert.equal(resumed.updatedAt, null);
+    const other = observe({ ...terminal, foreground: { pid: 43, argv: ["codex"] }, labels: { ...labels, "herdr.session": "s2" } }, undefined, 200000, 150000);
+    assert.equal(other.goal, "");
+  });
+
   it("does not infer activity duration from a status change or malformed update", () => {
     for (const timestamp of ["", "oops", "999999999999"]) {
       const record = observe({ ...terminal, status_ms: 10000, labels: { ...terminal.labels, "summary.updated": timestamp } });
@@ -160,5 +170,9 @@ describe("agent-list helper names", () => {
 
   it("ignores labels an earlier program in the terminal wrote", () => {
     assert.equal(name({ ...helper, labels: { "session.title": "Old work", "session.title.pid": "7" } }), "cx675");
+    // A resumed conversation keeps its title; the stamp must match the conversation running now.
+    const resumed = (session) => ({ ...helper, labels: { "session.title": "Fix alert contrast", "session.title.pid": "7", "session.title.session": "s1", "herdr.session": session, "herdr.session.pid": "42" } });
+    assert.equal(name(resumed("s1")), "Fix alert contrast");
+    assert.equal(name(resumed("s2")), "cx675");
   });
 });
