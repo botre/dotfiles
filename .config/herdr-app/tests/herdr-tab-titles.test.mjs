@@ -19,6 +19,11 @@ describe("tab-titles", () => {
     assert.equal(evaluate('publishedTitle({labels:{"session.title":"Review card reversal limits","session.title.updated":"100"}}, {startedAt:200000})'), null);
     assert.equal(evaluate('publishedTitle({labels:{"session.title":"Review card reversal limits","session.title.updated":"300"}}, {startedAt:200000})'), "Review card reversal limits");
     assert.equal(evaluate('publishedTitle({foreground:{pid:43},labels:{"session.title":"Old process title","session.title.updated":"300","session.title.pid":"42"}})'), null);
+    // A resumed conversation (a new process) keeps the title it published; another conversation doesn't.
+    const resumed = (session) => `publishedTitle({foreground:{pid:43},labels:{"session.title":"Fix alert contrast","session.title.updated":"300","session.title.pid":"42","session.title.session":"s1","herdr.session":"${session}","herdr.session.pid":"43"}}, {startedAt: 900000})`;
+    assert.equal(evaluate(resumed("s1")), "Fix alert contrast");
+    assert.equal(evaluate(resumed("s2")), null);
+    assert.equal(evaluate('publishedTitle({foreground:{pid:43},labels:{"session.title":"Fix alert contrast","session.title.updated":"300","session.title.pid":"42","session.title.session":"s1","resume":"{\\"session\\":\\"s1\\"}"}})'), "Fix alert contrast");
   });
 
   it("drops spinner frames and a trailing status word, but keeps words that belong to the title", () => {

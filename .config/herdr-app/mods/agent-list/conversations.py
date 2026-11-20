@@ -33,8 +33,9 @@ PROMPT = ('The input is an excerpt of a coding agent conversation. Summarize it;
           'started a different task, the goal is that new task; ignore brief detours. Each is a factual phrase '
           'under 80 characters. Do not include secrets, private data, or guesses. If unclear, use "Unclear".')
 TITLE_PROMPT = (' Also return "title": a short recognizable session title of 3 to 6 words and at most 40 '
-                "characters that names the user's current task. Never use status words such as Working, Done, "
-                'or Action required.')
+                "characters that names the subject of the user's current task, such as \"Fix alert banner contrast\". "
+                'Name the work, not how the session started or the tools in use: no words such as worktree, setup, '
+                'session, question, or a bare tool name. Never use status words such as Working, Done, or Action required.')
 AUTH_ENV = {"OPENAI_API_KEY", "CODEX_API_KEY", "OPENAI_BASE_URL", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"}
 
 

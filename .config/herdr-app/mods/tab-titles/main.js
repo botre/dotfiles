@@ -48,12 +48,24 @@ function agentTitle(p, prog) {
   return cleanTitle(t) && !names.includes(t.toLowerCase()) ? t : null;
 }
 
+// The conversation the terminal's program is in: the one the agent list's probe
+// found for this process, else the one the resume mod saved.
+function currentSession(terminal) {
+  const labels = terminal?.labels ?? {};
+  if (labels["herdr.session"] && labels["herdr.session.pid"] === String(terminal?.foreground?.pid)) return labels["herdr.session"];
+  try { return JSON.parse(labels.resume ?? "{}")?.session ?? null; } catch { return null; }
+}
+
+// The title the agent published: by this process, or by an earlier process of the
+// same conversation (a resumed session keeps its title).
 function publishedTitle(terminal, record = {}) {
   const updated = Number(terminal?.labels?.["session.title.updated"]) * 1000;
+  if (!(updated > 0 && updated <= Date.now() + 5000)) return null;
+  const stamp = terminal?.labels?.["session.title.session"];
+  const resumed = Boolean(stamp) && stamp === currentSession(terminal);
   const author = terminal?.labels?.["session.title.pid"];
-  const current = (!author || author === String(terminal?.foreground?.pid)) && updated > 0
-    && updated <= Date.now() + 5000 && (!record.startedAt || updated >= record.startedAt - 2000);
-  return current ? cleanTitle(terminal.labels["session.title"]) : null;
+  const mine = (!author || author === String(terminal?.foreground?.pid)) && (!record.startedAt || updated >= record.startedAt - 2000);
+  return mine || resumed ? cleanTitle(terminal.labels["session.title"]) : null;
 }
 
 // The title a recap gave the session, from the agent list's transcript
