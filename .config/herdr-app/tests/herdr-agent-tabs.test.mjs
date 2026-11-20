@@ -144,6 +144,22 @@ describe("agent-tabs", () => {
     assert.equal(child({ t2: { project: "github.com/o/x", at: 900 } }), "main");
   });
 
+  it("gives an agent's tab the agent's own menu, and other tabs the tab menu", () => {
+    const store = {}, ran = [], overlays = [];
+    const all = [agentPane("a", "t1"), { tab: "b", terminal: "t2", program: { shell: true } }];
+    const menu = loadMods(["agent-tabs/projects.js", "agent-tabs/main.js"], {
+      panes: () => all, setShared: (k, v) => { store[k] = v; }, run: (...a) => ran.push(a), openOverlay: (o) => overlays.push(o),
+    });
+    menu('tabMenu({ id: "a", space: "s1" })');
+    assert.equal(store["agent-list.action"].kind, "menu");
+    assert.equal(store["agent-list.action"].address, "t1");
+    assert.deepEqual(JSON.parse(JSON.stringify(ran)), [["agent-list.act"]]);
+    assert.equal(overlays.length, 0);
+    menu('tabMenu({ id: "b", space: "s1" })');
+    assert.equal(overlays[0].mod, "menu-org");
+    assert.deepEqual(JSON.parse(JSON.stringify(overlays[0].props)), { tab: "tab", target: { id: "b", space: "s1" } });
+  });
+
   it("starts with no remembered panels when the saved value is corrupt", () => {
     assert.equal(evaluate('JSON.stringify(savedObject("{oops"))'), "{}");
     assert.equal(evaluate('JSON.stringify(savedObject("[1]"))'), "{}");

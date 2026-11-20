@@ -343,6 +343,16 @@ describe("agent-list", () => {
       assert.equal(store["agent-list.action"], null);
     });
 
+    it("opens the agent's row menu when its tab asks for it", async () => {
+      const overlays = [];
+      const { view, store, cx } = setup(() => ({ openOverlay: (spec) => overlays.push(spec) }));
+      store["agent-list.action"] = { kind: "menu", address: "t1", at: Date.now() };
+      await view.command("act", cx);
+      assert.equal(overlays.length, 1);
+      assert.equal(overlays[0].mod, "agent-list");
+      assert.equal(overlays[0].props.rowMenu, "t1");
+    });
+
     it("offers Move to machine only with another ready machine, and opens a picker of them", async () => {
       const overlays = [];
       const { evaluate, view, store, cx } = setup(() => ({
