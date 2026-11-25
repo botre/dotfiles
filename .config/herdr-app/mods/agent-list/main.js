@@ -1007,8 +1007,11 @@ export default class Agents extends View {
         name: h_flex().flex_1().min_w(0).gap(5).items_center()
           .child(div().min_w(0).max_w(120).truncate().text_color(t.muted).child(a.space_name || name))
           .when(Boolean(a.space_name) && !DIGITS_RE.test(name), (el) => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`· ${name}`))),
-        details: [hovered ? back : div().text_size(11).text_color(t.dim)
-          .child(info.kind === "settled" ? duration(now - info.at) : wakeLabel(info.wake, now))],
+        // In the status column, right-aligned as the shelf's count above it.
+        slot: h_flex().min_w(GRID.status).h(GRID.status).flex_none().items_center().justify_end()
+          .pr((GRID.status - GRID.spinner) / 2)
+          .child(hovered ? back : div().text_size(11).text_color(t.dim)
+            .child(info.kind === "settled" ? duration(now - info.at) : wakeLabel(info.wake, now))),
       })
         .when(a.focused, (el) => el.bg(t.selected))
         .cursor_pointer()
