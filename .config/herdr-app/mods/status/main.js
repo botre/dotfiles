@@ -1,7 +1,5 @@
-// Herdr's workspace-status (0.1.11), plus the pull request of the shown
-// branch: its number, then checks and review state. A click opens it in the
-// browser. Asks `gh`, read-only, every two minutes and when the space or
-// branch changes.
+// The shown branch's pull request, checks and review state. A click opens it
+// in the browser. Reads `gh` every two minutes and when the space or branch changes.
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
