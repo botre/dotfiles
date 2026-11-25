@@ -7,6 +7,8 @@
 // tab without one is in General.
 
 export const GENERAL = "general";
+// Not a project: picking it shows every project's tabs at once.
+export const ALL = "all";
 export const PROJECT_LABEL = "project";
 // Under each machine's home folder.
 export const STORE_PATH = ".local/state/herdr/projects.json";
@@ -35,7 +37,8 @@ export const MAIN_STACK = "main-stack";
 export const MAIN_TAB = "main";
 export const MAIN_START = "project-start";
 
-export const generalProject = () => ({ id: GENERAL, name: "General", icon: {}, shown: true, updated_at: 0 });
+export const generalProject = () => ({ id: GENERAL, name: "Scratch", icon: {}, shown: true, updated_at: 0 });
+export const allProject = () => ({ id: ALL, name: "All", icon: {}, shown: true, updated_at: 0 });
 
 export const liveProjects = (list) => (list ?? []).filter((p) => !p.deleted && p.id !== GENERAL);
 export const byProjectName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base", numeric: true }) || (a.id < b.id ? -1 : 1);
@@ -75,9 +78,10 @@ export function tabProjects(spaces, panes, terms, known = null, pending = null, 
 
 // A project's tabs from every space, in space order, each with its space and
 // machine, and `active` set for the tab in focus (each space has its own).
+// All has every tab.
 export function projectTabs(spaces, project, tabProject, focusedTab = null) {
   return (spaces ?? []).flatMap((s) => (s.tabs ?? [])
-    .filter((tab) => (tabProject.get(tab.id) ?? GENERAL) === project)
+    .filter((tab) => project === ALL || (tabProject.get(tab.id) ?? GENERAL) === project)
     .map((tab) => ({ ...tab, active: tab.id === focusedTab, space: s.id, machine: s.machine ?? null })));
 }
 
@@ -216,4 +220,42 @@ export const pickerHeight = (rows) => MENU.pad + MENU.heading + rows * MENU.row 
 export function pickerOverlay(tab, list, create = null) {
   const rows = Math.min(pickerProjects(list).length, PICKER_ROWS) + (create ? 1 : 0);
   return { mod: "projects", kind: "popup", width: 260, height: pickerHeight(rows), props: create ? { picker: tab, create } : { picker: tab } };
+}
+
+// The agents list snoozes or parks an agent with a label on its terminal,
+// and shares what it just wrote until hc has it (agent-list/inbox.js).
+export const INBOX_SNOOZED = "inbox.snoozed";
+export const INBOX_SETTLED = "inbox.settled";
+const AWAY_SETTLED_RE = /^(\d+):(\d+)$/;
+export const INBOX_PENDING = "agent-list.pending";
+const AWAY_PENDING_MS = 5000;
+const AWAY_NUMBER_RE = /^\d+$/;
+
+function awayLabel(key, address, terms, pending, now) {
+  const p = pending?.[address];
+  return p && Object.prototype.hasOwnProperty.call(p, key) && now - p.at < AWAY_PENDING_MS ? p[key] : terms?.get(address)?.labels?.[key];
+}
+
+// Snoozed, or parked until it works, needs you or starts a new turn, as the
+// agents list has it, so the tab comes back before that list clears the label.
+export function putAway(pane, terms, pending, now = Date.now()) {
+  const snoozed = awayLabel(INBOX_SNOOZED, pane.terminal, terms, pending, now);
+  if (AWAY_NUMBER_RE.test(snoozed ?? "") && Number(snoozed) > now) return true;
+  const m = AWAY_SETTLED_RE.exec(awayLabel(INBOX_SETTLED, pane.terminal, terms, pending, now) ?? "");
+  if (!m || pane.status === "working" || pane.status === "blocked") return false;
+  return (terms?.get(pane.terminal)?.turn ?? 0) <= Number(m[2]);
+}
+
+// The tabs the bar shows: all but those whose every agent is snoozed or
+// parked. The tab in view always shows, and a tab without an agent never
+// hides. A put-away terminal counts as an agent even while it reports no
+// status (Herdr marks a program as an agent only once it does).
+export function shownTabs(tabs, allPanes, terms, pending, now = Date.now()) {
+  return (tabs ?? []).filter((tab) => {
+    if (tab.active) return true;
+    const mine = (allPanes ?? []).filter((p) => p.tab === tab.id && p.terminal);
+    const away = new Set(mine.filter((p) => putAway(p, terms, pending, now)).map((p) => p.terminal));
+    const agents = mine.filter((p) => p.program?.agent || p.status || away.has(p.terminal));
+    return !(agents.length && agents.every((p) => away.has(p.terminal)));
+  });
 }

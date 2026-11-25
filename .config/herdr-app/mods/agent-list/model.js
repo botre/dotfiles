@@ -1,4 +1,4 @@
-// Session data for the Agents overview.
+// Session data: what each agent works on, and its times for the bottom bar.
 const PREFIX = /^[^\p{L}\p{N}]+/u;
 const CONTROL = /[\u0000-\u001f\u007f]/g;
 const INSPECTION_TTL = 90000;
@@ -280,4 +280,14 @@ export function groupSessions(rows, terminals) {
   };
   for (const root of roots) count(root);
   return roots;
+}
+
+// Each agent's times, by address: its last activity, when its session started
+// and its last report. The bottom bar shows them for the agent in view.
+export function sessionTimes(all, listed, spaces, history, panes = [], observations = {}, now = Date.now()) {
+  const out = {};
+  for (const row of sessionRows(all, listed, spaces, history, panes, observations, now)) {
+    out[row.address] = { activityAt: row.activityAt ?? null, startedAt: row.startedAt ?? null, updatedAt: row.updatedAt ?? null };
+  }
+  return out;
 }

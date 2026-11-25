@@ -33,6 +33,9 @@ describe("tab-titles", () => {
     assert.equal(clean("Fix flaky tests - working"), "Fix flaky tests");
     assert.equal(clean("Fix flaky tests | Running *"), "Fix flaky tests");
     assert.equal(clean("Stop thinking"), "Stop thinking");
+    // A leading emoji stays, a hand or hourglass status mark goes (as Herdr 0.1.18).
+    assert.equal(clean("\u{1F534} login"), "\u{1F534} login");
+    assert.equal(clean("\u23F3 Fix flaky tests"), "Fix flaky tests");
     assert.equal(clean("Rooms 20-24 busy"), "Rooms 20-24 busy");
     assert.equal(clean("project | /tmp"), "project | /tmp");
     assert.equal(clean("\u280b Working"), null);

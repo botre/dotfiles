@@ -5,7 +5,7 @@
 // Machines merge by id: the newest updated_at wins and a deleted entry stays
 // as a tombstone.
 
-import { GENERAL, PROJECT_RECENT, generalProject, liveProjects, byProjectName } from "./membership.js";
+import { GENERAL, ALL, PROJECT_RECENT, generalProject, liveProjects, byProjectName } from "./membership.js";
 
 
 // "git@github.com:Org/Repo.git", "https://user@GitHub.com/Org/Repo/" and
@@ -133,7 +133,7 @@ export function autoLabels(fresh, panes, labelFor, selected) {
     const labelled = mates.map((q) => labelFor(q.terminal)).find(Boolean);
     const older = mates.some((q) => !fresh.has(q.terminal));
     const project = labelled || (older ? null : selected);
-    if (project && project !== GENERAL) out.push({ address: p.terminal, project });
+    if (project && project !== GENERAL && project !== ALL) out.push({ address: p.terminal, project });
   }
   return out;
 }

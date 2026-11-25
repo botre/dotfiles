@@ -93,8 +93,9 @@ function harness({ shown = true, enabled = true, all = [terminal], probe, fail =
   const evaluate = loadMods(["agent-list/model.js", "agent-list/conversations.js"], {
     Date: { now: () => clock }, appHome: () => "/home/test/.config/herdr-app",
     readTextFile: async () => "python backend", shared: (key) => values[key], setShared: (key, value) => { values[key] = value; },
-    terminals: () => all, spaces: () => [{ active: true, tabs: [{ active: true, id: "overview" }] }],
-    panes: () => shown ? [{ tab: "overview", mod: "agent-list" }] : [],
+    // `shown`: the agents' tab is in view. A helper has no pane of its own.
+    terminals: () => all, spaces: () => [{ active: true, tabs: [{ active: true, id: "view" }] }],
+    panes: () => shown ? all.filter((t) => !t.parent).map((t) => ({ tab: "view", terminal: t.address })) : [],
     hc: async (args) => { commands.push(args); return { code: 0 }; },
     exec: async (_program, args, options) => {
       probes.push(options);
@@ -110,7 +111,7 @@ function harness({ shown = true, enabled = true, all = [terminal], probe, fail =
 }
 
 describe("agent-list recap scheduling", () => {
-  it("inspects transcripts without model calls when recaps are disabled or the overview is closed", async () => {
+  it("inspects transcripts without model calls when recaps are disabled or the agent is out of view", async () => {
     for (const options of [{ shown: false }, { enabled: false }, { enabled: undefined }]) {
       const h = harness(options);
       if (options.enabled === undefined && options.shown === undefined) delete h.values["agents.recaps.enabled"];

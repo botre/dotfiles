@@ -69,11 +69,11 @@ describe("projects", () => {
     const active = { "github.com/o/a": 1, "github.com/o/c": 9, "github.com/o/d": 8, "github.com/o/e": 7, "github.com/o/f": 6, "github.com/o/b": 5, "github.com/o/g": 99 };
     const names = (expression, values) => run(expression, values).map((x) => x.name);
     // Sorted by name, so ctrl+N stays put while recency moves.
-    assert.deepEqual(names("listedProjects(list, active)", { list, active }), ["General", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot"]);
+    assert.deepEqual(names("listedProjects(list, active)", { list, active }), ["Scratch", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot"]);
     const shown = list.map((x) => (x.name === "Alpha" || x.name === "Echo" ? { ...x, shown: true } : x));
-    assert.deepEqual(names("listedProjects(shown, active)", { shown, active }), ["General", "Alpha", "Echo"]);
+    assert.deepEqual(names("listedProjects(shown, active)", { shown, active }), ["Scratch", "Alpha", "Echo"]);
     assert.deepEqual(names('searchProjects(list, "ha")', { list }), ["Alpha", "Charlie"]);
-    assert.deepEqual(names('searchProjects(list, "gen")', { list }), ["General"]);
+    assert.deepEqual(names('searchProjects(list, "scr")', { list }), ["Scratch"]);
     assert.equal(run('projectFor("select-2", listedProjects(shown, active)).name', { shown, active }), "Alpha");
     assert.equal(run('projectFor("select-9", listedProjects(shown, active))', { shown, active }), null);
   });
@@ -130,6 +130,15 @@ describe("projects", () => {
     // In General nothing is written; on the first look nothing is new (existing tabs stay in General).
     assert.deepEqual(run('autoLabels(fresh, panes, labelFor, "general")', { fresh, panes, labelFor }), [{ address: "split2", project: "github.com/o/x" }]);
     assert.equal(evaluate("freshTerminals(null, new Set([null]), panes).size", { panes }), 0);
+    // Under All a new tab stays in General, as All is no project.
+    assert.deepEqual(run('autoLabels(fresh, panes, labelFor, "all")', { fresh, panes, labelFor }), [{ address: "split2", project: "github.com/o/x" }]);
+  });
+
+  it("shows every tab under All and stays on All when focus moves", () => {
+    const spaces = [{ id: "s1", tabs: [{ id: "t1" }, { id: "t2" }] }, { id: "s2", machine: "vps", tabs: [{ id: "vps/t3" }] }];
+    const tabProject = new Map([["t1", "general"], ["t2", "github.com/o/x"], ["vps/t3", "github.com/o/y"]]);
+    assert.deepEqual(run('projectTabs(spaces, "all", tabProject, "t2").map((t) => [t.id, t.active])', { spaces, tabProject }), [["t1", false], ["t2", true], ["vps/t3", false]]);
+    assert.equal(evaluate('followFocus("t2", "t1", tabProject, new Set(), "all")', { tabProject }), null);
   });
 
   it("follows focus into another project's tab, but not into a tab that just appeared", () => {
@@ -141,6 +150,22 @@ describe("projects", () => {
     assert.equal(follow("t1", "t2", [], "general"), null);
     assert.equal(evaluate('tabToShow([{ id: "a" }, { id: "b" }], "b").id'), "b");
     assert.equal(evaluate('tabToShow([{ id: "a" }, { id: "b" }], "gone").id'), "a");
+  });
+
+  it("counts a project's agents and status as the tab bar shows them, without parked or snoozed ones", () => {
+    const sp = [{ id: "s1", tabs: [{ id: "work" }, { id: "parked" }, { id: "shell" }] }];
+    const ps = [
+      { tab: "work", terminal: "t1", program: { agent: true }, status: "working" },
+      { tab: "parked", terminal: "t2", program: { agent: true }, status: "idle" },
+      { tab: "shell", terminal: "t3", program: { shell: true } },
+    ];
+    const terms = new Map([["t1", { labels: {} }], ["t2", { turn: 3, labels: { "inbox.settled": "1000:3" } }], ["t3", { labels: {} }]]);
+    const tabProject = new Map([["work", "general"], ["parked", "github.com/o/x"], ["shell", "github.com/o/x"]]);
+    const running = [{ address: "t1", tab: "work", status: "working" }, { address: "t2", tab: "parked", status: "idle" }];
+    const live = { sp, ps, terms, tabProject, running, pending: null, now: 5000 };
+    sp[0].tabs.forEach((tab) => Object.assign(tab, { status: ps.find((p) => p.tab === tab.id).status ?? null }));
+    assert.deepEqual(run('projectSummary("github.com/o/x", live)', { live }), { status: null, count: 0 });
+    assert.deepEqual(run('projectSummary("all", live)', { live }), { status: "working", count: 1 });
   });
 
   it("records activity at most once a minute per project", () => {

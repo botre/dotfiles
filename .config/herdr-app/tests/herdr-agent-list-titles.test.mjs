@@ -80,6 +80,7 @@ describe("agent-list titles and saved values", () => {
   it("starts with corrupt saved `changed` and `woke` values", () => {
     const evaluate = loadMod("agent-list", {
       props: () => ({}),
+      panes: () => [],
       SessionTracker: class { sync() {} },
       localStorage: memoryStorage({ changed: "{oops", woke: '{"t1":true}' }),
     });

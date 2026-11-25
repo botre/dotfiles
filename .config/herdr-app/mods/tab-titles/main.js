@@ -7,9 +7,12 @@ import { View, div } from "gpui-kit";
 import { spaces, panes, terminals, run, home, shared, readTextFile, exec } from "herdr";
 
 const CONTROL_CHARACTERS_RE = /[\u0000-\u001f\u007f]/g;
-// A status glyph or spinner and the separator after it ("✦  Working"). It stops at
-// an opening bracket or quote, so a title that starts with one ("[web] login") keeps it.
-const TITLE_PREFIX_RE = /^[^\p{L}\p{N}\p{Ps}\p{Pi}]+/u;
+// What an agent puts before its title: a status glyph or spinner and the
+// separator after it ("✦  Working", "⠋ - Thinking"), and Codex's blinking
+// "[ ! ] " / "[ . ] " mark. It stops at an opening bracket or quote, so a title
+// that starts with one ("[web] login") keeps it, and at an emoji ("🔴 login",
+// "❤️ deploy"), except for known status marks. As Herdr's agents list (0.1.18).
+const TITLE_PREFIX_RE = /^(?:\[ [!.] \] |[✋⏳]\uFE0F?(?=\s)|(?!(?:\p{Emoji}\uFE0F|[#*]\u20E3))[^\p{L}\p{N}\p{Ps}\p{Pi}\p{Emoji_Presentation}])+/u;
 // Codex's blinking "[ ! ] " / "[ . ] " mark before its title.
 const CODEX_MARK_RE = /^\[ [!.] \] /;
 // Spinner frames, and a status word after a separator ("Fix tests \u00b7 Thinking"),

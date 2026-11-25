@@ -1,4 +1,4 @@
-// Pane header with an Agents label for the session overview.
+// Pane header: the pane's program and its status.
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
@@ -46,9 +46,9 @@ export default class Pane extends View {
     const t = theme();
     const p = this.me();
     if (!p) return div();
-    const overview = p.mod === "agent-list";
-    const name = overview ? "Agents" : ((p.program?.agent || p.program?.shell) && p.program.name) || p.title || p.program?.name || "shell";
-    const pic = overview ? svg("mods/agent-list/agents.svg").size(14).text_color(t.dim) : icon(p.program, 14, t.dim);
+    // A name the person gave the pane (pane.rename) comes first.
+    const name = p.name || ((p.program?.agent || p.program?.shell) && p.program.name) || p.title || p.program?.name || "shell";
+    const pic = icon(p.program, 14, t.dim);
     const st = p.status;
     const pane = p.pane;
     return h_flex()

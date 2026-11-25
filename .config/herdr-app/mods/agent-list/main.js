@@ -9,9 +9,9 @@ import { agents, terminals, panes, focused, spaces, run, theme, shared, setShare
 import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { OBSERVATIONS } from "./conversations.js";
-import { ICON } from "./ui.js";
-import { GENERAL, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, liveProjects, projectRank, tabProjects, projectIcon, PROJECT_ACTION } from "./projects.js";
-import { overview } from "./overview.js";
+// Whether recaps run (conversations.js reads it).
+const RECAPS = "agents.recaps.enabled";
+import { GENERAL, generalProject, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, liveProjects, projectRank, tabProjects, projectIcon, PROJECT_ACTION } from "./projects.js";
 import { machineChoices, machineOf, moveAgent } from "./move.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
 
@@ -34,9 +34,11 @@ const RESUME_ACTION = "resume.action";
 const UI = { div: (...a) => div(...a), h_flex: (...a) => h_flex(...a), svg: (...a) => svg(...a), image: (...a) => image(...a) };
 
 // What an agent puts before its title: a status glyph or spinner and the
-// separator after it ("✦  Working", "⠋ - Thinking"). It stops at an opening
-// bracket or quote, so a title that starts with one ("[web] login") keeps it.
-const TITLE_PREFIX_RE = /^[^\p{L}\p{N}\p{Ps}\p{Pi}]+/u;
+// separator after it ("✦  Working", "⠋ - Thinking"), and Codex's blinking
+// "[ ! ] " / "[ . ] " mark. It stops at an opening bracket or quote, so a title
+// that starts with one ("[web] login") keeps it, and at an emoji ("🔴 login",
+// "❤️ deploy"), except for known status marks. As Herdr's agents list (0.1.18).
+const TITLE_PREFIX_RE = /^(?:\[ [!.] \] |[✋⏳]\uFE0F?(?=\s)|(?!(?:\p{Emoji}\uFE0F|[#*]\u20E3))[^\p{L}\p{N}\p{Ps}\p{Pi}\p{Emoji_Presentation}])+/u;
 // Codex's blinking "[ ! ] " / "[ . ] " mark before its title.
 const CODEX_MARK_RE = /^\[ [!.] \] /;
 // Only a status glyph, so a path keeps its leading ~ or /.
@@ -152,8 +154,10 @@ export function saved(raw, fallback) {
 const RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
 // Pane-less sub-agents are absent from agents(). Treat errors as blocked.
 // Their parent reports completion, so display their done state as idle.
+// A kept sub-agent (one with a pane) is in agents(): it keeps its own status, done included.
 const kidStatus = (k, listed) => {
-  const s = listed.get(k.address) ?? k.status;
+  if (listed.has(k.address)) return listed.get(k.address);
+  const s = k.status;
   return s === "error" ? "blocked" : s === "done" ? "idle" : s;
 };
 // The statuses of an agent's live sub-agents, at any depth.
@@ -182,7 +186,7 @@ export function projectGroups(list, projectOf, projects) {
     const project = rank.has(projectOf.get(a.address)) ? projectOf.get(a.address) : GENERAL;
     const id = `pj-${project}`;
     if (groups.at(-1)?.id === id) groups.at(-1).members.push(a);
-    else groups.push({ id, project, label: project === GENERAL ? "General" : names.get(project) ?? project, status: null, members: [a] });
+    else groups.push({ id, project, label: project === GENERAL ? generalProject().name : names.get(project) ?? project, status: null, members: [a] });
   }
   return groups;
 }
@@ -233,6 +237,9 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
     items.push({ heading: "Snooze until" });
     for (const p of presets()) items.push({ kind: "snooze", preset: p.id, icon: chrome("clock"), label: p.label, hint: wakeLabel(p.wake) });
   }
+  // Recaps are on or off for every agent; they run for the agent in view.
+  items.push({ divider: true });
+  items.push({ kind: "recaps", icon: chrome("file-text"), label: shared(RECAPS) === true ? "Turn off recaps" : "Turn on recaps" });
   // Last and set apart, as in the tab menu.
   if (whereIs(address).pane) {
     items.push({ divider: true });
@@ -291,7 +298,7 @@ function icon(p, size, color) {
 
 // What an agent's row draws in its icon slot: its project's icon (projectIcon),
 // or { program } in General and for a project that is gone. Helpers keep their
-// program's icon, and so does the Agents overview.
+// program's icon.
 export function rowIcon(a, projectOf, projects, favicons) {
   const id = projectOf?.get(a.address);
   const proj = id && id !== GENERAL ? liveProjects(projects).find((p) => p.id === id) : null;
@@ -313,11 +320,9 @@ const rowIconSize = (spec) => (spec.program ? programIcon() : GRID.icon);
 export default class Agents extends View {
   init(_props, cx) {
     if (props()?.rowMenu) return;
-    if (props()?.overview) {
-      this.expanded = new Set();
-      cx.timer.every(10000, (cx) => cx.notify());
-      return;
-    }
+    // The Agents overview tab is gone: close any left from before.
+    if (props()?.overview) return;
+    for (const p of panes().filter((x) => x.mod === "agent-list")) run("pane.close", { pane: p.pane });
     this.folded = new Set(["inbox-snoozed", "inbox-settled"]);
     // Each agent's last state and when it changed (ms), kept across restarts.
     this.changed = saved(localStorage.getItem("changed"), {});
@@ -681,6 +686,7 @@ export default class Agents extends View {
   rowMenu(t) {
     const p = props();
     const act = (it) => {
+      if (it.kind === "recaps") { setShared(RECAPS, shared(RECAPS) !== true); closeOverlay(p.overlay); return; }
       // Close ends the agent: its tab when it's alone there, else just its pane.
       if (it.kind === "close") {
         const { pane } = whereIs(p.rowMenu);
@@ -729,24 +735,6 @@ export default class Agents extends View {
           .child(svg(it.icon).size(14).flex_none().text_color(t.muted))
           .child(div().flex_1().truncate().child(it.label))
           .when(Boolean(it.hint), (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(it.hint)))));
-  }
-
-  overview(cx) {
-    const existing = panes().find((p) => p.mod === "agent-list");
-    if (existing) { run("pane.focus", { pane: existing.pane }); return; }
-    if (this.opening) return;
-    const space = spaces().find((s) => s.active);
-    if (!space) return;
-    this.opening = true;
-    run("tab.new", { name: "Agents", space: space.id, mod: "agent-list", props: { overview: true } });
-    let attempts = 0;
-    const check = (cx) => {
-      const pane = panes().find((p) => p.mod === "agent-list");
-      if (pane) { run("tab.move", { id: pane.tab, index: 1 }); this.opening = false; return; }
-      if (++attempts < 20) cx.timer.after(100, check);
-      else this.opening = false;
-    };
-    cx.timer.after(100, check);
   }
 
   // Viewing a done agent makes it idle; that must not reset its status timer.
@@ -841,7 +829,7 @@ export default class Agents extends View {
 
   render(cx) {
     const t = theme();
-    if (props()?.overview) return overview(this.expanded);
+    if (props()?.overview) return div();
     if (props()?.rowMenu) return this.rowMenu(t);
     const collapsed = narrow();
     const all = terminals();
@@ -858,7 +846,9 @@ export default class Agents extends View {
     this.track(list, now);
     this.hold(list);
     this.graced = false;
-    const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a, now), ...kidStatuses(all, a.address, this.listed).map((s) => RANK[s] ?? 0))]));
+    // A helper's done is its own row's news: it doesn't pull a working parent out of Working.
+    const kidRank = (s) => RANK[s === "done" ? "idle" : s] ?? 0;
+    const urgency = new Map(list.map((a) => [a.address, Math.max(this.rank(a, now), ...kidStatuses(all, a.address, this.listed).map(kidRank))]));
     this.urgency = urgency;
     const rankOf = (a) => urgency.get(a.address);
     if (this.graced && !this.graceTimer) {
@@ -942,17 +932,21 @@ export default class Agents extends View {
       const waits = waitingOn(a, all, this.listed);
       const shown = waits ? { ...a, waiting: waits } : a;
       if (collapsed) {
-        return h_flex()
+        // A cell as wide as the projects rail's, centred, its number and glyph
+        // centred in it; the rail marks the agent you're on.
+        return h_flex().justify_center().flex_none().child(h_flex()
           .id(`ag-${a.address}`)
+          .w(32)
           .h(26)
-          .px(8)
-          .flex_none()
+          .rounded(6)
           .items_center()
+          .justify_center()
           .gap(4)
+          .when(a.focused, (el) => el.bg(t.selected))
           .hover((s) => s.bg(t.hover))
           .on_click(() => run("pane.focus", { pane: a.pane }))
-          .child(div().flex_1().min_w(0).whitespace_nowrap().text_right().text_color(t.muted).child(String(i + 1)))
-          .child(this.status(t, shown));
+          .child(div().whitespace_nowrap().text_color(a.focused ? t.foreground : t.muted).child(String(i + 1)))
+          .child(this.status(t, shown)));
       }
       const idle = a.status === "idle" && !a.focused && !waits;
       // Woken from a snooze and not looked at since: the name turns accent.
@@ -1067,13 +1061,14 @@ export default class Agents extends View {
         .when(Boolean(g.shelf), (el) => el.child(h_flex().w(GRID.status).flex_none().justify_end()
           .pr((GRID.status - GRID.spinner) / 2).text_color(t.dim).child(String(g.members.length))));
     };
-    const rows = collapsed
-      ? list.flatMap(withKids)
-      : groups.flatMap((g) => {
-        // A folded shelf still shows the agent in view.
-        const members = this.folded.has(g.id) ? g.members.filter((a) => g.shelf && a.focused) : g.members;
-        return [header(g), ...(g.shelf ? members.map(shelfRow) : members.flatMap(withKids))];
-      });
+    const groupRows = (g) => {
+      // A folded shelf still shows the agent in view.
+      const members = this.folded.has(g.id) ? g.members.filter((a) => g.shelf && a.focused) : g.members;
+      return [header(g), ...(g.shelf ? members.map(shelfRow) : members.flatMap(withKids))];
+    };
+    const rows = collapsed ? list.flatMap(withKids) : groups.filter((g) => !g.shelf).flatMap(groupRows);
+    // Snoozed and Parked sit at the bottom of the panel, below the scrolling list.
+    const shelves = collapsed ? [] : groups.filter((g) => g.shelf).flatMap(groupRows);
     const undo = this.undo && now < this.undo.until ? this.undo : null;
     const resumable = collapsed ? [] : this.resumable(t, now, allPanes);
 
@@ -1096,19 +1091,19 @@ export default class Agents extends View {
             .flex_none()
             .items_center()
             .justify_between()
-            .child(div().text_size(11.5).font_medium().text_color(t.dim).child("Agents"))
-            .child(div().id("agents-overview").size(26).flex_none().flex().items_center().justify_center().rounded(6)
-              .text_color(t.dim).cursor_pointer()
-              .hover((s) => s.bg(t.hover).text_color(t.foreground))
-              .tooltip("Open all agent sessions").accessibility_label("Open all agent sessions")
-              .on_click((_e, cx) => this.overview(cx)).child(svg(ICON).size(14))),
+            .child(div().text_size(11.5).font_medium().text_color(t.dim).child("Agents")),
         ),
       )
       .when(list.length === 0 && !collapsed && !resumable.length, (el) =>
         el.child(div().px(GRID.listPx + GRID.rowPx).text_size(12).text_color(t.dim).child("No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not.")),
       )
-      .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : GRID.listPx).pb(collapsed ? 0 : GRID.listEnd).gap(GRID.rowGap)
-        .overflow_y_scrollbar().mode("always").children([...resumable, ...rows]))
+      // The list fills the panel, so the shelves below it sit at the bottom; the
+      // scrollbar wrapper sizes to its content, so a filling box holds it.
+      .child(v_flex().flex_1().min_h(0).child(v_flex().id("ag-list").size_full().min_h(0).px(collapsed ? 0 : GRID.listPx).pb(collapsed ? 0 : GRID.listEnd).gap(GRID.rowGap)
+        .overflow_y_scrollbar().mode("always").children([...resumable, ...rows])))
+      // Its own height: a scrollbar box would take its whole max height.
+      .when(shelves.length > 0, (el) => el.child(v_flex().id("ag-shelves").flex_none().px(GRID.listPx).pb(GRID.listEnd)
+        .gap(GRID.rowGap).children(shelves)))
       .when(Boolean(undo) && !collapsed, (el) => el.child(h_flex()
         .mx(GRID.listPx)
         .mb(6)

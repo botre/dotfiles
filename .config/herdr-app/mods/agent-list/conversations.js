@@ -51,12 +51,11 @@ export class Conversations {
     setShared(OBSERVATIONS, next);
 
     if (shared(RECAPS) !== true) return;
-    // Only spend recap requests on primary sessions while their overview is visible.
+    // Only spend recap requests on the agents in the tab in view.
     const shown = spaces().find((space) => space.active)?.tabs.find((tab) => tab.active)?.id;
-    if (!panes().some((pane) => pane.tab === shown && pane.mod === "agent-list")) return;
+    const inView = new Set(panes().filter((pane) => pane.tab === shown && pane.terminal).map((pane) => pane.terminal));
     if (now - this.lastRecap < 180000) return;
-    const ownPane = new Set(panes().filter((pane) => pane.terminal).map((pane) => pane.terminal));
-    const candidate = all.find((t) => (!t.parent || ownPane.has(t.address)) && needsRecap(t, records[t.address] || {}, next[t.address], now));
+    const candidate = all.find((t) => inView.has(t.address) && needsRecap(t, records[t.address] || {}, next[t.address], now));
     if (!candidate) return;
     const observation = next[candidate.address];
     const on = machineOf(candidate.address);

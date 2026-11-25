@@ -34,17 +34,18 @@ describe("status: the agent's program", () => {
     const calls = [{ kind }];
     const proxy = new Proxy({}, { get: (_, name) => name === "calls" ? calls : (...args) => {
       if (name === "when") return args[0] ? args[1](proxy) : proxy;
-      calls.push([name, ...args.map((x) => x?.calls ?? x)]);
+      const unwrap = (x) => (Array.isArray(x) ? x.map(unwrap) : x?.calls ?? x);
+      calls.push([name, ...args.map(unwrap)]);
       return proxy;
     } });
     return proxy;
   };
-  const render = (f, panes, agents = []) => {
+  const render = (f, panes, agents = [], times = {}) => {
     const evaluate = loadMods(["status/main.js"], {
       div: () => element("div"), h_flex: () => element("h_flex"),
       svg: (path) => element(`svg ${path}`), image: (path) => element(`image ${path}`),
       spaces: () => [{ id: "sp1", active: true, machine: null, branch: null }],
-      agents: () => agents, panes: () => panes, focused: () => f,
+      agents: () => agents, panes: () => panes, focused: () => f, shared: (key) => (key === "agents.times" ? times : undefined),
       theme: () => new Proxy({}, { get: (_, name) => `#${String(name)}` }), keys: () => [], window: () => ({ platform: "linux" }),
     });
     return JSON.stringify(evaluate("Object.create(WorkspaceStatus.prototype).render()").calls);
@@ -55,6 +56,16 @@ describe("status: the agent's program", () => {
     const text = render({ tab: "tb1", terminal: "t1", agent: null }, panes, [{ address: "t1", program: CLAUDE }]);
     assert.match(text, /svg mods\/agent-list\/icons\/claude\.svg.*This computer/);
     assert.match(text, /"tooltip","Claude Code"/);
+  });
+
+  it("shows the focused agent's activity, session length and last update", () => {
+    const panes = [{ terminal: "t1", tab: "tb1", program: CLAUDE }];
+    const now = Date.now();
+    const text = render({ tab: "tb1", terminal: "t1" }, panes, [{ address: "t1", program: CLAUDE }],
+      { t1: { activityAt: now - 30000, startedAt: now - 16 * 60000, updatedAt: null } });
+    assert.match(text, /"Active".*"<1m ago".*"Session".*"16m"/);
+    assert.doesNotMatch(text, /"Updated"/);
+    assert.doesNotMatch(render({ tab: "tb1", terminal: "t2" }, [{ terminal: "t2", tab: "tb1", program: SHELL }], [], { t2: { startedAt: now } }), /"Session"/);
   });
 
   it("shows no program for a shell or a mod pane", () => {

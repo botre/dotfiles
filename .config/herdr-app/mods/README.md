@@ -35,20 +35,19 @@ colors they cached before the window attached.
 The `projects` sidebar replaces spaces in the `bjorn` layout. A project is a git
 remote, such as `github.com/owner/repo`. Create one with the sidebar's +: pick a
 folder in a repository with an `origin` remote, then add a name and an emoji or
-favicon URL. The same remote on any machine is the same project. The fixed General
+favicon URL. The same remote on any machine is the same project. The fixed Scratch
 project holds everything else.
 
 A tab belongs to the project its terminals carry in a `project=<id>` label. Tabs
-without one are in General. A new tab joins the project selected when it opens.
+without one are in Scratch. A new tab joins the project selected when it opens.
 Selecting a project fills the tab bar with its tabs from every space on every
 connected machine. Ctrl+1..9 select the projects in sidebar order.
 
 The sidebar lists the projects marked "Show in list", or else the five most recently
 active ones. Search finds the rest. Right-click a project for New worktree, Show or
-Hide, Edit and Delete. The agents list groups agents by project, General first.
-Its rows show the project's icon; General agents and helpers keep the program's
-icon, as does the Agents overview. The bottom bar starts with the program icon
-of the agent in view.
+Hide, Edit and Delete. The agents list groups agents by project, Scratch first.
+Its rows show the project's icon; Scratch agents and helpers keep the program's
+icon. The bottom bar starts with the program icon of the agent in view.
 
 Right-click an agent or a tab for Move to project. The picker relabels every
 terminal in the tab and leaves the selected project as it is, so a tab moved
@@ -58,10 +57,16 @@ cross hides the offer for that agent and project.
 
 A project without tabs shows a start page in the main area. It offers Claude Code,
 Codex and a terminal in the project's folder, plus New worktree and Open worktree.
-General starts at home, and a project without a known folder starts there too.
+Scratch starts at home, and a project without a known folder starts there too.
 The page sits in the layout's `main-stack` beside the tab block. The tab bar
 switches that stack, so no placeholder tab exists. New tabs join the selected
 project, and the page goes once the project has a tab.
+
+All sits above Scratch and is not a project. It fills the tab bar with every tab
+from every project, and it shows each kind of mod tab only once.
+Focus stays on All when a tab of another project comes into view. A new tab
+opened under All joins Scratch. Right-click Scratch or All for New terminal and the
+agents: they start in this computer's home and join Scratch.
 
 Each machine keeps the list in `~/.local/state/herdr/projects.json`. Every minute,
 and after each change, the sidebar merges the files of all connected machines and
@@ -79,24 +84,32 @@ both lists, so icons, names, counts and status glyphs line up across the sidebar
 Every row ends with its status slot, and a count or time sits just before it.
 `.config/herdr-app/tests/herdr-sidebar-grid.test.mjs` renders both lists and compares their rows.
 
+## Machines
+
+The `machines` mod draws the sidebar footer in the `bjorn` layout: a row per
+machine with its status, Add machine, a divider, then Settings. This computer
+comes first. A dot
+shows whether each machine is ready, needs a login, is connecting or is out of
+reach. A click on another machine opens its menu: Log in (in a terminal here, since it
+asks for a password or code), Update herdr-core, Rename and Forget.
+The footer resizes its layout block to fit its rows.
+
 ## Sessions
 
-The sidebar overview icon opens the closable Agents tab across connected
-machines. Click a row to open its session. Hover over its directory for the full
-path and branch.
-Helpers stay collapsed under their parent. Agents with their own tabs remain
-separate sessions, and the header counts those primary sessions.
+The bottom bar shows the agent in view's times: Active (since its last
+activity), Session (its length, idle time included) and Updated (its last
+report). The agents list works them out and shares them as `agents.times`.
 
 Agents publish labels through `python3 "$HOME/scripts/herdr-context" label`:
 
 - Summaries: `summary.goal`, `summary.activity`, `summary.updated` (Unix seconds).
 - Titles: `session.title`, `session.title.updated` (Unix seconds).
 
-Labels are optional but preferred. Every 30 seconds the overview reads the tail
+Labels are optional but preferred. Every 30 seconds the agents list reads the tail
 of each Claude Code and Codex transcript, with no model and no tokens. Activity
 comes from the agent's own report while it covers the latest conversation. Without
 one, it shows the live transcript: the running tool action during a turn ("Running
-node --test", "Editing overview.js"), else the latest assistant sentence. A dim
+node --test", "Editing main.js"), else the latest assistant sentence. A dim
 "Live · 12s ago" marks it, and the activity timer counts from that action. Then
 come the newest recap, status message, or older report. Phrases drop environment
 assignments and anything after a token or password flag. Orange marks only a failed
@@ -111,12 +124,12 @@ Names follow one order in agent rows, helper names and tab titles: Claude Code's
 goal and the terminal title. `tab-titles` reads recap titles from the agent list's
 shared observations and never renames a tab the person named.
 
-Recaps start disabled. Enable them in the overview to send a short excerpt to the
+Recaps start disabled. Turn them on from any agent's right-click menu to send a short excerpt to the
 smallest model of the session's provider: Claude Haiku or Codex's `gpt-6-luna`.
 The excerpt holds the first prompt and the last eight messages, with tool calls as
 one-line phrases, at most 4000 characters. One call returns a goal, an activity
 and, when the session has no `/rename` name or `session.title` label, a title.
-Recaps run only for a missing goal or title while the overview is visible, and
+Recaps run only for a missing goal or title of an agent in the tab in view, and
 never resume or fork the conversation. Requests wait at least two minutes after a
 report, three minutes between launches, and fifteen minutes between attempts for
 one session. Each request has a two-minute timeout. Recaps stay in a private cache
@@ -135,8 +148,8 @@ failed step leaves the agent running where it was. `agent-list/move.js` holds th
 plan and the steps.
 
 Session length uses the foreground process age from `ps` and includes idle time.
-A dash means unavailable. Existing Codex processes keep their old routing until
-the user resumes them; the overview marks these sessions.
+The bottom bar leaves out a time it doesn't know. Existing Codex processes keep
+their old routing until the user resumes them.
 
 Manual tab names take precedence. Clear a name to restore automatic titles.
 Temporary status titles such as "Action Required" are rejected.

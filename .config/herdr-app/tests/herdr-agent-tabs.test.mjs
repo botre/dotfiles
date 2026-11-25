@@ -8,6 +8,18 @@ describe("agent-tabs", () => {
   const tab = (id, active = false) => ({ id, active });
   const agentPane = (tabId, terminal) => ({ tab: tabId, terminal, program: { agent: true } });
 
+  it("keeps one of each mod tab, the one in view first, and every other tab", () => {
+    const tabs = [tab("o1"), tab("a"), tab("o2", true), tab("mix"), tab("f1")];
+    const all = [
+      { tab: "o1", terminal: null, mod: "agent-list" },
+      agentPane("a", "t1"),
+      { tab: "o2", terminal: null, mod: "agent-list" },
+      { tab: "mix", terminal: null, mod: "agent-list" }, agentPane("mix", "t2"),
+      { tab: "f1", terminal: null, mod: "files" },
+    ];
+    assert.deepEqual(ids("oneModTab(tabs, all)", { tabs, all }), ["a", "o2", "mix", "f1"]);
+  });
+
   it("hides a tab only when every agent in it is snoozed, and never the tab in view", () => {
     const space = { tabs: [tab("a"), tab("b"), tab("c"), tab("d", true), tab("e"), tab("f"), tab("g")] };
     const all = [
