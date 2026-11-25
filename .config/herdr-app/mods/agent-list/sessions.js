@@ -1,7 +1,10 @@
-import { terminals, shared, setShared, exec } from "herdr";
-import { isAgent, machineOf, observe, parseElapsed, sameProcess } from "./model.js";
+import { terminals, agents, spaces, panes, shared, setShared, exec } from "herdr";
+import { isAgent, machineOf, observe, parseElapsed, sameProcess, sessionTimes } from "./model.js";
 import { STORE } from "./ui.js";
-import { Conversations } from "./conversations.js";
+import { Conversations, OBSERVATIONS } from "./conversations.js";
+
+// Each agent's times, for the bottom bar: { address: { activityAt, startedAt, updatedAt } }.
+export const TIMES = "agents.times";
 
 // Measure the foreground process so a kept shell's age does not inflate sessions.
 export class SessionTracker {
@@ -38,6 +41,8 @@ export class SessionTracker {
       }
       if (JSON.stringify(records) !== JSON.stringify(previous)) setShared(STORE, records);
       await this.conversations.sync(all, records);
+      const times = sessionTimes(terminals(), agents(), spaces(), records, panes(), shared(OBSERVATIONS) || {}, Date.now());
+      if (JSON.stringify(times) !== JSON.stringify(shared(TIMES) ?? {})) setShared(TIMES, times);
       const keys = new Set(all.map((t) => `${t.address}:${t.created_ms}:${t.foreground?.pid}`));
       for (const key of this.starts.keys()) if (!keys.has(key)) this.starts.delete(key);
     // No redraw of its own: what it learns reaches the views through setShared,

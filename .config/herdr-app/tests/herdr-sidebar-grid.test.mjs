@@ -126,6 +126,9 @@ describe("sidebar grid", () => {
     const quiet = agentRows({ terms, agents });
     const header = byId(quiet, "inbox-settled");
     assert.ok(header, "the Parked shelf shows");
+    // At the bottom of the panel, below the scrolling list.
+    assert.ok(byId(byId(quiet, "ag-shelves"), "inbox-settled"));
+    assert.equal(byId(byId(quiet, "ag-list"), "inbox-settled"), null);
     assert.ok(!byId(quiet, "inbox-clear"));
     const count = children(header).at(-1);
     assert.equal(value(count, "w"), 18);
@@ -141,11 +144,10 @@ describe("sidebar grid", () => {
     assert.equal(grid.rowGap, menu.gap);
     const tree = agentRows();
     assert.equal(value(byId(tree, "ag-list"), "gap"), grid.rowGap);
-    // "Agents" starts where row content does; its 26px button sits centred over the status column.
+    // "Agents" starts where row content does, and has no overview button any more.
     const title = findIn(tree, (el) => has(el, "justify_between") && has(el, "pt", 10));
     assert.equal(value(title, "pl"), grid.listPx + grid.rowPx);
-    assert.equal(value(title, "pr") + 13, grid.listPx + grid.rowPx + grid.status / 2);
-    assert.equal(value(byId(tree, "agents-overview"), "size"), 26);
+    assert.equal(byId(tree, "agents-overview"), null);
   });
 
   it("hands Herdr the agent order once, not on every draw", () => {

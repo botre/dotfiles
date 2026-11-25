@@ -27,6 +27,8 @@ describe("project start page", () => {
     assert.deepEqual(place("github.com/o/old", null), { folder: "/home/me", machine: null, known: false });
     // General starts at home, and home is its folder.
     assert.deepEqual(place("general", "vps"), { folder: "/home/me", machine: null, known: true });
+    // So does All.
+    assert.deepEqual(place("all", "vps"), { folder: "/home/me", machine: null, known: true });
   });
 
   it("offers the installed agents, a terminal, and worktrees only for a project with a folder", () => {
@@ -119,7 +121,7 @@ describe("project start page render", () => {
 
   it("draws General at home without a repo or worktrees", () => {
     const { text } = render({ selected: "general" });
-    assert.ok(text.includes('"General"'));
+    assert.ok(text.includes('"Scratch"'));
     assert.doesNotMatch(text, /worktree|git-branch|No folder/);
     assert.ok(text.includes('"New terminal"'));
   });

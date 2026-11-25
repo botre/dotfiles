@@ -16,7 +16,7 @@
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { spaces, panes, terminals, agents, focused, machines, run, exec, hc, home, appHome, readTextFile, writeTextFile, theme, shared, setShared, openOverlay, closeOverlay, props, layout, notify, nextCommand, checking, pickFolder, window, knownAgents, keys } from "herdr";
-import { GENERAL, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects, pickerOverlay, PICKER_ROWS, MAIN_STACK, MAIN_START, MAIN_TAB } from "./membership.js";
+import { GENERAL, ALL, allProject, PROJECT_LABEL, STORE_PATH, DIRS_PATH, FAVICON_DIR, PROJECT_SELECTED, PROJECT_LIST, PROJECT_DIRS, PROJECT_ACTIVE, PROJECT_LAST_TAB, PROJECT_PENDING, PROJECT_ACTION, PROJECT_START_SHOWN, PROJECT_FAVICONS, GRID, MENU, projectIconView, statusGlyph, gridRow, gridTrail, generalProject, liveProjects, projectLabelOf, withProjectPending, tabProjects, projectTabs, projectStatus, projectAgents, projectIcon, moveCommands, pickerProjects, pickerOverlay, PICKER_ROWS, MAIN_STACK, MAIN_START, MAIN_TAB, shownTabs, putAway, INBOX_PENDING } from "./membership.js";
 import { startPlace, startAgents, startActions, startCommand, worktreeOverlay } from "./start.js";
 import { normalizeRemote, nameOf, parseStore, mergeProjects, planSync, upsert, remove, listedProjects, searchProjects, freshTerminals, autoLabels, touchActive, faviconSource, faviconBase, imageExt, iconCandidates } from "./store.js";
 
@@ -49,14 +49,19 @@ export const projectMenuHeight = (items) => MENU.pad * 2
 // The project menu: what the New menu starts (in the project's folder), then the
 // project's own actions. agents: knownAgents() for the folder's machine. As the New
 // menu, it lists the installed agents, then up to two that aren't installed.
+// Scratch and All only start things, at home, and what starts joins Scratch.
 export function projectMenuItems(proj, place, agents, terminalKey = "") {
   const installed = (agents ?? []).filter((a) => a.installed);
   const missing = (agents ?? []).filter((a) => !a.installed).slice(0, 2);
-  return [
+  const start = [
     { id: "terminal", kind: "terminal", label: "New terminal", icon: "icons/shell.svg", hint: terminalKey, enabled: true },
     { heading: "Start an agent" },
     ...installed.map((a, i) => ({ id: `agent-${a.key}`, kind: "agent", label: a.name, agent: a, hint: i < 9 ? String(i + 1) : "", enabled: true })),
     ...missing.map((a) => ({ id: `agent-${a.key}`, kind: "agent", label: a.name, agent: a, hint: "Not installed", enabled: false })),
+  ];
+  if (proj.id === GENERAL || proj.id === ALL) return start;
+  return [
+    ...start,
     { divider: true },
     { id: "worktree-new", kind: "worktree", action: "new", label: "New worktree…", icon: "mods/workspace-chrome/git-branch.svg", enabled: place.known },
     { id: "worktree-open", kind: "worktree", action: "open", label: "Open worktree…", icon: "mods/workspace-chrome/git-branch.svg", enabled: place.known },
@@ -66,6 +71,14 @@ export function projectMenuItems(proj, place, agents, terminalKey = "") {
     { divider: true },
     { id: "delete", label: "Delete", icon: "mods/workspace-chrome/x.svg", enabled: true },
   ];
+}
+
+// A project row's status and agent count, as its tabs in the bar have them:
+// parked and snoozed agents count in neither.
+export function projectSummary(id, { sp, ps, terms, tabProject, running, pending, focusedTab = null, now = Date.now() }) {
+  const tabs = shownTabs(projectTabs(sp, id, tabProject, focusedTab), ps, terms, pending, now);
+  const present = (running ?? []).filter((a) => !putAway({ terminal: a.address, status: a.status }, terms, pending, now));
+  return { status: projectStatus(tabs), count: projectAgents(present, tabs) };
 }
 
 // The key bound to a global command, for a menu row's hint.
@@ -97,7 +110,7 @@ export function tabToShow(tabs, remembered) {
 // The project focus moved into: only for a tab that changed, and not for a
 // tab that just appeared (it is being labelled with the selected project).
 export function followFocus(tab, before, tabProject, freshTabs, selected) {
-  if (!tab || tab === before || freshTabs.has(tab)) return null;
+  if (!tab || tab === before || freshTabs.has(tab) || selected === ALL) return null;
   const project = tabProject.get(tab);
   return project && project !== selected ? project : null;
 }
@@ -185,7 +198,7 @@ export default class Projects extends View {
 
   selected() {
     const id = shared(PROJECT_SELECTED) ?? GENERAL;
-    return id === GENERAL || liveProjects(this.projects).some((p) => p.id === id) ? id : GENERAL;
+    return id === GENERAL || id === ALL || liveProjects(this.projects).some((p) => p.id === id) ? id : GENERAL;
   }
 
   publish() {
@@ -321,7 +334,7 @@ export default class Projects extends View {
   // one of them, the one last shown there (or its first) comes into view.
   select(id) {
     setShared(PROJECT_SELECTED, id);
-    this.touch([id]);
+    if (id !== ALL) this.touch([id]);
     const sp = spaces(), ps = panes();
     const tabProject = tabProjects(sp, ps, new Map(terminals().map((k) => [k.address, k])), this.known(), shared(PROJECT_PENDING));
     const tabs = projectTabs(sp, id, tabProject, focused()?.tab);
@@ -415,14 +428,16 @@ export default class Projects extends View {
       if (before !== undefined && before !== a.seq) touched.push(tabProject.get(a.tab));
     }
     if (touched.length) this.touch(touched);
-    return { tabProject, sp, running };
+    return { tabProject, sp, ps, terms, running };
   }
 
   // --- Drawing ----------------------------------------------------------
 
   icon(p, t, size = GRID.icon) {
+    if (p.id === ALL) return h_flex().w(size).h(size).flex_none().items_center().justify_center().text_color(t.muted)
+      .child(svg("mods/agent-list/agents.svg").size(size - 4));
     if (p.id === GENERAL) return h_flex().w(size).h(size).flex_none().items_center().justify_center().text_color(t.muted)
-      .child(svg("mods/workspace-chrome/layers.svg").size(size - 4));
+      .child(svg("mods/projects/hash.svg").size(size - 4));
     const src = iconUrl(p);
     const own = src && this.favicons?.[src]?.path;
     return projectIconView(UI, t, projectIcon(p, own ? { [src]: own } : shared(PROJECT_FAVICONS)), size);
@@ -442,7 +457,7 @@ export default class Projects extends View {
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
       .cursor_pointer()
       .on_click((_e, cx) => { this.select(p.id); cx.notify(); })
-      .when(p.id !== GENERAL, (el) => el.on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.menu(p); }));
+      .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.menu(p); });
   }
 
   compact(p, t, on, status) {
@@ -451,7 +466,7 @@ export default class Projects extends View {
       .when(on, (el) => el.bg(t.selected))
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
       .on_click((_e, cx) => { this.select(p.id); cx.notify(); })
-      .when(p.id !== GENERAL, (el) => el.on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.menu(p); }))
+      .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); this.menu(p); })
       .child(this.icon(p, t))
       .when(status === "blocked" || status === "done", (el) => el.child(div().absolute().right(3).top(3).size(6).rounded(3).bg(t[status]))));
   }
@@ -489,15 +504,16 @@ export default class Projects extends View {
     const t = theme();
     const collapsed = narrow();
     // One read of the host's lists per render: observe() hands back what it read.
-    const { tabProject, sp, running } = this.observe(cx);
+    const { tabProject, sp, ps, terms, running } = this.observe(cx);
     const selected = this.selected();
     const searching = !collapsed && this.query.trim() !== "";
     const list = searching ? searchProjects(this.projects, this.query) : listedProjects(this.projects, shared(PROJECT_ACTIVE) ?? {});
-    const rows = list.map((proj) => {
-      const tabs = projectTabs(sp, proj.id, tabProject);
-      const status = projectStatus(tabs);
+    // All comes first, outside the search: it is not a project.
+    const live = { sp, ps, terms, tabProject, running, pending: shared(INBOX_PENDING), focusedTab: focused()?.tab };
+    const rows = [...(searching ? [] : [allProject()]), ...list].map((proj) => {
+      const { status, count } = projectSummary(proj.id, live);
       const on = proj.id === selected;
-      return collapsed ? this.compact(proj, t, on, status) : this.row(proj, t, on, status, projectAgents(running, tabs));
+      return collapsed ? this.compact(proj, t, on, status) : this.row(proj, t, on, status, count);
     });
     return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
       // The title starts where row content does; the + sits centred over the status column.
@@ -529,7 +545,8 @@ export default class Projects extends View {
   // --- Right-click menu ---------------------------------------------------
 
   menuModel(p) {
-    const proj = (shared(PROJECT_LIST) ?? []).find((x) => x.id === p.project && !x.deleted);
+    const proj = p.project === GENERAL ? generalProject() : p.project === ALL ? allProject()
+      : (shared(PROJECT_LIST) ?? []).find((x) => x.id === p.project && !x.deleted);
     if (!proj) return { items: [], place: null };
     const place = this.projectPlace(proj.id);
     return { items: projectMenuItems(proj, place, p.agents, keyFor("tab.new")), place };

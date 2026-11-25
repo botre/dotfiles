@@ -48,7 +48,7 @@ describe("move to project helpers", () => {
   });
 
   it("lists General, then the live projects by name, in a popup sized to them", () => {
-    assert.deepEqual(run("pickerProjects(list).map((p) => p.name)", { list: LIST }), ["General", "One", "Two"]);
+    assert.deepEqual(run("pickerProjects(list).map((p) => p.name)", { list: LIST }), ["Scratch", "One", "Two"]);
     const o = run("pickerOverlay('tb1', list)", { list: LIST });
     assert.deepEqual(o, { mod: "projects", kind: "popup", width: 260, height: o.height, props: { picker: "tb1" } });
     // Top padding, heading, rows with a gap after each (the last is the bottom padding), border.
@@ -98,7 +98,7 @@ describe("move to project", () => {
     await view.moveTab("tb1", "general");
     assert.deepEqual(plain(hcCalls), [["label", "t1", "project="], ["label", "vps/t2", "project="]]);
     assert.equal(shared["projects.pending"]["vps/t2"].project, "");
-    assert.equal(notes[0].title, "Moved to General");
+    assert.equal(notes[0].title, "Moved to Scratch");
   });
 
   it("reports a failed label and ignores a project that is gone", async () => {
@@ -125,8 +125,8 @@ describe("move to project", () => {
     assert.equal(view.at, 2, "starts on the tab's project");
     const tree = view.renderPicker(p);
     const text = JSON.stringify(tree.calls);
-    for (const s of ["Move to project", "General", "One", "Two"]) assert.ok(text.includes(JSON.stringify(s)), s);
-    assert.match(text, /svg mods\/workspace-chrome\/layers\.svg/, "General's icon");
+    for (const s of ["Move to project", "Scratch", "One", "Two"]) assert.ok(text.includes(JSON.stringify(s)), s);
+    assert.match(text, /svg mods\/projects\/hash\.svg/, "General's icon");
     assert.ok(text.includes(JSON.stringify("\u{1F680}")), "an emoji draws as text");
     assert.equal((text.match(/check\.svg/g) ?? []).length, 1);
     const handler = tree.calls.find((c) => c[0] === "on_key_down")[1];

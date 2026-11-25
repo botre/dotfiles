@@ -2,16 +2,17 @@
 // tab. The tab bar switches the layout's main stack to it (mainChild in
 // membership.js). These decide where its actions start and which it offers.
 
-import { GENERAL } from "./membership.js";
+import { GENERAL, ALL } from "./membership.js";
 
 // The agents the page starts, in this order, when installed.
 export const START_AGENTS = ["claude", "codex"];
 
-// Where the page's actions start. General: this computer's home. A project: its
+// Where the page's actions start. Scratch and All: this computer's home. A project: its
 // folder on the machine in view, else here, else another connected machine;
 // without one, this computer's home with `known: false`.
 // dirs: { [machine or ""]: { [id]: folder } }; ready: connected machine names.
 export function startPlace(dirs, id, inView, ready, homeDir) {
+  if (id === ALL) id = GENERAL;
   if (id !== GENERAL) {
     const up = new Set(["", ...(ready ?? [])]);
     for (const m of [inView ?? "", "", ...Object.keys(dirs ?? {})]) {

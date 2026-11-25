@@ -1,46 +1,20 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, terminals, focused, run, openOverlay, theme, window, shared, setShared, layout, settings, nextCommand } from "herdr";
-import { GENERAL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, GRID, liveProjects, tabProjects, projectTabs, mainChild } from "./projects.js";
+import { GENERAL, ALL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, GRID, liveProjects, tabProjects, projectTabs, mainChild, shownTabs, INBOX_PENDING } from "./projects.js";
 
 // Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
 // sprite that blurs when scaled and a logo on a white square.
 const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
 
-// The agents list snoozes or parks an agent with a label on its terminal,
-// and shares what it just wrote until hc has it (agent-list/inbox.js).
-const SNOOZED = "inbox.snoozed";
-const SETTLED = "inbox.settled";
-const SETTLED_RE = /^(\d+):(\d+)$/;
-const PENDING = "agent-list.pending";
-const PENDING_MS = 5000;
-const NUMBER_RE = /^\d+$/;
 const SELECT_RE = /^select-([1-9])$/;
-
-function labelNow(key, address, terms, pending, now) {
-  const p = pending?.[address];
-  return p && Object.prototype.hasOwnProperty.call(p, key) && now - p.at < PENDING_MS ? p[key] : terms.get(address)?.labels?.[key];
-}
-
-function snoozedNow(address, terms, pending, now) {
-  const value = labelNow(SNOOZED, address, terms, pending, now);
-  return NUMBER_RE.test(value ?? "") && Number(value) > now;
-}
-
-// Parked until it works, needs you or starts a new turn, as the agents list
-// has it, so the tab comes back before that list clears the label.
-function settledNow(pane, terms, pending, now) {
-  const m = SETTLED_RE.exec(labelNow(SETTLED, pane.terminal, terms, pending, now) ?? "");
-  if (!m || pane.status === "working" || pane.status === "blocked") return false;
-  return (terms.get(pane.terminal)?.turn ?? 0) <= Number(m[2]);
-}
 
 // The selected project's tabs, from every space on every machine, each with
 // its space; `active` marks the tab in focus (each space has its own active tab).
-// A label naming a project that is gone counts as General.
+// A label naming a project that is gone counts as General. All shows every tab.
 export function projectBarTabs(allSpaces, allPanes, terms, projects, selected, focusedTab, pending = null, now = Date.now()) {
   const known = new Set(liveProjects(projects).map((p) => p.id));
-  const project = selected === GENERAL || known.has(selected) ? selected : GENERAL;
+  const project = selected === GENERAL || selected === ALL || known.has(selected) ? selected : GENERAL;
   return projectTabs(allSpaces, project, tabProjects(allSpaces, allPanes, terms, known, pending, now), focusedTab);
 }
 
@@ -59,9 +33,32 @@ function selectedTabs({ allSpaces, allPanes, terms } = snapshot()) {
   return projectBarTabs(allSpaces, allPanes, terms, shared(PROJECT_LIST) ?? [], shared(PROJECT_SELECTED) ?? GENERAL, focusedTab(allSpaces), shared(PROJECT_PENDING));
 }
 
-// What the bar shows now: the selected project's visible tabs.
+// What the bar shows now: the selected project's visible tabs, and under All
+// one of each mod tab (each space may have its own).
 function barTabs(snap = snapshot(), tabs = selectedTabs(snap)) {
-  return visibleTabs(tabs, snap.allPanes, snap.terms);
+  const shown = visibleTabs(tabs, snap.allPanes, snap.terms);
+  return shared(PROJECT_SELECTED) === ALL ? oneModTab(shown, snap.allPanes) : shown;
+}
+
+// One tab per kind of mod tab (only mod panes, no terminal): the one in view,
+// else the first. Other tabs all stay.
+export function oneModTab(tabs, allPanes) {
+  const kind = new Map();
+  for (const p of allPanes ?? []) {
+    const k = kind.get(p.tab) ?? [];
+    k.push(p.terminal || !p.mod ? null : p.mod);
+    kind.set(p.tab, k);
+  }
+  const keyOf = (tab) => {
+    const mods = kind.get(tab.id) ?? [];
+    return mods.length && mods.every(Boolean) ? [...mods].sort().join(" ") : null;
+  };
+  const keep = new Map();
+  for (const tab of tabs ?? []) {
+    const key = keyOf(tab);
+    if (key && (!keep.has(key) || tab.active)) keep.set(key, tab.id);
+  }
+  return (tabs ?? []).filter((tab) => { const key = keyOf(tab); return !key || keep.get(key) === tab.id; });
 }
 
 // Shows a tab from any space: its space first, then the tab.
@@ -70,19 +67,9 @@ function selectTab(tab) {
   run("tab.select", { id: tab.id });
 }
 
-// The tabs the bar shows: all but those whose every agent is snoozed or
-// parked. The tab in view always shows, and a tab without an agent never
-// hides. A put-away terminal counts as an agent even while it reports no
-// status (Herdr marks a program as an agent only once it does).
-export function visibleTabs(tabs, all = panes(), terms = new Map(terminals().map((k) => [k.address, k])), pending = shared(PENDING), now = Date.now()) {
-  return (tabs ?? []).filter((tab) => {
-    if (tab.active) return true;
-    const mine = all.filter((p) => p.tab === tab.id && p.terminal);
-    const away = new Set(mine.filter((p) => snoozedNow(p.terminal, terms, pending, now) || settledNow(p, terms, pending, now)).map((p) => p.terminal));
-    const agents = mine.filter((p) => p.program?.agent || p.status || away.has(p.terminal));
-    return !(agents.length && agents.every((p) => away.has(p.terminal)));
-  });
-}
+// The tabs the bar shows (shownTabs in projects.js), from the host's lists now.
+export const visibleTabs = (tabs, all = panes(), terms = new Map(terminals().map((k) => [k.address, k])), pending = shared(INBOX_PENDING), now = Date.now()) =>
+  shownTabs(tabs, all, terms, pending, now);
 
 // alt-1..9 and the next/prev keys go by the tabs the bar shows, not by every tab.
 export function tabFor(command, tabs) {
@@ -205,10 +192,9 @@ export default class Tabs extends View {
     const snap = snapshot();
     const tabs = selectedTabs(snap);
     const shown = barTabs(snap, tabs);
-    // Each tab's program and whether it is the Agents overview, from the one pane read.
-    const programs = new Map(), overviews = new Set();
+    // Each tab's program, from the one pane read.
+    const programs = new Map();
     for (const p of snap.allPanes) {
-      if (p.mod === "agent-list") overviews.add(p.tab);
       const have = programs.get(p.tab);
       if (!have || (!have.agent && p.program?.agent)) programs.set(p.tab, { program: p.program, agent: Boolean(p.program?.agent) });
     }
@@ -224,7 +210,6 @@ export default class Tabs extends View {
     const button = (id, label, action) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
       .on_mouse_down("left", stop).on_click(action).child(label);
     const item = (c, i) => {
-      const overview = overviews.has(c.id);
       const program = programs.get(c.id)?.program;
       const name = c.named ? c.name : program?.name ?? "Terminal";
       return h_flex().id(`tab-${c.id}`).h(29).px(10).gap(7).rounded(7).items_center().flex_none().text_size(12.8)
@@ -242,7 +227,6 @@ export default class Tabs extends View {
         })
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); tabMenu(c); })
         .when(Boolean(program?.icon), el => el.child(BRAND[program.key] ? svg(BRAND[program.key][0]).size(14).text_color(BRAND[program.key][1]) : program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
-        .when(overview, el => el.child(svg("mods/agent-list/agents.svg").size(14).text_color(t.muted)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
         .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(GRID.spinner).flex_none().text_color(t.working).spin(900)))
         .when(c.status === "blocked" || c.status === "done", el => el.child(div().size(GRID.dot).flex_none().rounded(4).bg(t[c.status])))
@@ -277,7 +261,16 @@ export default class Tabs extends View {
       .child(h_flex().id("tab-scroll").flex_1().min_w(0).h_full().items_center().gap(3).overflow_x_scrollbar().track_scroll(this.scroll)
         .on_size_change((_size, cx) => { if (active >= 0) { this.scroll.scroll_to_item(active); cx.notify(); } })
         .children(shown.map(item)))
-      .child(button("tab-new", "+", () => openOverlay({ mod: "new-menu-org", kind: "popup", width: 250, height: 512 })))
+      // A split button: + opens a terminal in the shown space, the chevron the New menu.
+      .child(h_flex().id("tab-new-split").h(26).flex_none().items_center().rounded(6)
+        .on_mouse_down("left", stop)
+        .child(div().id("tab-new").w(24).h_full().flex().items_center().justify_center().rounded_l(6).text_color(t.dim)
+          .hover(s => s.bg(t.hover).text_color(t.foreground)).tooltip("New terminal")
+          .on_click(() => run("tab.new", { space: spaces().find((s) => s.active)?.id })).child("+"))
+        .child(div().id("tab-new-menu").w(16).h_full().flex().items_center().justify_center().rounded_r(6).text_color(t.dim)
+          .hover(s => s.bg(t.hover).text_color(t.foreground)).tooltip("New…")
+          .on_click(() => openOverlay({ mod: "new-menu-org", kind: "popup", width: 250, height: 512 }))
+          .child(svg("mods/workspace-chrome/chevron-down.svg").size(11))))
       // The tab-actions menu; off in the Mods panel hides the button. Height: 31 per action, plus 10.
       .when(!(shared("mods.off") ?? []).includes("tab-actions"), el => el.child(button("tab-actions", svg("mods/tab-actions/more.svg").size(16),
         () => openOverlay({ mod: "tab-actions", kind: "popup", width: 250, height: 41 }))))

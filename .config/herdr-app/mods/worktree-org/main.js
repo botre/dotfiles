@@ -3,7 +3,7 @@
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, Scrollbar } from "gpui-base";
-import { run, props, closeOverlay, theme, spaces, panes, exec, home, appHome, readTextFile } from "herdr";
+import { run, props, closeOverlay, theme, spaces, panes, terminals, exec, home, appHome, readTextFile } from "herdr";
 
 // Where a space is now: its first terminal's live folder, else where it was made.
 function place(s, all = panes()) {
@@ -127,7 +127,10 @@ async function repoOf(folder, on) {
 function repoName(main, url) {
   const m = url.match(/[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/);
   if (m && !url.startsWith("/")) return `${m[1]}/${m[2]}`;
-  return main.replace(/\\/g, "/").split("/").slice(-2).join("/");
+  // A bare repo hidden beside its worktrees (<project>/.bare) goes by its project.
+  const parts = main.replace(/\\/g, "/").split("/");
+  if (parts.at(-1) === ".bare") parts.pop();
+  return parts.slice(-2).join("/");
 }
 
 export default class Worktree extends View {
@@ -197,11 +200,13 @@ export default class Worktree extends View {
   }
 
   async work(cx) {
-    if (this.busy || !this.repo) return;
+    const remove = props()?.action === "remove";
+    // A main checkout is never removed, only a linked worktree.
+    if (this.busy || !this.repo || (remove && !this.repo.linked)) return;
     this.busy = true;
     this.error = "";
     cx.notify();
-    try { this.error = props().action === "remove" ? await this.remove() : await this.create(); }
+    try { this.error = remove ? await this.remove(cx) : await this.create(); }
     catch (error) { this.error = String(error); }
     this.busy = false;
     if (!this.error) this.close();
@@ -235,7 +240,7 @@ export default class Worktree extends View {
     else run("space.new", { folder: c.path, machine: this.on ?? "" });
   }
 
-  async remove() {
+  async remove(cx) {
     const s = this.space();
     const status = await git(this.repo.top, ["--no-optional-locks", "-c", "core.fsmonitor=false", "status", "--porcelain"], this.on);
     if (!status.ok) return status.err || "git status failed.";
@@ -247,8 +252,24 @@ export default class Worktree extends View {
     this.dirty ||= status.out !== "";
     this.unpushed = [...new Set([...this.unpushed, ...unpushed])];
     if (changed) return "It changed since this opened. Enter again removes it anyway.";
-    // Terminals first: a shell sitting in the folder keeps it busy on Windows.
-    run("space.close", { id: s.id, confirmed: true });
+    // A locked worktree stays: say why instead of failing halfway.
+    const list = await git(this.repo.main, ["-c", "core.quotePath=false", "worktree", "list", "--porcelain"], this.on);
+    if (!list.ok) return list.err || "git worktree list failed.";
+    const checkout = list.out.split(/\n\n+/).map((record) => record.split("\n")).find(([path]) => path === `worktree ${this.repo.top}`);
+    const lock = checkout?.find((field) => field === "locked" || field.startsWith("locked "));
+    if (lock) return lock === "locked" ? "This worktree is locked." : `This worktree is locked: ${lock.slice(7)}`;
+    // Terminals first: a shell sitting in the folder keeps it busy on Windows,
+    // and a dev server still writing could leave a half-deleted checkout.
+    if (s?.id) {
+      const tabs = new Set(s.tabs.map((tab) => tab.id));
+      this.closingTerminals = new Set(panes().filter((p) => p.terminal && tabs.has(p.tab)).map((p) => p.terminal));
+      run("space.close", { id: s.id, confirmed: true });
+    }
+    const deadline = Date.now() + 10_000;
+    while (this.closingTerminals?.size && terminals().some((t) => t.state === "live" && this.closingTerminals.has(t.address))) {
+      if (Date.now() >= deadline) return "The space's terminals haven't stopped yet. Press Enter to check again.";
+      await cx.sleep(50);
+    }
     const force = this.dirty || mods.length > 0;
     const r = await git(this.repo.main, ["worktree", "remove", ...(force ? ["--force"] : []), this.repo.top], this.on, 600_000);
     return r.ok ? "" : r.err || "git worktree remove failed.";

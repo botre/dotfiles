@@ -55,6 +55,20 @@ describe("project menu", () => {
     assert.match(text, /svg mods\/agent-list\/icons\/claude\.svg/);
   });
 
+  it("gives Scratch and All only the terminal and agents, started at home in Scratch", () => {
+    for (const project of ["general", "all"]) {
+      const { evaluate, view, store, ran } = setup();
+      const p = { project, agents: [claude, cursor], overlay: "m1" };
+      const { items, place } = evaluate("view.menuModel(p)", { view, p });
+      assert.deepEqual(plain(items).map((it) => it.heading ?? it.label), ["New terminal", "Start an agent", "Claude Code", "Cursor"], project);
+      evaluate("view.chooseMenu(items[0], p, place)", { view, p, items, place });
+      // The selection stays on the row picked; a new tab under either joins Scratch.
+      assert.equal(store["projects.action"].id, project);
+      assert.equal(plain(ran)[1][0], "tab.new");
+      assert.equal(plain(ran)[1][1].folder, "/home/me");
+    }
+  });
+
   it("greys out the worktrees for a project without a folder", () => {
     const { evaluate, view } = setup({ dirs: {} });
     const { items } = plain(evaluate("view.menuModel(p)", { view, p: { project: ID, agents: [claude] } }));

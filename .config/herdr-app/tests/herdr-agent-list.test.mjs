@@ -12,29 +12,17 @@ describe("agent-list", () => {
       assert.equal(evaluate('clean(undefined)'), "");
     });
 
-    it("opens one overview at the left, focuses it on repeat, and allows reopening after close", () => {
-      const commands = [], timers = [];
-      let panes = [];
+    it("closes Agents overview tabs left from before, and draws nothing in one", () => {
+      const commands = [];
       const evaluate = loadMod("agent-list", {
-        panes: () => panes,
-        spaces: () => [{ id: "sp1", active: true }],
+        props: () => ({}),
+        panes: () => [{ pane: "p1", tab: "tb1", mod: "agent-list" }, { pane: "p2", tab: "tb2", terminal: "t1" }],
         run: (command, args) => commands.push({ command, args }),
+        SessionTracker: class { sync() {} },
+        localStorage: { getItem: () => null, setItem() {} },
       });
-      const agentList = evaluate("new Agents()");
-      const cx = { timer: { after: (_ms, callback) => timers.push(callback) } };
-      agentList.overview(cx);
-      agentList.overview(cx);
-      assert.equal(commands.length, 1);
-      assert.equal(commands[0].command, "tab.new");
-      panes = [{ pane: "p1", tab: "tb1", mod: "agent-list" }];
-      timers.shift()(cx);
-      assert.equal(commands[1].command, "tab.move");
-      assert.equal(commands[1].args.index, 1);
-      agentList.overview(cx);
-      assert.equal(commands[2].command, "pane.focus");
-      panes = [];
-      agentList.overview(cx);
-      assert.equal(commands[3].command, "tab.new");
+      evaluate("new Agents()").init({}, { spawn() {}, timer: { every() {} } });
+      assert.deepEqual(plain(commands), [{ command: "pane.close", args: { pane: "p1" } }]);
     });
   });
 
@@ -419,7 +407,7 @@ describe("agent-list", () => {
       const list = [{ address: "t1", tab: "a" }, { address: "t2", tab: "b" }, { address: "vps/t3", tab: "vps/c" }, { address: "vps/t4", tab: "vps/d" }, { address: "t9", tab: null }];
       const groups = plain(evaluate("projectGroups(list, agentProjects(list, spaces, panes, terms, projects), projects)", { list, spaces, panes, terms, projects }));
       assert.deepEqual(groups.map((g) => [g.id, g.label, g.members.map((a) => a.address)]), [
-        ["pj-general", "General", ["t2", "t9"]],
+        ["pj-general", "Scratch", ["t2", "t9"]],
         ["pj-github.com/o/alpha", "Alpha", ["vps/t3"]],
         ["pj-github.com/o/zulu", "Zulu", ["t1", "vps/t4"]],
       ]);

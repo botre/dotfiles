@@ -86,14 +86,17 @@ describe("worktree-org wiring", () => {
 });
 
 describe("worktree-org removal", () => {
-  const setup = ({ status = { code: 0, stdout: "" }, removal = { code: 0 } } = {}) => {
+  const setup = ({ status = { code: 0, stdout: "" }, removal = { code: 0 }, list = "worktree /dev/tool\n\nworktree /w/tool/fix\nHEAD abc", live = () => [] } = {}) => {
     const calls = [];
     const evaluate = loadMod("worktree-org", {
       props: () => ({ space: "sp1" }),
-      spaces: () => [{ id: "sp1" }],
+      spaces: () => [{ id: "sp1", tabs: [{ id: "tb1" }] }],
+      panes: () => [{ tab: "tb1", terminal: "t1" }],
+      terminals: live,
       run: (...args) => calls.push(args),
       exec: async (_cmd, args) => {
         if (args.includes("status")) return status;
+        if (args.includes("list")) return { code: 0, stdout: list };
         if (args[0] === "rev-parse") return { code: 0, stdout: "/dev/tool/.git/worktrees/fix" };
         if (args.includes("config")) return { code: 1 };
         if (args[0] === "worktree") { calls.push(args); return removal; }
@@ -102,7 +105,8 @@ describe("worktree-org removal", () => {
     });
     const view = evaluate("new Worktree()");
     Object.assign(view, { repo: { top: "/w/tool/fix", main: "/dev/tool", linked: true }, dirty: false, unpushed: [] });
-    return { view, calls };
+    const cx = { sleep: async () => {} };
+    return { view, calls, cx };
   };
 
   it("keeps the space and checkout when the final status check fails", async () => {
@@ -129,6 +133,25 @@ describe("worktree-org removal", () => {
     assert.equal(view.dirty, true);
     assert.equal(await view.remove(), "");
     assert.deepEqual(plain(calls.at(-1)), ["worktree", "remove", "--force", "/w/tool/fix"]);
+  });
+
+  it("refuses a locked worktree before it closes anything", async () => {
+    const { view, calls, cx } = setup({ list: "worktree /w/tool/fix\nHEAD abc\nlocked on a USB drive" });
+    assert.equal(await view.remove(cx), "This worktree is locked: on a USB drive");
+    assert.deepEqual(calls, []);
+  });
+
+  it("waits for the space's terminals to stop before it deletes the folder", async () => {
+    let checks = 0;
+    const { view, calls, cx } = setup({ live: () => (++checks < 3 ? [{ address: "t1", state: "live" }] : []) });
+    assert.equal(await view.remove(cx), "");
+    assert.equal(checks, 3);
+    assert.deepEqual(plain(calls.at(-1)), ["worktree", "remove", "/w/tool/fix"]);
+  });
+
+  it("names a hidden bare repo after its project", () => {
+    const evaluate = loadMod("worktree-org");
+    assert.equal(evaluate('repoName("/home/me/dev/tool/.bare", "")'), "dev/tool");
   });
 
   it("reports a failed worktree removal", async () => {

@@ -5,13 +5,15 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { spaces, agents, panes, focused, theme, run, window, keys, exec } from "herdr";
+import { spaces, agents, panes, focused, theme, run, window, keys, exec, shared } from "herdr";
 
 // Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
 // sprite that blurs when scaled and a logo on a white square.
 const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
 
 const EVERY = 2 * 60 * 1000;
+// The agents list publishes each agent's times here (agent-list/sessions.js).
+const TIMES = "agents.times";
 const FAILED = new Set(["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]);
 const PENDING = new Set(["PENDING", "EXPECTED", "QUEUED", "IN_PROGRESS", "WAITING", "REQUESTED"]);
 
@@ -32,6 +34,39 @@ export function focusedAgentProgram(f, allPanes, allAgents) {
   return program?.icon && (agent || program.agent) ? program : null;
 }
 
+// The address of the agent in the focused pane, or null.
+export function focusedAgentAddress(f, allPanes, allAgents) {
+  const address = f?.agent ?? f?.terminal;
+  if (!address) return null;
+  return allAgents.some((a) => a.address === address) || allPanes.find((p) => p.terminal === address)?.program?.agent ? address : null;
+}
+
+// "<1m", "16m", "1h 49m", as the agents list writes them.
+export function duration(ms) {
+  const minutes = Math.max(0, Math.floor(ms / 60000));
+  if (minutes < 1) return "<1m";
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h${minutes % 60 ? ` ${minutes % 60}m` : ""}`;
+}
+
+// "16:55" today, else "24/11 16:55".
+export function clock(at, now = Date.now()) {
+  const date = new Date(at), today = new Date(now);
+  const time = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return date.toDateString() === today.toDateString() ? time : `${date.getDate()}/${date.getMonth() + 1} ${time}`;
+}
+
+// The agent's times as [label, value, tooltip], leaving out what isn't known.
+export function agentTimes(times, now = Date.now()) {
+  if (!times) return [];
+  return [
+    times.activityAt && ["Active", `${duration(now - times.activityAt)} ago`, "Time since its last activity"],
+    times.startedAt && ["Session", duration(now - times.startedAt), "Session length, idle time included, since launch or resume"],
+    times.updatedAt && ["Updated", clock(times.updatedAt, now), "Its last report of what it works on"],
+  ].filter(Boolean);
+}
+
 // statusCheckRollup mixes check runs (status, conclusion) and commit
 // statuses (state).
 function checks(rollup) {
@@ -50,6 +85,8 @@ export default class WorkspaceStatus extends View {
       const space = spaces().find((s) => s.active);
       if (space && where(space).key !== this.key) this.load(cx, space);
     });
+    // The agent's times count up.
+    cx.timer.every(15000, (cx) => cx.notify());
     cx.timer.every(EVERY, (cx) => {
       const space = spaces().find((s) => s.active);
       if (space) this.load(cx, space);
@@ -115,16 +152,21 @@ export default class WorkspaceStatus extends View {
     const label = (icon, text) => h_flex().gap(6).items_center().child(svg(`mods/workspace-chrome/${icon}.svg`).size(13)).child(text);
     const pr = space?.branch ? this.prItem(t) : null;
     const program = focusedAgentProgram(focused(), panes(), list);
+    const address = focusedAgentAddress(focused(), panes(), list);
+    const times = agentTimes(address ? (shared(TIMES) ?? {})[address] : null);
     return h_flex().size_full().px(14).gap(16).items_center().bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .child(h_flex().gap(10).items_center()
         .when(Boolean(program), (el) => el.child(div().id("agent-program").flex_none().tooltip(program.name)
           .child(BRAND[program.key] ? svg(BRAND[program.key][0]).size(13).text_color(BRAND[program.key][1]) : program.tint ? svg(program.icon).size(13).text_color(t.muted) : image(program.icon).w(13).h(13))))
         .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "This computer")))
       .when(Boolean(space?.branch), el => el.child(h_flex().gap(10).items_center().child(label("branch", space.branch)).when(Boolean(pr), (e) => e.child(pr))))
+      .when(times.length > 0, (el) => el.child(h_flex().gap(12).items_center()
+        .children(times.map(([name, value, tip]) => h_flex().id(`time-${name}`).gap(4).items_center().tooltip(tip)
+          .child(div().text_color(t.dim).child(name)).child(div().child(value))))))
       .child(div().flex_1())
       // The left side describes the focused pane; the right side is window-wide.
       .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} agent${list.length === 1 ? "" : "s"}`)
-        .when(needs > 0, el => el.child(div().text_color(t.blocked).child(`· ${needs} needs you`))))
+        .when(needs > 0, el => el.child(div().text_color(t.blocked).child(`· ${needs} ${needs === 1 ? "needs" : "need"} you`))))
       .child(div().id("palette").text_color(t.dim).on_click(() => run("app.palette")).child(this.hint(t)));
   }
 }
