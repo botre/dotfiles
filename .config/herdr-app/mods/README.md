@@ -124,7 +124,7 @@ Names follow one order in agent rows, helper names and tab titles: Claude Code's
 goal and the terminal title. `tab-titles` reads recap titles from the agent list's
 shared observations and never renames a tab the person named.
 
-Recaps start disabled. Turn them on from any agent's right-click menu to send a short excerpt to the
+Recaps are always on. Each sends a short excerpt to the
 smallest model of the session's provider: Claude Haiku or Codex's `gpt-6-luna`.
 The excerpt holds the first prompt and the last eight messages, with tool calls as
 one-line phrases, at most 4000 characters. One call returns a goal, an activity

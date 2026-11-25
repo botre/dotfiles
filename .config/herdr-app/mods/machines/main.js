@@ -130,7 +130,7 @@ export default class Machines extends View {
     const items = machineMenu(row);
     const live = items.map((it, i) => (it.enabled ? i : -1)).filter((i) => i >= 0);
     if (!live.includes(this.at)) this.at = live[0] ?? 0;
-    return v_flex().id("machine-menu").track_focus(this.handle).w_full().min_h(0).p(5).gap(2).bg(t.popover).text_size(12.8)
+    return v_flex().id("machine-menu").track_focus(this.handle).size_full().justify_center().min_h(0).p(5).gap(2).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
         const k = live.indexOf(this.at);
         if (e.key === "down" && live.length) this.at = live[(k + 1) % live.length];

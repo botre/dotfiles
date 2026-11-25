@@ -87,9 +87,9 @@ describe("agent-list conversation freshness", () => {
   });
 });
 
-function harness({ shown = true, enabled = true, all = [terminal], probe, fail = false } = {}) {
+function harness({ shown = true, all = [terminal], probe, fail = false } = {}) {
   let clock = now;
-  const values = { "agents.recaps.enabled": enabled }, commands = [], probes = [];
+  const values = {}, commands = [], probes = [];
   const evaluate = loadMods(["agent-list/model.js", "agent-list/conversations.js"], {
     Date: { now: () => clock }, appHome: () => "/home/test/.config/herdr-app",
     readTextFile: async () => "python backend", shared: (key) => values[key], setShared: (key, value) => { values[key] = value; },
@@ -111,10 +111,9 @@ function harness({ shown = true, enabled = true, all = [terminal], probe, fail =
 }
 
 describe("agent-list recap scheduling", () => {
-  it("inspects transcripts without model calls when recaps are disabled or the agent is out of view", async () => {
-    for (const options of [{ shown: false }, { enabled: false }, { enabled: undefined }]) {
+  it("inspects transcripts without model calls while the agent is out of view", async () => {
+    for (const options of [{ shown: false }]) {
       const h = harness(options);
-      if (options.enabled === undefined && options.shown === undefined) delete h.values["agents.recaps.enabled"];
       await h.sync();
       assert.equal(h.probes.length, 1);
       assert.equal(h.commands.filter((args) => args[0] === "run").length, 0);
