@@ -43,7 +43,9 @@ export function footerHeight(count, collapsed = false) {
 }
 
 // The popup's height for these items, as the agents list sizes its menus:
-// 5 padding, 31 per row, 9 per divider, 2 between items.
+// 5 padding, 31 per row, 9 per divider, 2 between items, and the 1px border on each side.
+// At a fractional zoom each row and gap rounds to whole pixels, so a long menu
+// needs a little room to spare: 1px for every three items.
 export function menuHeight(items) {
-  return 5 * 2 + items.reduce((h, it) => h + (it.divider ? 9 : 31), 0) + 2 * Math.max(0, items.length - 1);
+  return 5 * 2 + items.reduce((h, it) => h + (it.divider ? 9 : 31), 0) + 2 * Math.max(0, items.length - 1) + 2 + Math.ceil(items.length / 3);
 }

@@ -31,6 +31,6 @@ describe("machines", () => {
     // 2 machines and Add machine, a divider, Settings: 4 rows of 28, 4 gaps, the heading, padding and the border.
     assert.equal(evaluate("footerHeight(2)"), 1 + 4 + 8 + 4 * 28 + 9 + 4 + 26);
     assert.equal(evaluate("footerHeight(2, true)"), 1 + 4 + 8 + 4 * 28 + 9 + 4);
-    assert.equal(evaluate('menuHeight([{ id: "a" }, { divider: true }, { id: "b" }])'), 10 + 31 + 9 + 31 + 4);
+    assert.equal(evaluate('menuHeight([{ id: "a" }, { divider: true }, { id: "b" }])'), 10 + 31 + 9 + 31 + 4 + 2 + 1);
   });
 });

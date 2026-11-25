@@ -104,8 +104,10 @@ describe("project menu", () => {
     const o = plain(overlays[0]);
     assert.deepEqual(o.props, { menu: true, project: ID, agents: [claude] });
     assert.equal(o.width, 250);
-    // 5 + [terminal 31, heading 26, Claude 31, line 9, two worktrees 62, line 9, show and edit 62, line 9, delete 31] + 10 gaps of 2 + 5
-    assert.equal(o.height, 5 + 31 + 26 + 31 + 9 + 62 + 9 + 62 + 9 + 31 + 10 * 2 + 5);
+    // 5 + [terminal 31, heading 26, Claude 31, line 9, two worktrees 62, line 9, show and edit 62, line 9, delete 31] + 10 gaps of 2 + 5,
+    // and the popup's 1px border on each side.
+    // Plus 1px to spare for every three of its 11 items, for rounding at a fractional zoom.
+    assert.equal(o.height, 5 + 31 + 26 + 31 + 9 + 62 + 9 + 62 + 9 + 31 + 10 * 2 + 5 + 2 + 4);
     await evaluate("view.menu(proj)", { view, proj: PROJECT });
     assert.equal(asked.length, 1, "the second menu uses the cached list");
   });

@@ -9,8 +9,6 @@ import { agents, terminals, panes, focused, spaces, run, theme, shared, setShare
 import { SessionTracker } from "./sessions.js";
 import { helperName } from "./model.js";
 import { OBSERVATIONS } from "./conversations.js";
-// Whether recaps run (conversations.js reads it).
-const RECAPS = "agents.recaps.enabled";
 import { GENERAL, generalProject, PROJECT_LIST, PROJECT_PENDING, PROJECT_FAVICONS, PROJECT_DIRS, GRID, MENU, projectIconView, statusGlyph, statusSlot, gridRow, liveProjects, projectRank, tabProjects, projectIcon, PROJECT_ACTION } from "./projects.js";
 import { machineChoices, machineOf, moveAgent } from "./move.js";
 import { SETTLED, SNOOZED, PENDING, ACTION, parseSettled, parseSnoozed, labelOf, withPending, presets, wakeLabel, reference } from "./inbox.js";
@@ -237,9 +235,6 @@ function menuItems(address, { finished = false, blocked = false } = {}) {
     items.push({ heading: "Snooze until" });
     for (const p of presets()) items.push({ kind: "snooze", preset: p.id, icon: chrome("clock"), label: p.label, hint: wakeLabel(p.wake) });
   }
-  // Recaps are on or off for every agent; they run for the agent in view.
-  items.push({ divider: true });
-  items.push({ kind: "recaps", icon: chrome("file-text"), label: shared(RECAPS) === true ? "Turn off recaps" : "Turn on recaps" });
   // Last and set apart, as in the tab menu.
   if (whereIs(address).pane) {
     items.push({ divider: true });
@@ -254,7 +249,11 @@ const machineItems = (address) => machineChoices(machines(), machineOf(address))
 
 // A divider is a 1px line with 4px above and below.
 const DIVIDER = 9;
-const menuHeight = (items) => MENU.pad * 2 + items.reduce((h, it) => h + (it.divider ? DIVIDER : it.heading ? MENU.heading : MENU.row), 0) + MENU.gap * Math.max(0, items.length - 1);
+// A popup's height counts its 1px border on each side, as the picker's does.
+// At a fractional zoom each row and gap rounds to whole pixels, so a long menu
+// needs a little room to spare: 1px for every three items.
+const menuHeight = (items) => MENU.pad * 2 + items.reduce((h, it) => h + (it.divider ? DIVIDER : it.heading ? MENU.heading : MENU.row), 0) + MENU.gap * Math.max(0, items.length - 1) + 2
+  + Math.ceil(items.length / 3);
 
 // Agent programs a terminal can run while Herdr lists it only once it reports a status.
 const AGENT_PROGRAMS = new Set(["claude", "codex"]);
@@ -686,7 +685,6 @@ export default class Agents extends View {
   rowMenu(t) {
     const p = props();
     const act = (it) => {
-      if (it.kind === "recaps") { setShared(RECAPS, shared(RECAPS) !== true); closeOverlay(p.overlay); return; }
       // Close ends the agent: its tab when it's alone there, else just its pane.
       if (it.kind === "close") {
         const { pane } = whereIs(p.rowMenu);
@@ -711,8 +709,10 @@ export default class Agents extends View {
       run("agent-list.act");
       closeOverlay(p.overlay);
     };
+    // Centred, so the room to spare splits between top and bottom.
     return v_flex()
-      .w_full()
+      .size_full()
+      .justify_center()
       .p(MENU.pad)
       .gap(MENU.gap)
       .bg(t.popover)

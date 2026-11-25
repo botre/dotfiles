@@ -41,10 +41,13 @@ const OBSERVE_EVERY = 2000;
 const UI = { div: (...a) => div(...a), h_flex: (...a) => h_flex(...a), svg: (...a) => svg(...a), image: (...a) => image(...a) };
 // A divider in a menu: 1px with 4px above and below.
 const DIVIDER = 9;
-// The project menu's height: its rows, headings and dividers, with a gap between each.
+// The project menu's height: its rows, headings and dividers, with a gap between each,
+// and the popup's 1px border on each side.
+// At a fractional zoom each row and gap rounds to whole pixels, so a long menu
+// needs a little room to spare: 1px for every three items.
 export const projectMenuHeight = (items) => MENU.pad * 2
   + items.reduce((h, it) => h + (it.divider ? DIVIDER : it.heading ? MENU.heading : MENU.row), 0)
-  + MENU.gap * Math.max(0, items.length - 1);
+  + MENU.gap * Math.max(0, items.length - 1) + 2 + Math.ceil(items.length / 3);
 
 // The project menu: what the New menu starts (in the project's folder), then the
 // project's own actions. agents: knownAgents() for the folder's machine. As the New
@@ -580,7 +583,7 @@ export default class Projects extends View {
       if (!a.icon) return div();
       return a.tint ? svg(a.icon).size(14).text_color(t.foreground) : image(a.icon).size(14);
     };
-    return v_flex().id("project-menu").track_focus(this.handle).w_full().min_h(0).p(MENU.pad).gap(MENU.gap).bg(t.popover).text_size(12.8)
+    return v_flex().id("project-menu").track_focus(this.handle).size_full().justify_center().min_h(0).p(MENU.pad).gap(MENU.gap).bg(t.popover).text_size(12.8)
       .on_key_down((e, cx) => {
         if (!live.length) return;
         const k = live.indexOf(this.at);

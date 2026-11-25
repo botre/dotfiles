@@ -2,7 +2,6 @@ import { appHome, readTextFile, exec, hc, shared, setShared, panes, spaces, term
 import { machineOf, needsRecap, recapWantsTitle } from "./model.js";
 
 export const OBSERVATIONS = "agents.conversations";
-export const RECAPS = "agents.recaps.enabled";
 
 export class Conversations {
   constructor() { this.tried = 0; this.lastRecap = 0; }
@@ -50,7 +49,6 @@ export class Conversations {
     for (const address of Object.keys(next)) if (!live.has(address)) delete next[address];
     setShared(OBSERVATIONS, next);
 
-    if (shared(RECAPS) !== true) return;
     // Only spend recap requests on the agents in the tab in view.
     const shown = spaces().find((space) => space.active)?.tabs.find((tab) => tab.active)?.id;
     const inView = new Set(panes().filter((pane) => pane.tab === shown && pane.terminal).map((pane) => pane.terminal));
