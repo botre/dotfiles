@@ -1,13 +1,15 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
 import { spaces, panes, terminals, focused, run, openOverlay, theme, window, shared, setShared, layout, settings, nextCommand } from "herdr";
-import { GENERAL, ALL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, GRID, liveProjects, tabProjects, projectTabs, mainChild, shownTabs, INBOX_PENDING } from "./projects.js";
+import { GENERAL, ALL, PROJECT_SELECTED, PROJECT_LIST, PROJECT_PENDING, PROJECT_START_SHOWN, MAIN_STACK, MAIN_START, GRID, liveProjects, tabProjects, projectTabs, projectLabelOf, mainChild, shownTabs, INBOX_PENDING } from "./projects.js";
 
 // Claude Code and Codex as clean one-colour marks: the shipped icons are a pixel
 // sprite that blurs when scaled and a logo on a white square.
 const BRAND = { claude: ["mods/agent-list/icons/claude.svg", "#D97757"], codex: ["mods/agent-list/icons/codex.svg", "#6F7DFF"] };
 
 const SELECT_RE = /^select-([1-9])$/;
+// How long a new tab without a project label counts as the selected project's.
+const NEWCOMER_MS = 1500;
 
 // The selected project's tabs, from every space on every machine, each with
 // its space; `active` marks the tab in focus (each space has its own active tab).
@@ -65,6 +67,44 @@ export function oneModTab(tabs, allPanes) {
 function selectTab(tab) {
   if (!spaces().find((s) => s.id === tab.space)?.active) run("space.select", { id: tab.space });
   run("tab.select", { id: tab.id });
+}
+
+// Where focus goes after the tab in view closed. Herdr focuses a neighbour in
+// the closed tab's space, which can be another project's tab or a parked one.
+// When it did, the bar's own neighbour takes over: the next tab it showed,
+// else the one before. before: the bar's tab ids and the tab in view at the
+// last draw; live: every tab id now; tabs: what the bar shows now.
+export function afterClose(before, focusedNow, live, tabs) {
+  if (!before?.active || live.has(before.active) || before.ids.includes(focusedNow)) return null;
+  const at = before.ids.indexOf(before.active);
+  if (at < 0) return null;
+  const order = [...before.ids.slice(at + 1), ...before.ids.slice(0, at).reverse()];
+  const id = order.find((x) => live.has(x));
+  return id ? tabs.find((t) => t.id === id) ?? null : null;
+}
+
+// The tab in view when it just opened and has no project label yet. The projects
+// sidebar labels a new tab with the selected project, but the bar can draw before
+// it does. Until then (at most NEWCOMER_MS) the bar counts the tab as the selected
+// project's, so the start page doesn't flash up and take the keyboard from it.
+// seen: the tabs with a terminal at the last draw (null at the first), so a tab whose
+// pane arrives a draw after it still counts; held: the last draw's result.
+export function newcomer(focusedId, allPanes, terms, pending, seen, held, now = Date.now()) {
+  if (!focusedId || !seen) return null;
+  const mine = (allPanes ?? []).filter((p) => p.tab === focusedId && p.terminal);
+  if (!mine.length || mine.some((p) => projectLabelOf(terms?.get(p.terminal) ?? { address: p.terminal }, pending, now))) return null;
+  if (!seen.has(focusedId)) return { id: focusedId, until: now + NEWCOMER_MS };
+  return held?.id === focusedId && held.until > now ? held : null;
+}
+
+// One draw's look at closing: the neighbour to show (or null) and what the next
+// draw goes by. A draw can still name the closed tab as focused; the bar from
+// before it then stays the one to go by. shown: what the bar shows now.
+export function closeStep(before, focusedNow, live, tabs, shown) {
+  const neighbour = afterClose(before, focusedNow, live, tabs);
+  if (neighbour) return { neighbour, bar: { ids: before.ids.filter((x) => live.has(x)), active: neighbour.id } };
+  if (focusedNow && !live.has(focusedNow)) return { neighbour: null, bar: before };
+  return { neighbour: null, bar: { ids: shown.map((x) => x.id), active: shown.some((x) => x.active) ? focusedNow : null } };
 }
 
 // The tabs the bar shows (shownTabs in projects.js), from the host's lists now.
@@ -190,7 +230,16 @@ export default class Tabs extends View {
   render() {
     const t = theme();
     const snap = snapshot();
-    const tabs = selectedTabs(snap);
+    const live = new Set(snap.allSpaces.flatMap((s) => s.tabs.map((x) => x.id)));
+    const nowFocused = focusedTab(snap.allSpaces);
+    this.newTab = newcomer(nowFocused, snap.allPanes, snap.terms, shared(PROJECT_PENDING), this.seenTabs, this.newTab);
+    this.seenTabs = new Set(snap.allPanes.filter((p) => p.terminal).map((p) => p.tab));
+    let tabs = selectedTabs(snap);
+    if (this.newTab && !tabs.some((x) => x.id === this.newTab.id)) {
+      const space = snap.allSpaces.find((s) => s.tabs.some((x) => x.id === this.newTab.id));
+      const tab = space?.tabs.find((x) => x.id === this.newTab.id);
+      if (tab) tabs = [...tabs, { ...tab, active: true, space: space.id, machine: space.machine ?? null }];
+    }
     const shown = barTabs(snap, tabs);
     // Each tab's program, from the one pane read.
     const programs = new Map();
@@ -198,6 +247,10 @@ export default class Tabs extends View {
       const have = programs.get(p.tab);
       if (!have || (!have.agent && p.program?.agent)) programs.set(p.tab, { program: p.program, agent: Boolean(p.program?.agent) });
     }
+    // The tab in view just closed and focus left the bar: show the bar's neighbour.
+    const { neighbour, bar } = closeStep(this.lastBar, nowFocused, live, tabs, shown);
+    this.lastBar = bar;
+    if (neighbour) selectTab(neighbour);
     // Keep the active tab in view: index into the tabs the bar shows.
     const active = shown.findIndex(tab => tab.active);
     const selected = shown[active]?.id;
@@ -240,7 +293,8 @@ export default class Tabs extends View {
     const panel = find(root, "panel"), body = find(root, "panel-body");
     const enabled = shared("workspace.panels") ?? ["files", "changes"];
     this.syncPanel(shared(PROJECT_SELECTED) ?? GENERAL, panel, body, enabled);
-    this.syncMain(find(root, MAIN_STACK), mainChild(tabs));
+    // Parked tabs don't keep the tab in view: with none shown, the start page shows.
+    this.syncMain(find(root, MAIN_STACK), mainChild(neighbour ? [neighbour] : shown));
     const panelButton = (id, label, icon) => {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)

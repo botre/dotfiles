@@ -105,6 +105,23 @@ export function projectFor(command, list) {
   return m ? list[Number(m[1]) - 1] ?? null : null;
 }
 
+// The tab that just opened in each space, when it doesn't sit last yet, as a
+// tab.move command that puts it there. A new tab in view opens next to the old
+// one (background tabs are appended already); the bar reads better with new
+// work at its end. Several tabs at once in a space are a machine coming back,
+// not something opened, and stay where they are. fresh: terminals that just
+// appeared (freshTerminals); seenTabs: tab ids at the last look (null at first).
+export function tabsToAppend(spaces, panes, fresh, seenTabs) {
+  if (!seenTabs || !fresh?.size) return [];
+  const opened = new Set((panes ?? []).filter((p) => p.terminal && fresh.has(p.terminal)).map((p) => p.tab));
+  return (spaces ?? []).flatMap((s) => {
+    const tabs = s.tabs ?? [];
+    const mine = tabs.filter((t) => opened.has(t.id) && !seenTabs.has(t.id));
+    if (mine.length !== 1 || tabs.indexOf(mine[0]) === tabs.length - 1) return [];
+    return [{ id: mine[0].id, index: tabs.length }];
+  });
+}
+
 // The tab to show when a project is picked: the one last shown there, else its first.
 export function tabToShow(tabs, remembered) {
   return tabs.find((t) => t.id === remembered) ?? tabs[0] ?? null;
@@ -112,8 +129,12 @@ export function tabToShow(tabs, remembered) {
 
 // The project focus moved into: only for a tab that changed, and not for a
 // tab that just appeared (it is being labelled with the selected project).
-export function followFocus(tab, before, tabProject, freshTabs, selected) {
+// Nor when the tab before closed: Herdr then focuses a neighbour in its space,
+// which may belong to another project, and the tab bar picks one of its own.
+// liveTabs: the ids of every tab now, when known.
+export function followFocus(tab, before, tabProject, freshTabs, selected, liveTabs = null) {
   if (!tab || tab === before || freshTabs.has(tab) || selected === ALL) return null;
+  if (before && liveTabs && !liveTabs.has(before)) return null;
   const project = tabProject.get(tab);
   return project && project !== selected ? project : null;
 }
@@ -180,6 +201,7 @@ export default class Projects extends View {
       cx.notify();
     });
     this.seen = null; // terminal addresses at the last look
+    this.seenTabs = null; // tab ids at the last look
     this.readyBefore = new Set([null]);
     this.focusedTab = undefined;
     this.seq = new Map(); // agent address -> its seq at the last look
@@ -304,7 +326,7 @@ export default class Projects extends View {
     const a = shared(PROJECT_ACTION);
     if (!a || Date.now() - a.at > 10000) return;
     setShared(PROJECT_ACTION, null);
-    if (a.kind === "select") return this.select(a.id);
+    if (a.kind === "select") return this.select(a.id, { starting: Boolean(a.starting) });
     if (a.kind === "move") return this.moveTab(a.tab, a.id);
     if (a.kind === "pick") return this.openPicker(a.tab);
     if (a.kind === "show") this.projects = upsert(this.projects, a.id, { shown: a.shown });
@@ -335,12 +357,16 @@ export default class Projects extends View {
 
   // Shows a project: its tabs fill the tab bar, and unless the tab in view is
   // one of them, the one last shown there (or its first) comes into view.
-  select(id) {
+  // Parked and snoozed tabs stay put away. With { starting: true } something new
+  // is about to open there and take focus, so no old tab is brought up first.
+  select(id, { starting = false } = {}) {
     setShared(PROJECT_SELECTED, id);
     if (id !== ALL) this.touch([id]);
+    if (starting) return;
     const sp = spaces(), ps = panes();
-    const tabProject = tabProjects(sp, ps, new Map(terminals().map((k) => [k.address, k])), this.known(), shared(PROJECT_PENDING));
-    const tabs = projectTabs(sp, id, tabProject, focused()?.tab);
+    const terms = new Map(terminals().map((k) => [k.address, k]));
+    const tabProject = tabProjects(sp, ps, terms, this.known(), shared(PROJECT_PENDING));
+    const tabs = shownTabs(projectTabs(sp, id, tabProject, focused()?.tab), ps, terms, shared(INBOX_PENDING));
     // The main area flips now, not when the tab bar next draws: the start page
     // for a project with no tab, its tabs otherwise.
     const stacked = JSON.stringify(layout() ?? {}).includes(`"${MAIN_STACK}"`);
@@ -397,6 +423,10 @@ export default class Projects extends View {
     const fresh = freshTerminals(this.seen, this.readyBefore, ps);
     this.seen = new Set(ps.filter((p) => p.terminal).map((p) => p.terminal));
     this.readyBefore = new Set([null, ...readyMachines()]);
+    const liveTabs = new Set(sp.flatMap((s) => (s.tabs ?? []).map((t) => t.id)));
+    const append = tabsToAppend(sp, ps, fresh, this.seenTabs);
+    this.seenTabs = liveTabs;
+    for (const m of append) run("tab.move", m);
     const selected = this.selected();
     const labelFor = (address) => projectLabelOf(terms.get(address) ?? { address }, pending);
     const writes = autoLabels(fresh, ps, labelFor, selected);
@@ -415,10 +445,12 @@ export default class Projects extends View {
     const touched = [];
     if (tab && tab !== this.focusedTab) {
       const freshTabs = new Set(ps.filter((p) => fresh.has(p.terminal)).map((p) => p.tab));
-      const next = followFocus(tab, this.focusedTab, tabProject, freshTabs, selected);
+      const next = followFocus(tab, this.focusedTab, tabProject, freshTabs, selected, liveTabs);
+      // Where Herdr's focus lands after a close in another project isn't a choice to remember.
+      const closedInto = this.focusedTab && !liveTabs.has(this.focusedTab);
       this.focusedTab = tab;
       const project = tabProject.get(tab);
-      if (project) {
+      if (project && !(closedInto && project !== selected && selected !== ALL)) {
         const last = shared(PROJECT_LAST_TAB) ?? {};
         if (last[project] !== tab) setShared(PROJECT_LAST_TAB, { ...last, [project]: tab });
         touched.push(project);
@@ -560,8 +592,14 @@ export default class Projects extends View {
     closeOverlay(p.overlay);
     const act = (fields) => { setShared(PROJECT_ACTION, { ...fields, id: p.project, at: Date.now() }); run("projects.act"); };
     if (it.kind === "terminal" || it.kind === "agent" || it.kind === "worktree") {
-      // New tabs join the selected project, so the new tab joins this one.
-      act({ kind: "select" });
+      // New tabs join the selected project, so the new tab joins this one. A
+      // terminal or agent opens at once: the selection changes here, before the
+      // tab opens, since the sidebar copy takes the action only later and would
+      // label the tab with the old project. A worktree waits on a dialog that
+      // can be cancelled, so it selects the project as a click on it does.
+      const starting = it.kind !== "worktree";
+      if (starting) setShared(PROJECT_SELECTED, p.project);
+      act({ kind: "select", starting });
       if (it.kind === "worktree") openOverlay(worktreeOverlay(it, place));
       else run(...startCommand(it, place, spaces()));
     } else if (it.id === "show") act({ kind: "show", shown: it.shown });

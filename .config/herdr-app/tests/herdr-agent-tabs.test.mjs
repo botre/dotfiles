@@ -178,4 +178,61 @@ describe("agent-tabs", () => {
     assert.equal(evaluate("JSON.stringify(savedObject(null))"), "{}");
     assert.equal(evaluate('JSON.stringify(savedObject("{\\"sp1\\":\\"files\\"}"))'), '{"sp1":"files"}');
   });
+  it("shows the bar's neighbour when the tab in view closed and focus left the bar", () => {
+    const tabs = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    const next = (before, focused, live) => evaluate("afterClose(before, focused, new Set(live), tabs)?.id ?? null", { before, focused, live, tabs });
+    // b closed and Herdr focused another project's tab: c, the next one, comes up.
+    assert.equal(next({ ids: ["a", "b", "c"], active: "b" }, "other", ["a", "c", "other"]), "c");
+    // The last one closed: the one before it.
+    assert.equal(next({ ids: ["a", "b", "c"], active: "c" }, "other", ["a", "b", "other"]), "b");
+    // Herdr already focused a tab in the bar, or the tab in view is still there: nothing to fix.
+    assert.equal(next({ ids: ["a", "b", "c"], active: "b" }, "c", ["a", "c"]), null);
+    assert.equal(next({ ids: ["a", "b", "c"], active: "b" }, "other", ["a", "b", "c", "other"]), null);
+    // The bar's only tab closed, or focus was outside the bar before.
+    assert.equal(next({ ids: ["b"], active: "b" }, "other", ["other"]), null);
+    assert.equal(next({ ids: ["a"], active: null }, "other", ["other"]), null);
+  });
+  it("counts a just-opened tab in view as the selected project's until it has a label", () => {
+    const panes = [{ tab: "new", terminal: "t1" }, { tab: "old", terminal: "t2" }, { tab: "mod", pane: "p3", mod: "files" }];
+    const terms = new Map([["t1", { address: "t1", labels: {} }], ["t2", { address: "t2", labels: {} }]]);
+    const pick = (focused, seen, held, now, pending = null) => evaluate("newcomer(focused, panes, terms, pending, seen && new Set(seen), held, now)", { focused, panes, terms, pending, seen, held, now });
+    const first = pick("new", ["old"], null, 1000);
+    assert.deepEqual(JSON.parse(JSON.stringify(first)), { id: "new", until: 2500 });
+    // It holds on later draws, then lapses.
+    assert.equal(pick("new", ["old", "new"], first, 2000)?.id, "new");
+    assert.equal(pick("new", ["old", "new"], first, 2600), null);
+    // Not once it has a label (pending counts), not for a tab seen before, a mod tab, or the first draw.
+    assert.equal(pick("new", ["old"], null, 1000, { t1: { project: "x", at: 1000 } }), null);
+    assert.equal(pick("old", ["old"], null, 1000), null);
+    assert.equal(pick("mod", ["old"], null, 1000), null);
+    assert.equal(pick("new", null, null, 1000), null);
+    // Its pane arrived a draw after the tab: seen lists tabs with a terminal, so it still counts.
+    assert.equal(evaluate('newcomer("late", [], terms, null, new Set(["old"]), null, 1000)', { terms }), null);
+    assert.equal(evaluate('newcomer("late", [{ tab: "late", terminal: "t9" }], terms, null, new Set(["old"]), null, 1100)?.id', { terms }), "late");
+  });
+  it("replays a close across draws, including one that still names the closed tab", () => {
+    // Each draw: [focused tab, live tab ids, the project's tabs (shown = these minus hidden)].
+    const step = (bar, focused, live, tabs, shown) => JSON.parse(evaluate("JSON.stringify(closeStep(bar, focused, new Set(live), tabs, shown))", { bar, focused, live, tabs, shown }));
+    const t = (id, active = false) => ({ id, active });
+    let s = step(undefined, "b", ["a", "b", "c", "x"], [t("a"), t("b", true), t("c")], [t("a"), t("b", true), t("c")]);
+    assert.deepEqual(s, { neighbour: null, bar: { ids: ["a", "b", "c"], active: "b" } });
+    // b closes; one draw still says b is focused.
+    s = step(s.bar, "b", ["a", "c", "x"], [t("a"), t("c")], [t("a"), t("c")]);
+    assert.deepEqual(s, { neighbour: null, bar: { ids: ["a", "b", "c"], active: "b" } });
+    // Herdr then focuses x, another project's tab: c comes up.
+    s = step(s.bar, "x", ["a", "c", "x"], [t("a"), t("c")], [t("a"), t("c")]);
+    assert.equal(s.neighbour.id, "c");
+    // Until tab.select lands, focus still reads x: nothing more happens.
+    s = step(s.bar, "x", ["a", "c", "x"], [t("a"), t("c")], [t("a"), t("c")]);
+    assert.deepEqual(s, { neighbour: null, bar: { ids: ["a", "c"], active: null } });
+    s = step(s.bar, "c", ["a", "c", "x"], [t("a"), t("c", true)], [t("a"), t("c", true)]);
+    assert.deepEqual(s, { neighbour: null, bar: { ids: ["a", "c"], active: "c" } });
+  });
+
+  it("brings the bar's neighbour up over a parked tab Herdr focused after a close", () => {
+    const step = (bar, focused, live, tabs, shown) => JSON.parse(evaluate("JSON.stringify(closeStep(bar, focused, new Set(live), tabs, shown))", { bar, focused, live, tabs, shown }));
+    // The bar showed a and b; p is parked (in the project, not shown). b closes and Herdr focuses p.
+    const s = step({ ids: ["a", "b"], active: "b" }, "p", ["a", "p"], [{ id: "a" }, { id: "p", active: true }], [{ id: "a" }, { id: "p", active: true }]);
+    assert.equal(s.neighbour.id, "a");
+  });
 });
