@@ -148,8 +148,24 @@ describe("projects", () => {
     assert.equal(follow("t2", "t2", [], "general"), null);
     assert.equal(follow("t2", "t1", ["t2"], "general"), null);
     assert.equal(follow("t1", "t2", [], "general"), null);
+    // Focus that lands in another project because the tab in view closed stays put.
+    assert.equal(evaluate('followFocus("t2", "gone", tabProject, new Set(), "general", new Set(["t1", "t2"]))', { tabProject }), null);
+    assert.equal(evaluate('followFocus("t2", "t1", tabProject, new Set(), "general", new Set(["t1", "t2"]))', { tabProject }), "github.com/o/x");
     assert.equal(evaluate('tabToShow([{ id: "a" }, { id: "b" }], "b").id'), "b");
     assert.equal(evaluate('tabToShow([{ id: "a" }, { id: "b" }], "gone").id'), "a");
+  });
+
+  it("moves a tab that just opened to the end of its space, once", () => {
+    const spaces = [{ id: "s1", tabs: [{ id: "a" }, { id: "new" }, { id: "b" }] }, { id: "s2", tabs: [{ id: "c" }, { id: "last" }] }];
+    const panes = [{ tab: "a", terminal: "t1" }, { tab: "new", terminal: "t2" }, { tab: "new", terminal: "t3" }, { tab: "b", terminal: "t4" }, { tab: "c", terminal: "t5" }, { tab: "last", terminal: "t6" }];
+    const append = (fresh, seen) => run("tabsToAppend(spaces, panes, new Set(fresh), seen && new Set(seen))", { spaces, panes, fresh, seen });
+    assert.deepEqual(append(["t2", "t3", "t6"], ["a", "b", "c"]), [{ id: "new", index: 3 }]);
+    // A split in a tab that was there before, the first look, and nothing new: no move.
+    assert.deepEqual(append(["t4"], ["a", "b", "c", "new", "last"]), []);
+    assert.deepEqual(append(["t2"], null), []);
+    assert.deepEqual(append([], ["a"]), []);
+    // Two new tabs in one space at once: a machine coming back, so its order stays.
+    assert.deepEqual(append(["t1", "t2", "t4"], ["c", "last"]), []);
   });
 
   it("counts a project's agents and status as the tab bar shows them, without parked or snoozed ones", () => {

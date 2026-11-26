@@ -62,6 +62,14 @@ The page sits in the layout's `main-stack` beside the tab block. The tab bar
 switches that stack, so no placeholder tab exists. New tabs join the selected
 project, and the page goes once the project has a tab.
 
+A new tab moves to the end of its space, so new work lands at the right of the bar
+(not when several arrive at once, as when a machine comes back).
+Picking a project brings up the tab last shown there, else its first; never a parked
+or snoozed one, and with only those, the start page shows. Starting a terminal or agent from a project's menu brings
+up no old tab, since the new one takes focus. When the tab in view closes and Herdr focuses
+a tab outside the bar (another project's, or a parked one), the bar shows its own
+neighbour instead, and the selected project stays.
+
 All sits above Scratch and is not a project. It fills the tab bar with every tab
 from every project, and it shows each kind of mod tab only once.
 Focus stays on All when a tab of another project comes into view. A new tab
